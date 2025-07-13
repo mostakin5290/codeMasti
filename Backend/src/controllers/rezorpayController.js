@@ -2,8 +2,24 @@ const crypto = require('crypto');
 const createRazorpayInstance = require('../utils/razorpay');
 const Subscription = require('../models/subscription');
 const User = require('../models/user');
+const schedule = require('node-schedule');
 
-// Helper function to calculate subscription end date
+schedule.scheduleJob('*/5 * * * *', async () => {
+    try {
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const result = await Subscription.deleteMany({
+            status: 'pending',
+            createdAt: { $lte: fiveMinutesAgo }
+        });
+        
+        if (result.deletedCount > 0) {
+            console.log(`Cleaned up ${result.deletedCount} pending subscriptions`);
+        }
+    } catch (error) {
+        console.error('Error cleaning up pending subscriptions:', error);
+    }
+});
+
 const calculateEndDate = (plan) => {
     const now = new Date();
     if (plan === 'monthly') {
@@ -41,17 +57,14 @@ const createOrder = async (req, res) => {
             });
         }
 
-        // --- FIX IS HERE ---
-        // Generate a shorter, unique receipt ID using Unix timestamp (seconds)
+        // Generate a shorter, unique receipt ID
         const receiptId = `sub_${userId}_${Math.floor(Date.now() / 1000)}`;
-
-        // New Length Calculation: 4 (sub_) + 24 (userId) + 1 (_) + 10 (timestamp) = 39 characters. This is valid.
 
         // Create the Razorpay order
         const options = {
             amount: amount * 100, // amount in smallest currency unit (paise)
             currency: "INR",
-            receipt: receiptId, // Use the new shorter receiptId
+            receipt: receiptId,
             notes: {
                 userId: userId.toString(),
                 plan: plan,
@@ -61,7 +74,7 @@ const createOrder = async (req, res) => {
         const order = await razorpay.orders.create(options);
 
         // Create a 'pending' subscription record in the database
-        await Subscription.create({
+        const newSubscription = await Subscription.create({
             userId: userId,
             plan: plan,
             amount: amount,
@@ -81,12 +94,10 @@ const createOrder = async (req, res) => {
         });
 
     } catch (error) {
-        // This is where your error was being caught
         console.error("Error creating payment order:", error);
         res.status(500).json({
             success: false,
             message: "Something went wrong while creating the order.",
-            // It's good practice to not expose the raw error object to the client in production
             error: process.env.NODE_ENV === 'development' ? error : 'Internal Server Error'
         });
     }
