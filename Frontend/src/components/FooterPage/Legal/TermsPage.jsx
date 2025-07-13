@@ -1,8 +1,7 @@
 import React from 'react';
-import LegalPageLayout from './LegalPageLayout'; // Adjust path if necessary
-import { useTheme } from '../../../context/ThemeContext'; // Import useTheme
+import LegalPageLayout from './LegalPageLayout';
+import { useTheme } from '../../../context/ThemeContext';
 
-// Default theme for fallback (optional here, as LegalPageLayout provides it)
 const defaultAppTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
     primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
@@ -10,48 +9,64 @@ const defaultAppTheme = {
     buttonText: 'text-white', highlight: 'text-cyan-400', highlightSecondary: 'text-blue-400',
     highlightTertiary: 'text-purple-400', iconBg: 'bg-cyan-500/10',
     gradientFrom: 'from-gray-900', gradientTo: 'to-gray-800',
-    successColor: 'text-emerald-400',
-    warningColor: 'text-amber-400',
-    errorColor: 'text-red-400',
-    infoColor: 'text-blue-400',
+    successColor: 'text-emerald-400', warningColor: 'text-amber-400',
+    errorColor: 'text-red-400', infoColor: 'text-blue-400',
 };
 
 const TermsPage = () => {
-    // Get theme from context (optional, but good practice if child elements need theme)
     const { theme: appThemeFromContext } = useTheme();
     const appTheme = { ...defaultAppTheme, ...appThemeFromContext };
 
-    // Helper for heading text color
-    const getHeadingColor = () => appTheme.highlight; // Or appTheme.text if you prefer less emphasis
+    const getHeadingColor = () => appTheme.highlight;
 
     return (
-        <LegalPageLayout title="Terms of Service">
-            <h2 className={`text-2xl font-bold mb-4 ${getHeadingColor()}`}>1. Acceptance of Terms</h2>
-            <p className={`mb-4 ${appTheme.cardText}`}>
-                By accessing and using CodeMasti ("the Service"), you accept and agree to be bound by the terms and provision of this agreement.
-                In addition, when using this Service's particular services, you shall be subject to any posted guidelines or rules applicable to such services.
-            </p>
+        <LegalPageLayout title="Terms and Conditions">
+            <div className={`${appTheme.cardText} space-y-6`}>
+                <h2 className={`text-2xl font-bold mb-4 ${getHeadingColor()}`}>General Terms</h2>
+                <p>
+                    By using our platform or making any purchase, you agree to our terms of service. Content may change without notice. We don’t guarantee completeness, accuracy, or performance of any information.
+                </p>
 
-            <h2 className={`text-2xl font-bold mb-4 ${getHeadingColor()}`}>2. User Conduct and Responsibilities</h2>
-            <p className={`mb-4 ${appTheme.cardText}`}>
-                You are responsible for all activity that occurs under your account. You agree not to use the Service for any purpose that is illegal or prohibited by these Terms.
-            </p>
-            <ul className={`list-disc list-inside space-y-2 mb-4 ${appTheme.cardText}`}>
-                <li>You agree not to post content that is harassing, defamatory, or obscene.</li>
-                <li>You agree not to submit plagiarized solutions during contests or for problem submissions.</li>
-                <li>You agree not to disrupt or interfere with the security of, or otherwise abuse, the Service.</li>
-            </ul>
+                <h2 className={`text-2xl font-bold mb-4 ${getHeadingColor()}`}>User Conduct</h2>
+                <p>
+                    You agree not to misuse the platform, submit plagiarized content, or disrupt services. We reserve the right to suspend your account if terms are violated.
+                </p>
 
-            <h2 className={`text-2xl font-bold mb-4 ${getHeadingColor()}`}>3. Intellectual Property</h2>
-            <p className={`mb-4 ${appTheme.cardText}`}>
-                The Service and its original content (excluding content provided by users), features, and functionality are and will remain the exclusive property of CodeMasti and its licensors.
-                User-submitted solutions and discussion posts remain the intellectual property of the user, but you grant CodeMasti a worldwide, non-exclusive, royalty-free license to use, reproduce, and display such content in connection with the Service.
-            </p>
+                <h2 className={`text-2xl font-bold mb-4 ${getHeadingColor()}`}>Intellectual Property</h2>
+                <p>
+                    All materials (design, text, images) are owned or licensed by us. Unauthorized use may lead to legal action.
+                </p>
 
-            <h2 className={`text-2xl font-bold mb-4 ${getHeadingColor()}`}>4. Termination</h2>
-            <p className={`mb-4 ${appTheme.cardText}`}>
-                We may terminate or suspend your account and bar access to the Service immediately, without prior notice or liability, under our sole discretion, for any reason whatsoever and without limitation, including but not limited to a breach of the Terms.
-            </p>
+                <h2 className={`text-2xl font-bold mb-4 ${getHeadingColor()}`}>External Links</h2>
+                <p>
+                    Our site may include links for informational purposes. Linking to our site requires prior written permission.
+                </p>
+
+                <h2 className={`text-2xl font-bold mb-4 ${getHeadingColor()}`}>Governing Law</h2>
+                <p>
+                    Any disputes will be governed by the laws of India.
+                </p>
+
+                <h2 className={`text-2xl font-bold mb-4 ${getHeadingColor()}`}>Cancellation & Refund</h2>
+                <p className="italic text-sm mb-2">Last updated on Jul 5 2025</p>
+                <ul className="list-disc list-inside space-y-2">
+                    <li>Cancellation requests accepted within 2-3 days of order unless shipped.</li>
+                    <li>No cancellations for perishable items. Refunds possible for quality issues.</li>
+                    <li>Report damaged/defective items within 2-3 days of receipt.</li>
+                    <li>Refunds (if approved) are processed within 3-4 business days.</li>
+                </ul>
+                <p className="mt-4">
+                    For full policy, visit: <br />
+                    <a 
+                        href="https://merchant.razorpay.com/policy/QpG6qfwRHONpPX/refund" 
+                        className={`${appTheme.highlight} hover:underline`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        https://merchant.razorpay.com/policy/QpG6qfwRHONpPX/refund
+                    </a>
+                </p>
+            </div>
         </LegalPageLayout>
     );
 };

@@ -153,20 +153,20 @@ const FrontPage = () => {
                                     Trusted by 5M+ developers worldwide
                                 </div>
                                 <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
-                                    Master Coding Interviews with <span className="  bg-clip-text bg-gradient-to-r from-primary to-secondary">CodeMukti</span>
+                                    Master Coding Interviews with <span className="  bg-clip-text bg-gradient-to-r from-primary to-secondary">CodeMasti</span>
                                 </h1>
                                 <p className="text-xl text-white/80 mb-8">
                                     The most effective platform to prepare for technical interviews. Practice with real company questions and join our thriving developer community.
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-4">
                                     <a
-                                        href="/problems"
+                                        href="/login"
                                         className="px-7 py-3.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-medium hover:shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center transform hover:scale-[1.02]"
                                     >
                                         Start Practicing <FiChevronRight className="ml-1.5" />
                                     </a>
                                     <a
-                                        href="/learn-more"
+                                        href="/help"
                                         className="px-7 py-3.5 rounded-lg bg-white/5 border border-white/20 text-white font-medium hover:bg-white/10 transition-all flex items-center justify-center transform hover:scale-[1.02]"
                                     >
                                         Learn More
@@ -213,7 +213,7 @@ const FrontPage = () => {
                     {/* Features Section */}
                     <section className="mb-28">
                         <div className="text-center mb-14">
-                            <h2 className="text-3xl font-bold text-white mb-4">Why Developers Choose CodeMukti</h2>
+                            <h2 className="text-3xl font-bold text-white mb-4">Why Developers Choose CodeMasti</h2>
                             <div className="w-24 h-1.5 bg-gradient-to-r from-primary to-secondary mx-auto mb-6 rounded-full"></div>
                             <p className="text-white/80 max-w-2xl mx-auto">
                                 Everything you need to ace your technical interviews in one place
@@ -242,7 +242,7 @@ const FrontPage = () => {
                         <div className="relative z-10">
                             <h2 className="text-4xl font-bold text-white mb-6">Ready to Mukti the Code?</h2>
                             <p className="text-white/80 mb-8 max-w-2xl mx-auto text-lg">
-                                Join millions of developers who have transformed their careers with CodeMukti.
+                                Join millions of developers who have transformed their careers with CodeMasti.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <a
@@ -269,14 +269,14 @@ const FrontPage = () => {
                                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
                                         <FiCode className="text-white text-xl" />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-white">CodeMukti</h3>
+                                    <h3 className="text-2xl font-bold text-white">CodeMasti</h3>
                                 </div>
                                 <p className="text-white/70 mb-4">
                                     The ultimate platform for technical interview preparation.
                                 </p>
                                 <div className="flex space-x-4">
                                     {['Twitter', 'GitHub', 'LinkedIn', 'YouTube'].map((social, index) => (
-                                        <a key={index} href={`/${social.toLowerCase()}`} className="text-white/70 hover:text-white transition-colors">
+                                        <a key={index} href="#" className="text-white/70 hover:text-white transition-colors">
                                             {social}
                                         </a>
                                     ))}
@@ -285,34 +285,33 @@ const FrontPage = () => {
                             <div>
                                 <h4 className="text-white font-medium mb-4 text-lg">Product</h4>
                                 <ul className="space-y-3">
-                                    <li><a href="/problems" className="text-white/70 hover:text-white transition-colors hover:underline">Problems</a></li>
-                                    <li><a href="/premium" className="text-white/70 hover:text-white transition-colors hover:underline">Premium</a></li>
-                                    <li><a href="/contests" className="text-white/70 hover:text-white transition-colors hover:underline">Contests</a></li>
-                                    <li><a href="/discuss" className="text-white/70 hover:text-white transition-colors hover:underline">Discuss</a></li>
+                                    <li><a href="/login" className="text-white/70 hover:text-white transition-colors hover:underline">Problems</a></li>
+                                    <li><a href="/login" className="text-white/70 hover:text-white transition-colors hover:underline">Premium</a></li>
+                                    <li><a href="/login" className="text-white/70 hover:text-white transition-colors hover:underline">Contests</a></li>
+                                    <li><a href="/login" className="text-white/70 hover:text-white transition-colors hover:underline">Discuss</a></li>
                                 </ul>
                             </div>
                             <div>
                                 <h4 className="text-white font-medium mb-4 text-lg">Company</h4>
                                 <ul className="space-y-3">
                                     <li><a href="/about" className="text-white/70 hover:text-white transition-colors hover:underline">About</a></li>
-                                    <li><a href="/careers" className="text-white/70 hover:text-white transition-colors hover:underline">Careers</a></li>
-                                    <li><a href="/blog" className="text-white/70 hover:text-white transition-colors hover:underline">Blog</a></li>
+                                    <li><a href="/help/faq" className="text-white/70 hover:text-white transition-colors hover:underline">Careers</a></li>
                                     <li><a href="/contact" className="text-white/70 hover:text-white transition-colors hover:underline">Contact</a></li>
                                 </ul>
                             </div>
                             <div>
                                 <h4 className="text-white font-medium mb-4 text-lg">Resources</h4>
                                 <ul className="space-y-3">
-                                    <li><a href="/learn" className="text-white/70 hover:text-white transition-colors hover:underline">Learning Paths</a></li>
-                                    <li><a href="/interview-prep" className="text-white/70 hover:text-white transition-colors hover:underline">Interview Prep</a></li>
-                                    <li><a href="/webinars" className="text-white/70 hover:text-white transition-colors hover:underline">Webinars</a></li>
+                                    <li><a href="/help" className="text-white/70 hover:text-white transition-colors hover:underline">Learning Paths</a></li>
+                                    <li><a href="/help" className="text-white/70 hover:text-white transition-colors hover:underline">Interview Prep</a></li>
+                                    <li><a href="/help" className="text-white/70 hover:text-white transition-colors hover:underline">Webinars</a></li>
                                     <li><a href="/help" className="text-white/70 hover:text-white transition-colors hover:underline">Help Center</a></li>
                                 </ul>
                             </div>
                         </div>
                         <div className="py-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-white/60 text-sm">
                             <div className="mb-4 md:mb-0">
-                                © {new Date().getFullYear()} CodeMukti. All rights reserved.
+                                © {new Date().getFullYear()} CodeMasti. All rights reserved.
                             </div>
                             <div className="flex space-x-6">
                                 <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>

@@ -26,7 +26,7 @@ const LegalPageLayout = ({ title, children }) => {
     // Helper for main background gradient
     const getMainBackgroundGradient = () => `bg-gradient-to-br ${appTheme.gradientFrom} ${appTheme.gradientTo}`;
     // Helper for primary text gradient
-    const getPrimaryTextGradient = () => `bg-clip-text text-transparent bg-gradient-to-r ${appTheme.primary.replace('bg-', 'from-')} ${appTheme.secondary.replace('bg-', 'to-')}`;
+    const getPrimaryTextGradient = () => `bg-clip-text  bg-gradient-to-r ${appTheme.primary.replace('bg-', 'from-')} ${appTheme.secondary.replace('bg-', 'to-')}`;
 
 
     return (
