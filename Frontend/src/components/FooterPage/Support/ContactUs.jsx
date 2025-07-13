@@ -139,7 +139,7 @@ const ContactUs = () => {
                             <h3 className={`text-2xl font-semibold ${appTheme.text} mb-2`}>Email Us</h3>
                             <p className={`${appTheme.cardText}`}>We'll respond to your email as quickly as possible.</p>
                             <p className={`mt-4 text-lg ${appTheme.highlight}`}>
-                                <a href="mailto:support.codemasti@gmail.com" className="hover:underline">support.codemasti@gmail.com</a>
+                                <a href="mailto:m.codemasti@gmail.com" className="hover:underline">m.codemasti@gmail.com</a>
                             </p>
                         </div>
 
@@ -148,7 +148,7 @@ const ContactUs = () => {
                             <h3 className={`text-2xl font-semibold ${appTheme.text} mb-2`}>Call Us</h3>
                             <p className={`${appTheme.cardText}`}>For urgent inquiries, feel free to give us a call.</p>
                             <p className={`mt-4 text-lg ${appTheme.highlightSecondary}`}>
-                                <a href="tel:+1234567890" className="hover:underline">+1 (234) 567-890</a>
+                                <a href="tel:#" className="hover:underline">#</a>
                             </p>
                         </div>
 
@@ -157,8 +157,7 @@ const ContactUs = () => {
                             <h3 className={`text-2xl font-semibold ${appTheme.text} mb-2`}>Our Office</h3>
                             <p className={`${appTheme.cardText}`}>Visit us during business hours by appointment.</p>
                             <p className={`mt-4 text-lg ${appTheme.highlightTertiary}`}>
-                                123 Code Street, Suite 456<br />
-                                Tech City, TC 98765
+                                Not Avaliable
                             </p>
                         </div>
                     </div>

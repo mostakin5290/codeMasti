@@ -5,8 +5,14 @@ import Footer from '../../components/layout/Footer';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
 import MonacoEditor from '@monaco-editor/react';
-import { FaSearch, FaTimes, FaCode, FaLink,FaAlignLeft,FaAlignCenter,FaAlignRight, FaTextHeight, FaBold, FaItalic, FaUnderline, FaStrikethrough, FaListUl, FaListOl, FaPalette, FaQuoteLeft, FaLink as FaLinkIcon, FaUndo, FaRedo, FaTrashAlt } from 'react-icons/fa'; // Added FaTrashAlt for clear formatting
-import { FiCheckCircle, FiXCircle } from 'react-icons/fi'; // Added for selected problem checkmarks
+import {
+    FaSearch, FaTimes, FaCode, FaLink,
+    FaAlignLeft, FaAlignCenter, FaAlignRight,
+    FaTextHeight, FaBold, FaItalic, FaUnderline, FaStrikethrough,
+    FaPalette, FaLink as FaLinkIcon, FaUndo, FaRedo, FaTrashAlt // FaListUl, FaListOl, FaQuoteLeft were unused/redundant if using StarterKit defaults
+} from 'react-icons/fa';
+// FiCheckCircle, FiXCircle were imported but not used in this component's JSX
+// and are not strictly needed for basic functionality.
 import { useTheme } from '../../context/ThemeContext';
 
 // Rich text editor imports
@@ -18,12 +24,14 @@ import Underline from '@tiptap/extension-underline';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
-import Blockquote from '@tiptap/extension-blockquote';
-import CodeBlock from '@tiptap/extension-code-block'; // Simple CodeBlock, not Lowlight
-import HardBreak from '@tiptap/extension-hard-break'; // Added HardBreak
-import HorizontalRule from '@tiptap/extension-horizontal-rule'; // Added HorizontalRule
 
-// Default theme for the app context
+// NOTE: Blockquote, CodeBlock, HardBreak, HorizontalRule are already part of StarterKit.
+// Importing and adding them separately causes the "Duplicate extension names found" warning.
+// If you need custom configurations for these, you should disable them in StarterKit's config
+// and then add your custom configured versions. For simplicity and to resolve the warning,
+// I've removed the redundant explicit imports and usage.
+
+// Default theme for the app context (provided in your original code)
 const defaultAppTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
     primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
@@ -37,16 +45,20 @@ const defaultAppTheme = {
     infoColor: 'text-blue-400',
 };
 
+// MenuBar component for Tiptap editor
 const MenuBar = ({ editor, appTheme }) => {
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [showHighlightPicker, setShowHighlightPicker] = useState(false);
     const [linkUrl, setLinkUrl] = useState('');
     const [showLinkInput, setShowLinkInput] = useState(false);
 
+    // Ref for the menu bar container to detect clicks outside
+    const menuBarRef = useRef(null);
+
     // Close pickers if clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (event.target.closest('.color-picker-group') === null && event.target.closest('.highlight-picker-group') === null && event.target.closest('.link-input-group') === null) {
+            if (menuBarRef.current && !menuBarRef.current.contains(event.target)) {
                 setShowColorPicker(false);
                 setShowHighlightPicker(false);
                 setShowLinkInput(false);
@@ -57,7 +69,6 @@ const MenuBar = ({ editor, appTheme }) => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
-
 
     if (!editor) {
         return null;
@@ -73,6 +84,8 @@ const MenuBar = ({ editor, appTheme }) => {
 
     const removeLink = () => {
         editor.chain().focus().extendMarkRange('link').unsetLink().run();
+        setLinkUrl(''); // Clear URL field after removing
+        setShowLinkInput(false);
     };
 
     // Predefined color options - using Tailwind default colors, adjust as needed
@@ -80,15 +93,13 @@ const MenuBar = ({ editor, appTheme }) => {
         '#000000', '#ffffff', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#eab308', '#a855f7', '#6b7280'
     ];
 
-
-
     // Highlight color options - using Tailwind default colors, adjust as needed
     const presetHighlights = [
         '#fef08a', '#bbf7d0', '#bfdbfe', '#fecaca', '#e9d5ff', '#a78bfa', '#fda4af', '#fcd34d',
     ];
 
     return (
-        <div className={`flex flex-wrap gap-1 mb-2 p-3 ${appTheme.cardBg} rounded-t-lg border-b ${appTheme.border}`}>
+        <div ref={menuBarRef} className={`flex flex-wrap gap-1 mb-2 p-3 ${appTheme.cardBg} rounded-t-lg border-b ${appTheme.border}`}>
             {/* Undo/Redo */}
             <button
                 type="button"
@@ -115,9 +126,8 @@ const MenuBar = ({ editor, appTheme }) => {
             <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
-                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${
-                    editor.isActive('bold') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
-                }`}
+                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${editor.isActive('bold') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
+                    }`}
                 title="Bold"
             >
                 <FaBold className="w-5 h-5" />
@@ -125,9 +135,8 @@ const MenuBar = ({ editor, appTheme }) => {
             <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleItalic().run()}
-                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${
-                    editor.isActive('italic') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
-                }`}
+                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${editor.isActive('italic') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
+                    }`}
                 title="Italic"
             >
                 <FaItalic className="w-5 h-5" />
@@ -135,9 +144,8 @@ const MenuBar = ({ editor, appTheme }) => {
             <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
-                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${
-                    editor.isActive('underline') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
-                }`}
+                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${editor.isActive('underline') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
+                    }`}
                 title="Underline"
             >
                 <FaUnderline className="w-5 h-5" />
@@ -145,9 +153,8 @@ const MenuBar = ({ editor, appTheme }) => {
             <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleStrike().run()}
-                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${
-                    editor.isActive('strike') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
-                }`}
+                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${editor.isActive('strike') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
+                    }`}
                 title="Strikethrough"
             >
                 <FaStrikethrough className="w-5 h-5" />
@@ -158,9 +165,8 @@ const MenuBar = ({ editor, appTheme }) => {
             <button
                 type="button"
                 onClick={() => editor.chain().focus().setTextAlign('left').run()}
-                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${
-                    editor.isActive({ textAlign: 'left' }) ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
-                }`}
+                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${editor.isActive({ textAlign: 'left' }) ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
+                    }`}
                 title="Align Left"
             >
                 <FaAlignLeft className="w-5 h-5" />
@@ -168,9 +174,8 @@ const MenuBar = ({ editor, appTheme }) => {
             <button
                 type="button"
                 onClick={() => editor.chain().focus().setTextAlign('center').run()}
-                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${
-                    editor.isActive({ textAlign: 'center' }) ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
-                }`}
+                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${editor.isActive({ textAlign: 'center' }) ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
+                    }`}
                 title="Align Center"
             >
                 <FaAlignCenter className="w-5 h-5" />
@@ -178,9 +183,8 @@ const MenuBar = ({ editor, appTheme }) => {
             <button
                 type="button"
                 onClick={() => editor.chain().focus().setTextAlign('right').run()}
-                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${
-                    editor.isActive({ textAlign: 'right' }) ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
-                }`}
+                className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${editor.isActive({ textAlign: 'right' }) ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
+                    }`}
                 title="Align Right"
             >
                 <FaAlignRight className="w-5 h-5" />
@@ -188,17 +192,20 @@ const MenuBar = ({ editor, appTheme }) => {
 
             <div className={`w-px h-8 ${appTheme.border} mx-1`}></div>
 
-            {/* Blockquote & Code Block */}
-            <div className={`w-px h-8 ${appTheme.border} mx-1`}></div>
-
             {/* Link */}
             <div className="relative link-input-group">
                 <button
                     type="button"
-                    onClick={() => setShowLinkInput(!showLinkInput)}
-                    className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${
-                        editor.isActive('link') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
-                    }`}
+                    onClick={() => {
+                        setShowLinkInput(!showLinkInput);
+                        if (editor.isActive('link')) {
+                            setLinkUrl(editor.getAttributes('link').href);
+                        } else {
+                            setLinkUrl('');
+                        }
+                    }}
+                    className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${editor.isActive('link') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
+                        }`}
                     title="Add Link"
                 >
                     <FaLinkIcon className="w-5 h-5" />
@@ -220,13 +227,15 @@ const MenuBar = ({ editor, appTheme }) => {
                             >
                                 Add
                             </button>
-                            <button
-                                type="button"
-                                onClick={removeLink}
-                                className={`px-3 py-1 text-sm ${appTheme.errorColor} border border-red-400 rounded hover:bg-red-400 hover:text-white`}
-                            >
-                                Remove
-                            </button>
+                            {editor.isActive('link') && (
+                                <button
+                                    type="button"
+                                    onClick={removeLink}
+                                    className={`px-3 py-1 text-sm ${appTheme.errorColor} border border-red-400 rounded hover:bg-red-400 hover:text-white`}
+                                >
+                                    Remove
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
@@ -278,9 +287,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 <button
                     type="button"
                     onClick={() => setShowHighlightPicker(!showHighlightPicker)}
-                    className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${
-                        editor.isActive('highlight') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
-                    }`}
+                    className={`p-2 rounded hover:${appTheme.cardBg}/80 transition-colors ${editor.isActive('highlight') ? `${appTheme.primary} ${appTheme.buttonText}` : `${appTheme.cardText}`
+                        }`}
                     title="Highlight"
                 >
                     <span className="text-sm font-bold" style={{ backgroundColor: 'yellow', color: 'black', padding: '2px 4px', borderRadius: '2px' }}>H</span>
@@ -316,7 +324,7 @@ const MenuBar = ({ editor, appTheme }) => {
                     </div>
                 )}
             </div>
-            
+
             <div className={`w-px h-8 ${appTheme.border} mx-1`}></div>
             {/* Clear Formatting */}
             <button
@@ -331,6 +339,7 @@ const MenuBar = ({ editor, appTheme }) => {
     );
 };
 
+// Main CreateDiscussPost Component
 const CreateDiscussPost = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -347,17 +356,23 @@ const CreateDiscussPost = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const searchRef = useRef(null);
 
+    // Get post data if editing
     const postToEdit = location.state?.post;
+    console.log("Post received for editing:", postToEdit); // Debugging: log postToEdit
 
+    // Tiptap Editor setup
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
                 heading: {
                     levels: [1, 2, 3],
                 },
-                codeBlock: {
+                codeBlock: { // This is for inline code blocks, not the Monaco editor
                     languageClasses: true,
                 },
+                // Removed redundant extensions like blockquote, hardBreak, horizontalRule
+                // as StarterKit already provides them. If custom versions are needed,
+                // disable them here: blockquote: false, etc.
             }),
             TextStyle,
             Color.configure({
@@ -370,16 +385,12 @@ const CreateDiscussPost = () => {
             Link.configure({
                 openOnClick: false,
                 HTMLAttributes: {
-                    class: 'text-blue-500 underline hover:text-blue-700', // Default link style
+                    class: 'text-blue-500 underline hover:text-blue-700',
                 },
             }),
             TextAlign.configure({
                 types: ['heading', 'paragraph'],
             }),
-            Blockquote,
-            CodeBlock, // Use simple CodeBlock instead of Lowlight if Lowlight is causing issues
-            HardBreak,
-            HorizontalRule,
         ],
         content: postToEdit ? postToEdit.description : '',
         editorProps: {
@@ -387,9 +398,10 @@ const CreateDiscussPost = () => {
                 class: `prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto focus:outline-none min-h-[300px] p-4 custom-scrollbar ${appTheme.text} ${appTheme.background.includes('dark') || appTheme.background.includes('black') || appTheme.background.includes('zinc-9') ? 'prose-invert' : ''}`,
             },
         },
-        immediatelyRender: false,
+        immediatelyRender: false, // Prevents immediate render issues on hydration
     });
 
+    // Monaco Editor theme synchronization
     const [monacoEditorTheme, setMonacoEditorTheme] = useState('vs-dark');
 
     useEffect(() => {
@@ -400,6 +412,7 @@ const CreateDiscussPost = () => {
         }
     }, [appTheme.background]);
 
+    // Populate form fields if editing an existing post
     useEffect(() => {
         if (postToEdit && editor) {
             setTitle(postToEdit.title);
@@ -407,11 +420,13 @@ const CreateDiscussPost = () => {
             setLanguage(postToEdit.language || 'javascript');
             setSelectedProblem(postToEdit.problem || null);
             setProblemQuery(postToEdit.problem?.title || '');
-            
+
+            // Set editor content. Use `commands.setContent` for Tiptap
             editor.commands.setContent(postToEdit.description);
         }
-    }, [postToEdit, editor]);
+    }, [postToEdit, editor]); // Depend on editor instance and postToEdit
 
+    // Fetch problems based on search query
     useEffect(() => {
         if (problemQuery.length < 2) {
             setSearchedProblems([]);
@@ -430,7 +445,7 @@ const CreateDiscussPost = () => {
     const handleSelectProblem = (problem) => {
         setSelectedProblem(problem);
         setProblemQuery(problem.title);
-        setSearchedProblems([]);
+        setSearchedProblems([]); // Clear search results after selection
     };
 
     const clearSelectedProblem = () => {
@@ -438,6 +453,7 @@ const CreateDiscussPost = () => {
         setProblemQuery('');
     };
 
+    // Handle form submission (create or update)
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!title.trim() || !editor?.getText().trim() || !selectedProblem) {
@@ -450,28 +466,39 @@ const CreateDiscussPost = () => {
             const postData = {
                 title: title.trim(),
                 description: editor.getHTML(),
-                code: code.trim(),
-                language,
+                // Ensure empty code string becomes null if not provided
+                code: code.trim() !== '' ? code.trim() : null,
+                language: code.trim() !== '' ? language : null, // Only set language if code exists
                 problemId: selectedProblem._id,
             };
 
             let response;
             if (postToEdit) {
+                // Update existing post
                 response = await axiosClient.put(`/discuss/${postToEdit._id}`, postData);
                 toast.success('Post updated successfully! ✨');
+                navigate(`/discuss/${response.data.post.slug}`);
+
             } else {
+                // Create new post
                 response = await axiosClient.post('/discuss/create', postData);
                 toast.success('Post created successfully! 🎉');
+                navigate(`/discuss/${response.data.slug}`);
+
             }
-            
-            navigate(`/discuss/${response.data.slug}`);
+
+            // Navigate to the newly created/updated post using its slug.
+            // The backend is now expected to return the full post object directly
+            // (e.g., `res.json(updatedPost)` or `res.json(savedPost)`).
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to save post.");
+            console.error("Post save error:", error); // Log the full error for debugging
+            toast.error(error.response?.data?.message || "Failed to save post. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    // Monaco editor options
     const editorOptions = {
         minimap: { enabled: false },
         fontSize: 14,
@@ -516,6 +543,7 @@ const CreateDiscussPost = () => {
                                             type="button"
                                             onClick={clearSelectedProblem}
                                             className={`absolute top-1/2 right-3 -translate-y-1/2 ${appTheme.cardText} hover:${appTheme.errorColor} transition-colors`}
+                                            title="Clear selected problem"
                                         >
                                             <FaTimes />
                                         </button>
@@ -524,7 +552,7 @@ const CreateDiscussPost = () => {
                                     )}
                                 </div>
 
-                                {searchedProblems.length > 0 && (
+                                {searchedProblems.length > 0 && !selectedProblem && ( // Only show if not selected
                                     <ul className={`absolute z-10 w-full mt-1 ${appTheme.cardBg} border ${appTheme.border} rounded-lg shadow-lg max-h-60 overflow-y-auto`}>
                                         {searchedProblems.map(p => (
                                             <li
@@ -575,7 +603,7 @@ const CreateDiscussPost = () => {
                                 <div className={`${appTheme.cardBg}`}>
                                     <EditorContent
                                         editor={editor}
-                                        className={`min-h-[300px] p-4 ${appTheme.text} focus:outline-none`} // Min height added here
+                                        className={`min-h-[300px] p-4 ${appTheme.text} focus:outline-none`}
                                     />
                                 </div>
                             </div>

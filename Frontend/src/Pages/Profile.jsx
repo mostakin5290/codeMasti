@@ -935,7 +935,7 @@ function ProfilePage() {
                                                 <h4 className={`${appTheme.cardText} font-medium`}>No solution posts yet</h4>
                                                 <p className={`${appTheme.cardText}/70 mt-1`}>Share your coding insights and solutions with the community!</p>
                                                 <Link
-                                                    to="discuss/new"
+                                                    to="/discuss/new"
                                                     className={`mt-4 inline-block px-6 py-2 ${appTheme.highlight.replace('text-', 'bg-')}/10 hover:${appTheme.highlight.replace('text-', 'bg-')}/20 ${appTheme.highlight} rounded-lg border border-${appTheme.highlight.split('-')[1]}-600/30 transition-colors`}
                                                 >
                                                     Create a Post

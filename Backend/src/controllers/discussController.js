@@ -105,6 +105,7 @@ const getPostBySlug = async (req, res) => {
             .populate('author', 'firstName lastName avatar')
             .populate('problem', 'title _id');
 
+        console.log(post)
         if (!post) {
             return res.status(404).json({ message: 'Post not found.' });
         }
@@ -117,13 +118,16 @@ const getPostBySlug = async (req, res) => {
 
 const toggleUpvote = async (req, res) => {
     try {
-        const post = await DiscussionPost.findById(req.params._id);
+        const postId = req.params._id;
+        const post = await DiscussionPost.findById(postId);
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
 
         const userId = req.user.id;
-        const upvoteIndex = post.upvotes.indexOf(userId);
+        const upvoteIndex = post.upvotes.findIndex(
+            (upvotedUserId) => upvotedUserId.toString() === userId
+        );
 
         if (upvoteIndex === -1) {
             post.upvotes.push(userId);
@@ -180,7 +184,8 @@ const deletePost = async (req, res) => {
 const updatePost = async (req, res) => {
     const { title, description, code, language } = req.body;
     const postId = req.params.id;
-    const userId = req.user.id;
+    const userId = req.user._id;
+    console.log(`post id: ${postId} user id: ${userId}`)
 
     if (!title || !description) {
         return res.status(400).json({ message: 'Title and description are required.' });
@@ -193,8 +198,10 @@ const updatePost = async (req, res) => {
             return res.status(404).json({ message: 'Post not found.' });
         }
 
+        console.log(post.author._id.toString() == userId)
+
         // Check if the current user is the author of the post
-        if (post.author.toString() !== userId) {
+        if (post.author._id.toString() != userId) {
             return res.status(403).json({
                 message: 'Unauthorized. You can only update your own posts.'
             });
@@ -230,38 +237,6 @@ const updatePost = async (req, res) => {
         });
     }
 };
-
-// const deletePost = async (req, res) => {
-//     try {
-//         const post = await DiscussionPost.findById(req.params.id);
-
-//         if (!post) {
-//             return res.status(404).json({ message: 'Post not found.' });
-//         }
-
-//         // Check if the current user is the author of the post
-//         if (post.author.toString() !== req.user.id) {
-//             return res.status(403).json({ 
-//                 message: 'Unauthorized. You can only delete your own posts.' 
-//             });
-//         }
-
-//         await DiscussionPost.findByIdAndDelete(req.params.id);
-
-//         res.json({ 
-//             success: true,
-//             message: 'Post deleted successfully.' 
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ 
-//             success: false,
-//             message: 'Server error while deleting post.' 
-//         });
-//     }
-// };
-
-// comment controller functions
 
 const addComment = async (req, res) => {
     try {

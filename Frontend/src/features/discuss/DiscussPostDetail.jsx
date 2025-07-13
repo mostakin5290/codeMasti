@@ -97,6 +97,7 @@ const DiscussPostDetail = () => {
     const fetchPost = useCallback(async () => {
         try {
             const { data } = await axiosClient.get(`/discuss/post/${slug}`);
+            console.log(data); // Inspect this data structure to confirm upvotes types
             setPost(data);
             setUpvoteCount(data.upvotes.length);
 
@@ -109,8 +110,9 @@ const DiscussPostDetail = () => {
             setComments(processedComments);
 
             if (currentUser) {
-                setIsUpvoted(data.upvotes.includes(currentUser._id));
-                setIsBookmarked(data.bookmarks?.includes(currentUser._id) || false); // Add bookmark logic if available
+                // Convert each ObjectId in data.upvotes to string for comparison with currentUser._id
+                setIsUpvoted(data.upvotes.map(id => id.toString()).includes(currentUser._id));
+                setIsBookmarked(data.bookmarks?.map(id => id.toString()).includes(currentUser._id) || false);
             }
         } catch (err) {
             setError("Hmm, this post seems to have vanished into the digital void 🤔");
@@ -124,34 +126,38 @@ const DiscussPostDetail = () => {
         fetchPost();
     }, [fetchPost]);
 
-    const handleUpvote = async () => {
-        if (!currentUser) {
-            toast.error("Join us to show some love! 💙");
-            return navigate('/login');
-        }
-        if (isOperating) return;
+const handleUpvote = async () => {
+    if (!currentUser) {
+        toast.error("Join us to show some love! 💙");
+        return navigate('/login');
+    }
+    if (isOperating) return;
 
-        setIsOperating(true);
-        try {
-            const newIsUpvoted = !isUpvoted;
-            setIsUpvoted(newIsUpvoted);
-            console.log(newIsUpvoted)
-            setUpvoteCount(prev => newIsUpvoted ? prev + 1 : prev - 1);
+    setIsOperating(true);
+    try {
+        // Optimistic update (frontend side for immediate feedback)
+        const newIsUpvotedOptimistic = !isUpvoted;
+        setIsUpvoted(newIsUpvotedOptimistic);
+        setUpvoteCount(prev => newIsUpvotedOptimistic ? prev + 1 : prev - 1);
 
-            await axiosClient.patch(`/discuss/up/${post._id}`);
-            // Re-fetch post to ensure counts are accurate after the operation
-            const { data } = await axiosClient.get(`/discuss/post/${slug}`);
-            console.log(data)
-            setPost(data);
-        } catch (err) {
-            // Revert optimistic update on error
-            setIsUpvoted(prev => !prev);
-            setUpvoteCount(prev => isUpvoted ? prev - 1 : prev + 1);
-            toast.error("Oops! Something went wrong");
-        } finally {
-            setIsOperating(false);
-        }
-    };
+        await axiosClient.patch(`/discuss/up/${post._id}`);
+
+        // Re-fetch post to ensure counts are accurate after the operation
+        // This is a good fallback, as the backend is now fixed to return correct state.
+        const { data } = await axiosClient.get(`/discuss/post/${slug}`);
+        setPost(data); // Update the entire post object
+        setUpvoteCount(data.upvotes.length); // Get actual count from fresh data
+        // Update isUpvoted based on actual fetched data
+        setIsUpvoted(data.upvotes.map(id => id.toString()).includes(currentUser._id));
+    } catch (err) {
+        // Revert optimistic update on error
+        setIsUpvoted(prev => !prev);
+        setUpvoteCount(prev => isUpvoted ? prev - 1 : prev + 1);
+        toast.error("Oops! Something went wrong");
+    } finally {
+        setIsOperating(false);
+    }
+};
 
     // Function to handle editing the main post
     const handleEditPost = () => {
