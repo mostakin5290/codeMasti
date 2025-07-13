@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
     FaArrowLeft, FaEdit, FaTrash, FaCalendarAlt,
-    FaClock,FaTimes,FaUsers, FaTrophy, FaList
+    FaClock,FaTimes,FaUsers, FaTrophy,FaList
 } from 'react-icons/fa';
 import { useTheme } from '../../../context/ThemeContext';
 import axiosClient from '../../../api/axiosClient';
