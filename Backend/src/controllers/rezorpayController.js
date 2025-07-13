@@ -33,6 +33,9 @@ const calculateEndDate = (plan) => {
 const createOrder = async (req, res) => {
     try {
         const razorpay = createRazorpayInstance();
+        if (!razorpay?.orders?.create) {
+            throw new Error("Razorpay initialization failed - check API keys");
+        }
         const userId = req.user._id;
 
         // Enhanced input validation
@@ -123,31 +126,38 @@ const createOrder = async (req, res) => {
             subscriptionId: newSubscription._id
         });
 
-    } catch (error) {
-        console.error("Error in createOrder:", {
-            error: error.message,
-            stack: error.stack,
+    }
+    catch (error) {
+        // Ensure we have a proper Error object
+        const err = (error instanceof Error) ? error : new Error(String(error));
+
+        console.error("Detailed Payment Error:", {
+            name: err.name,
+            message: err.message,
+            stack: err.stack,
+            rawError: error, // In case it's a non-Error object
             requestBody: req.body,
             userId: req.user?._id
         });
 
-        // Specific error messages for common cases
-        let userMessage = "Something went wrong while creating the order.";
-        if (error.message.includes("currency")) {
-            userMessage = "Invalid currency specified";
-        } else if (error.message.includes("amount")) {
-            userMessage = "Invalid amount specified";
-        } else if (error.message.includes("timeout")) {
-            userMessage = "Payment service timeout. Please try again.";
+        let userMessage = "Payment processing failed";
+
+        // Safely check error message
+        if (err.message && typeof err.message.includes === 'function') {
+            if (err.message.includes("currency")) userMessage = "Invalid currency";
+            if (err.message.includes("amount")) userMessage = "Invalid amount";
+            if (err.message.includes("timeout")) userMessage = "Payment gateway timeout";
         }
 
         res.status(500).json({
             success: false,
             message: userMessage,
-            error: process.env.NODE_ENV === 'development' ? {
-                message: error.message,
-                type: error.constructor.name
-            } : undefined
+            ...(process.env.NODE_ENV === 'development' && {
+                debug: {
+                    error: err.message,
+                    type: err.name
+                }
+            })
         });
     }
 };
