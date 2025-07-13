@@ -11,7 +11,7 @@ schedule.scheduleJob('*/5 * * * *', async () => {
             status: 'pending',
             createdAt: { $lte: fiveMinutesAgo }
         });
-
+        
         if (result.deletedCount > 0) {
             console.log(`Cleaned up ${result.deletedCount} pending subscriptions`);
         }
@@ -33,77 +33,51 @@ const calculateEndDate = (plan) => {
 const createOrder = async (req, res) => {
     try {
         const razorpay = createRazorpayInstance();
-        if (!razorpay?.orders?.create) {
-            throw new Error("Razorpay initialization failed - check API keys");
-        }
         const userId = req.user._id;
 
-        // Enhanced input validation
         const { amount, plan } = req.body;
-        if (!amount || isNaN(amount) || amount <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid positive amount is required."
-            });
+
+        if (!amount || !plan) {
+            return res.status(400).json({ success: false, message: "Amount and plan are required." });
+        }
+        if (!['monthly', 'yearly'].includes(plan)) {
+            return res.status(400).json({ success: false, message: "Invalid subscription plan." });
         }
 
-        if (!plan || !['monthly', 'yearly'].includes(plan)) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid subscription plan (monthly/yearly) is required."
-            });
-        }
-
-        // Check existing subscriptions with better error messaging
+        // Check if the user already has an active or pending subscription
         const existingSubscription = await Subscription.findOne({
             userId: userId,
             status: { $in: ['active', 'pending'] }
-        }).lean();
+        });
 
         if (existingSubscription) {
-            const message = existingSubscription.status === 'active'
-                ? "You already have an active subscription."
-                : "You have a pending subscription. Please complete that payment first.";
-
             return res.status(409).json({
                 success: false,
-                message,
-                existingSubscriptionId: existingSubscription._id
+                message: `You already have an ${existingSubscription.status} subscription. Please complete the payment or manage your existing subscription.`,
             });
         }
 
-        // Generate receipt ID with additional validation
-        const timestampSec = Math.floor(Date.now() / 1000);
-        if (!userId || typeof userId.toString !== 'function') {
-            throw new Error("Invalid user ID format");
-        }
-        const receiptId = `sub_${userId.toString()}_${timestampSec}`;
+        // --- FIX IS HERE ---
+        // Generate a shorter, unique receipt ID using Unix timestamp (seconds)
+        const receiptId = `sub_${userId}_${Math.floor(Date.now() / 1000)}`;
 
-        // Validate Razorpay instance
-        if (!razorpay || typeof razorpay.orders.create !== 'function') {
-            throw new Error("Razorpay instance not properly initialized");
-        }
+        // New Length Calculation: 4 (sub_) + 24 (userId) + 1 (_) + 10 (timestamp) = 39 characters. This is valid.
 
-        // Create Razorpay order with timeout
+        // Create the Razorpay order
         const options = {
-            amount: Math.round(amount * 100), // Ensure integer value
+            amount: amount * 100, // amount in smallest currency unit (paise)
             currency: "INR",
-            receipt: receiptId,
+            receipt: receiptId, // Use the new shorter receiptId
             notes: {
                 userId: userId.toString(),
                 plan: plan,
             }
         };
 
-        const order = await Promise.race([
-            razorpay.orders.create(options),
-            new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("Razorpay order creation timeout")), 10000)
-            )
-        ]);
+        const order = await razorpay.orders.create(options);
 
-        // Create subscription record with additional validation
-        const subscriptionData = {
+        // Create a 'pending' subscription record in the database
+        await Subscription.create({
             userId: userId,
             plan: plan,
             amount: amount,
@@ -111,53 +85,25 @@ const createOrder = async (req, res) => {
             startDate: new Date(),
             endDate: calculateEndDate(plan),
             razorpayOrderId: order.id,
-            status: 'pending',
-            paymentAttempts: 1
-        };
+            status: 'pending'
+        });
 
-        const newSubscription = await Subscription.create(subscriptionData);
-
-        return res.status(201).json({
+        res.status(201).json({
             success: true,
             orderId: order.id,
             amount: order.amount,
             currency: order.currency,
-            key_id: process.env.RAZORPAY_KEY_ID,
-            subscriptionId: newSubscription._id
+            key_id: process.env.RAZORPAY_KEY_ID
         });
 
-    }
-    catch (error) {
-        // Ensure we have a proper Error object
-        const err = (error instanceof Error) ? error : new Error(String(error));
-
-        console.error("Detailed Payment Error:", {
-            name: err.name,
-            message: err.message,
-            stack: err.stack,
-            rawError: error, // In case it's a non-Error object
-            requestBody: req.body,
-            userId: req.user?._id
-        });
-
-        let userMessage = "Payment processing failed";
-
-        // Safely check error message
-        if (err.message && typeof err.message.includes === 'function') {
-            if (err.message.includes("currency")) userMessage = "Invalid currency";
-            if (err.message.includes("amount")) userMessage = "Invalid amount";
-            if (err.message.includes("timeout")) userMessage = "Payment gateway timeout";
-        }
-
+    } catch (error) {
+        // This is where your error was being caught
+        console.error("Error creating payment order:", error);
         res.status(500).json({
             success: false,
-            message: userMessage,
-            ...(process.env.NODE_ENV === 'development' && {
-                debug: {
-                    error: err.message,
-                    type: err.name
-                }
-            })
+            message: "Something went wrong while creating the order.",
+            // It's good practice to not expose the raw error object to the client in production
+            error: process.env.NODE_ENV === 'development' ? error : 'Internal Server Error'
         });
     }
 };
@@ -185,8 +131,8 @@ const verifyPaymentAndSubscription = async (req, res) => {
                 const payment = payload.payment.entity;
 
                 // 1. Find the subscription by order ID
-                const subscription = await Subscription.findOne({
-                    razorpayOrderId: payment.order_id
+                const subscription = await Subscription.findOne({ 
+                    razorpayOrderId: payment.order_id 
                 });
 
                 if (!subscription) {
