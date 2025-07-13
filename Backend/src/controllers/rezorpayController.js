@@ -9,7 +9,7 @@ schedule.scheduleJob('*/5 * * * *', async () => {
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
         const result = await Subscription.deleteMany({
             status: 'pending',
-            createdAt:{ $lte: fiveMinutesAgo }
+            createdAt: { $lte: fiveMinutesAgo }
         });
         
         if (result.deletedCount > 0) {
