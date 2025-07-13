@@ -1,0 +1,259 @@
+/* Base container for the animated forms */
+.auth-container {
+    position: relative;
+    width: 850px;
+    height: 550px;
+    border-radius: 30px;
+    box-shadow: 0 0px 30px rgba(0, 0, 0, 0.2);
+    margin: 20px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Base style for form boxes (Login and Register) */
+.auth-form-box {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.1));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+    color: #fff;
+    transition: all 0.6s ease-in-out;
+    z-index: 1;
+}
+
+/* Specific to Login form (default active, right side) */
+.auth-form-box.login {
+    right: 0;
+    opacity: 1;
+    transform: translateX(0);
+    visibility: visible;
+}
+
+/* Specific to Register form (default inactive, left side) */
+.auth-form-box.register {
+    left: 0;
+    opacity: 0;
+    transform: translateX(-100%);
+    visibility: hidden;
+}
+
+/* When the container is 'active' (register mode) */
+.auth-container.active .auth-form-box.login {
+    transform: translateX(100%);
+    opacity: 0;
+    visibility: hidden;
+}
+
+.auth-container.active .auth-form-box.register {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Toggle box styles - the background slider effect */
+.auth-toggle-box {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.auth-toggle-box::before {
+    content: '';
+    position: absolute;
+    left: -250%;
+    width: 300%;
+    height: 100%;
+    background: linear-gradient(to right, #6366f1, #8b5cf6);
+    border-radius: 150px;
+    transition: left 0.8s ease-in-out;
+    z-index: 1;
+}
+
+.auth-container.active .auth-toggle-box::before {
+    left: 50%;
+}
+
+/* Toggle panel styles (text and buttons) */
+.auth-toggle-panel {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    text-align: center;
+    z-index: 2;
+    transition: all 0.6s ease-in-out;
+}
+
+/* Left panel (default active, shows Register button) */
+.auth-toggle-panel.left {
+    left: 0;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.auth-container.active .auth-toggle-panel.left {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+/* Right panel (default inactive, shows Login button) */
+.auth-toggle-panel.right {
+    right: 0;
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.auth-container.active .auth-toggle-panel.right {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+/* Buttons inside toggle panels */
+.auth-toggle-panel .btn {
+    width: 160px;
+    height: 46px;
+    background: linear-gradient(to right, #6366f1, #8b5cf6);
+    border: none;
+    margin-top: 20px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+
+.auth-toggle-panel .btn:hover {
+    background: linear-gradient(to right, #5a5cd6, #7c4cf5);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.auth-toggle-panel .btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+}
+
+/* Ensure the toggle panels have proper z-index */
+.auth-toggle-panel {
+    z-index: 10;
+}
+
+/* Make sure the form boxes have proper stacking */
+.auth-form-box {
+    z-index: 5;
+}
+
+
+
+
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    .auth-container {
+        width: 100%;
+        max-width: 400px;
+        height: 600px;
+        margin: 20px auto;
+        flex-direction: column;
+    }
+
+    .auth-form-box {
+        width: 100%;
+        height: 70%;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        top: auto;
+    }
+
+    .auth-form-box.login {
+        transform: translateY(0);
+    }
+
+    .auth-container.active .auth-form-box.login {
+        transform: translateY(-100%);
+    }
+
+    .auth-form-box.register {
+        top: 100%;
+        left: 0;
+        right: auto;
+        bottom: auto;
+        opacity: 0;
+        visibility: hidden;
+        z-index: 0;
+    }
+
+    .auth-container.active .auth-form-box.register {
+        transform: translateY(-100%);
+    }
+
+    .auth-toggle-box::before {
+        left: 0;
+        top: -270%;
+        width: 100%;
+        height: 300%;
+        border-radius: 20vw;
+        transition: top 0.8s ease-in-out;
+    }
+
+    .auth-container.active .auth-toggle-box::before {
+        top: 70%;
+    }
+
+    .auth-toggle-panel {
+        width: 100%;
+        height: 30%;
+        left: 0;
+        top: auto;
+        right: auto;
+        bottom: auto;
+    }
+
+    .auth-toggle-panel.left {
+        top: 0;
+        transform: translateY(0);
+    }
+
+    .auth-container.active .auth-toggle-panel.left {
+        transform: translateY(100%);
+    }
+
+    .auth-toggle-panel.right {
+        bottom: 0;
+        transform: translateY(100%);
+    }
+
+    .auth-container.active .auth-toggle-panel.right {
+        transform: translateY(0);
+    }
+}
+
+@media screen and (max-width: 400px) {
+    .auth-form-box {
+        padding: 20px;
+    }
+    .auth-toggle-panel h1 {
+        font-size: 28px;
+    }
+}
