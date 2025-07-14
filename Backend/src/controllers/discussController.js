@@ -183,7 +183,7 @@ const deletePost = async (req, res) => {
 
 const updatePost = async (req, res) => {
     const { title, description, code, language } = req.body;
-    const postId = req.params.id;
+    const postId = req.params._id;
     const userId = req.user._id;
     console.log(`post id: ${postId} user id: ${userId}`)
 

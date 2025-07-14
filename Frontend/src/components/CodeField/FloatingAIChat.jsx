@@ -3,65 +3,56 @@ import {
     FaRobot, FaTrash, FaTimes,
     FaPaperPlane, FaLightbulb, FaCode, FaBug, FaQuestion, FaCopy,
     FaVolumeUp, FaVolumeMute, FaMicrophone, FaMicrophoneSlash,
-    FaBookmark, FaHistory,FaGithub,FaStackOverflow,FaExpand,FaMinus,
+    FaBookmark, FaHistory, FaGithub, FaStackOverflow, FaExpand, FaMinus,
     FaSearch,
     FaThumbsUp, FaThumbsDown,
-    FaRedo, FaUndo, FaCog, FaUsers
+    FaRedo, FaUndo, FaCog, FaUsers,
+    FaCompress, FaExpandArrowsAlt
 } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 import { HiSparkles } from 'react-icons/hi';
 import { BsStars, BsCodeSlash } from 'react-icons/bs';
 import { MdAutoFixHigh, MdInsertDriveFile, MdSmartToy } from 'react-icons/md';
 import axiosClient from '../../api/axiosClient';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { dracula, prism } from 'react-syntax-highlighter/dist/esm/styles/prism'; // Import both for flexibility
+import { dracula, prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { copyToClipboard } from '../../utils/clipboard';
-// useTheme hook is not directly used here as theme is passed via prop for light theme consistency
 
-// Fixed light theme for this specific component. It will NOT change with the app's theme.
-// This is the base theme if no `appTheme` prop is passed, or if it's the controlling parent.
 const lightThemeDefaults = {
     background: 'bg-gray-100',
     text: 'text-gray-900',
     cardBg: 'bg-white',
     cardText: 'text-gray-600',
     border: 'border-gray-200',
-    primary: 'bg-blue-600', // Primary accent color
+    primary: 'bg-blue-600',
     primaryHover: 'bg-blue-700',
-    secondary: 'bg-indigo-600', // Secondary accent color
+    secondary: 'bg-indigo-600',
     secondaryHover: 'bg-indigo-700',
     buttonText: 'text-white',
     highlight: 'text-blue-600',
     highlightSecondary: 'text-indigo-600',
     highlightTertiary: 'text-purple-600',
-    iconBg: 'bg-blue-100', // Background for icons (e.g., FaLightbulb in prompts)
-    gradientFrom: 'from-blue-600', // These are not used for solid color strategy
-    gradientTo: 'to-indigo-600',   // but kept for compatibility with other components
+    iconBg: 'bg-blue-100',
+    gradientFrom: 'from-blue-600',
+    gradientTo: 'to-indigo-600',
     successColor: 'text-green-600',
     warningColor: 'text-amber-600',
     errorColor: 'text-red-600',
     infoColor: 'text-blue-600',
 };
 
-// Helper function to process text content for simple markdown like bold
 const processTextContent = (text) => {
-    // Replace **text** with <strong>text</strong>
-    // This is a basic markdown parser. For complex markdown, use a dedicated library.
     return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 };
 
 const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme: propAppTheme }) => {
-    // Use the propAppTheme if provided (from AIChatPage), otherwise fallback to lightThemeDefaults
-    // This allows the parent to control the exact theme if needed, otherwise it's light.
     const appTheme = { ...lightThemeDefaults, ...propAppTheme };
-
-    // State management - removed isDarkMode state
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [speakingMessageId, setSpeakingMessageId] = useState(null);
-
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
@@ -88,14 +79,12 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
     const [undoStack, setUndoStack] = useState([]);
     const [redoStack, setRedoStack] = useState([]);
 
-    // Refs
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
     const chatContainerRef = useRef(null);
     const recognition = useRef(null);
     const searchInputRef = useRef(null);
 
-    // Configuration
     const MAX_INPUT_LENGTH = 2000;
     const MAX_UNDO_STACK = 20;
 
@@ -135,7 +124,13 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
     useEffect(() => {
         const interval = setInterval(() => {
             if (messages.length > 1) {
-                const currentChat = { id: Date.now(), title: problem?.title || 'Coding Session', messages: messages, timestamp: new Date(), messageCount: messages.length };
+                const currentChat = {
+                    id: Date.now(),
+                    title: problem?.title || 'Coding Session',
+                    messages: messages,
+                    timestamp: new Date(),
+                    messageCount: messages.length
+                };
                 setChatHistory(prev => [currentChat, ...prev.slice(0, 9)]);
             }
         }, 60000);
@@ -364,13 +359,18 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
 
         } catch (error) {
             setIsTyping(false);
-            const errorMessage = { role: 'assistant', parts: [{ type: 'text', content: "Sorry, I encountered an error. Please try again." }], timestamp: new Date(), isError: true, id: Date.now() + 2 };
+            const errorMessage = {
+                role: 'assistant',
+                parts: [{ type: 'text', content: "Sorry, I encountered an error. Please try again." }],
+                timestamp: new Date(),
+                isError: true,
+                id: Date.now() + 2
+            };
             setMessages(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
         }
     };
-
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -388,7 +388,12 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
     const clearChat = () => {
         if (window.confirm('Are you sure you want to clear the chat history? This cannot be undone.')) {
             saveToUndoStack();
-            setMessages([{ role: 'assistant', parts: [{ type: 'text', content: `Chat cleared. How can I help you with "${problem?.title || 'this problem'}"?` }], timestamp: new Date(), id: Date.now() }]);
+            setMessages([{
+                role: 'assistant',
+                parts: [{ type: 'text', content: `Chat cleared. How can I help you with "${problem?.title || 'this problem'}"?` }],
+                timestamp: new Date(),
+                id: Date.now()
+            }]);
         }
     };
 
@@ -411,7 +416,11 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
     };
 
     const exportChat = () => {
-        const chatData = JSON.stringify({ title: problem?.title || 'Coding Session', timestamp: new Date().toISOString(), messages }, null, 2);
+        const chatData = JSON.stringify({
+            title: problem?.title || 'Coding Session',
+            timestamp: new Date().toISOString(),
+            messages
+        }, null, 2);
         const blob = new Blob([chatData], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -433,15 +442,25 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                         const hydratedMessages = importedMessages.map(m => ({ ...m, timestamp: new Date(m.timestamp) }));
                         setMessages(hydratedMessages);
                         showNotification('Chat imported successfully!');
-                    } else { throw new Error('Invalid format'); }
-                } catch { showNotification('Invalid chat file.'); }
+                    } else {
+                        throw new Error('Invalid format');
+                    }
+                } catch {
+                    showNotification('Invalid chat file.');
+                }
             };
             reader.readAsText(file);
         }
     };
 
-    const toggleFavorite = (messageId) => setFavorites(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
-    const rateMessage = (messageId, rating) => setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, rating: msg.rating === rating ? null : rating } : msg));
+    const toggleFavorite = (messageId) => {
+        setFavorites(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
+    };
+
+    const rateMessage = (messageId, rating) => {
+        setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, rating: msg.rating === rating ? null : rating } : msg));
+    };
+
     const insertCodeIntoEditor = (code) => {
         if (onCodeUpdate) {
             onCodeUpdate(code);
@@ -455,44 +474,59 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
         return content.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
-    // Helper for solid button colors (use `appTheme.buttonPrimary` and `appTheme.buttonPrimaryHover`)
-    const getSolidButtonClasses = () => `${appTheme.buttonPrimary} hover:${appTheme.buttonPrimaryHover}`;
+    const getSolidButtonClasses = () => `${appTheme.primary} hover:${appTheme.primaryHover}`;
 
-
-    if (!isOpen) {
-        return (
-            <div className="fixed bottom-6 right-6 z-50">
-                <button onClick={() => setIsOpen(true)} className={`w-16 h-16 ${getSolidButtonClasses()} hover:scale-110 ${appTheme.buttonText} rounded-full shadow-2xl transition-all duration-300 flex items-center justify-center group animate-pulse hover:animate-none`} aria-label="Open AI Chat">
-                    <FaRobot className="w-8 h-8 group-hover:rotate-12 transition-transform duration-300" />
-                    <div className={`absolute -top-1 -right-1 w-5 h-5 ${appTheme.highlight.replace('text-', 'bg-')} rounded-full flex items-center justify-center shadow-lg`}>
-                        <HiSparkles className="w-3 h-3 text-white" />
-                    </div>
-                </button>
-            </div>
-        );
-    }
-
-    // Helper function to get text color for code highlighter based on appTheme's background
     const getHighlighterTheme = () => {
         const isAppThemeDark = appTheme.background.includes('dark') || appTheme.background.includes('black') || appTheme.background.includes('zinc-9');
         return isAppThemeDark ? dracula : prism;
     };
 
-
-    // UI IMPROVEMENT: Helper functions for dynamic sizing
     const getChatHeight = () => (isExpanded ? 'calc(100vh - 4rem)' : isMinimized ? '3.5rem' : 'min(80vh, 700px)');
     const getChatWidth = () => (isExpanded ? 'calc(100vw - 4rem)' : isMinimized ? '350px' : '450px');
+
+    if (!isOpen) {
+        return (
+            <motion.div
+                drag
+                dragConstraints={{
+                    top: 0,
+                    left: 0,
+                    right: window.innerWidth,
+                    bottom: window.innerHeight,
+                }}
+                className="fixed bottom-6 right-6 z-50"
+            >
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className={`w-16 h-16 ${getSolidButtonClasses()} ${appTheme.buttonText} rounded-full shadow-2xl transition-all duration-300 flex items-center justify-center group animate-pulse hover:animate-none`}
+                    aria-label="Open AI Chat"
+                >
+                    <FaRobot className="w-8 h-8 group-hover:rotate-12 transition-transform duration-300" />
+                    <div className={`absolute -top-1 -right-1 w-5 h-5 ${appTheme.highlight.replace('text-', 'bg-')} rounded-full flex items-center justify-center shadow-lg`}>
+                        <HiSparkles className="w-3 h-3 text-white" />
+                    </div>
+                </button>
+            </motion.div>
+        );
+    }
 
     return (
         <div
             ref={chatContainerRef}
             className={`fixed z-50 rounded-2xl shadow-2xl transition-all duration-500 ease-in-out flex flex-col ${appTheme.background} ${appTheme.text} ${isExpanded ? 'inset-2' : 'bottom-6 right-6'}`}
-            style={{ width: getChatWidth(), height: getChatHeight(), backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `${appTheme.border}/50`, }} >
+            style={{
+                width: getChatWidth(),
+                height: getChatHeight(),
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: `${appTheme.border}/50`,
+            }}
+        >
             {/* Header */}
             <div className={`flex items-center justify-between p-3 border-b shrink-0 ${appTheme.border}/50`}>
                 <div className="flex items-center gap-3">
                     <div className="relative">
-                        <div className={`w-9 h-9 ${appTheme.buttonPrimary} rounded-full flex items-center justify-center`}>
+                        <div className={`w-9 h-9 ${appTheme.primary} rounded-full flex items-center justify-center`}>
                             <MdSmartToy className={appTheme.buttonText} />
                         </div>
                         <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${appTheme.successColor.replace('text-', 'bg-')} rounded-full border-2 ${appTheme.background} animate-pulse`}></div>
@@ -505,7 +539,6 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    {/* Removed Dark/Light Mode Toggle */}
                     <button onClick={() => setIsMuted(!isMuted)} className={`p-2 rounded-lg hover:${appTheme.background}/20 transition-colors ${appTheme.text}`} title={isMuted ? "Unmute Sound" : "Mute Sound"}>
                         {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
                     </button>
@@ -526,6 +559,7 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                     </button>
                 </div>
             </div>
+
             {/* Body */}
             <div className={`flex-1 flex flex-col min-h-0 ${isMinimized && 'hidden'}`}>
                 {/* Search & Settings */}
@@ -546,14 +580,7 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                 )}
                 {showSettings && (
                     <div className={`p-3 border-b ${appTheme.border}/30 space-y-3`}>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className={`block text-xs font-medium mb-1 ${appTheme.cardText}`}>Theme</label>
-                                {/* Theme selection is now disabled and follows app theme */}
-                                <select disabled value="auto" className={`w-full border rounded px-2 py-1 text-sm ${appTheme.cardBg} ${appTheme.border} ${appTheme.text}`}>
-                                    <option value="auto">Auto (Sync with App Theme)</option>
-                                </select>
-                            </div>
+                        <div className="grid gap-3">
                             <div>
                                 <label className={`block text-xs font-medium mb-1 ${appTheme.cardText}`}>Font Size ({fontSize}px)</label>
                                 <input type="range" min="12" max="18" value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} className="w-full slider" />
@@ -587,12 +614,12 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                     {filteredMessages.map((message) => (
                         <div key={message.id} className={`flex items-end gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'} group`}>
                             {message.role === 'assistant' && (
-                                <div className={`w-7 h-7 ${appTheme.buttonPrimary} rounded-full flex items-center justify-center shrink-0`}>
+                                <div className={`w-7 h-7 ${appTheme.primary} rounded-full flex items-center justify-center shrink-0`}>
                                     <MdSmartToy className={appTheme.buttonText} />
                                 </div>
                             )}
                             <div className={`max-w-[90%] p-3 rounded-2xl relative ${message.role === 'user'
-                                ? `${appTheme.buttonPrimary} ${appTheme.buttonText} rounded-br-lg`
+                                ? `${appTheme.primary} ${appTheme.buttonText} rounded-br-lg`
                                 : message.isError
                                     ? `${appTheme.errorColor.replace('text-', 'bg-')}/20 ${appTheme.errorColor} border ${appTheme.errorColor.replace('text-', 'border-')}/30 rounded-bl-lg`
                                     : `${appTheme.cardBg} rounded-bl-lg ${appTheme.text}`
@@ -603,16 +630,44 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                                             {speakingMessageId === message.id ? <FaVolumeMute size={12} /> : <FaVolumeUp size={12} />}
                                         </button>
                                     )}
-                                    <button onClick={() => rateMessage(message.id, 'up')} className={`p-1 rounded-full hover:${appTheme.background}/20 ${message.rating === 'up' && `${appTheme.successColor.replace('text-', 'bg-')}/50`}`} title="Good">
+                                    <button
+                                        onClick={() => rateMessage(message.id, 'up')}
+                                        className={`p-1 rounded-full hover:${appTheme.background}/20 active:scale-90 transition-transform ${message.rating === 'up'
+                                                ? `${appTheme.successColor.replace('text-', 'bg-')}`
+                                                : `${appTheme.text}`
+                                            }`}
+                                        title="Good"
+                                    >
                                         <FaThumbsUp size={12} />
                                     </button>
-                                    <button onClick={() => rateMessage(message.id, 'down')} className={`p-1 rounded-full hover:${appTheme.background}/20 ${message.rating === 'down' && `${appTheme.errorColor.replace('text-', 'bg-')}/50`}`} title="Bad">
+
+                                    <button
+                                        onClick={() => rateMessage(message.id, 'down')}
+                                        className={`p-1 rounded-full hover:${appTheme.background}/20 active:scale-90 transition-transform ${message.rating === 'down'
+                                                ? `${appTheme.errorColor.replace('text-', 'bg-')}`
+                                                : `${appTheme.text}`
+                                            }`}
+                                        title="Bad"
+                                    >
                                         <FaThumbsDown size={12} />
                                     </button>
-                                    <button onClick={() => toggleFavorite(message.id)} className={`p-1 rounded-full hover:${appTheme.background}/20 ${favorites.includes(message.id) && appTheme.highlight}`} title="Bookmark">
+
+                                    <button
+                                        onClick={() => toggleFavorite(message.id)}
+                                        className={`p-1 rounded-full hover:${appTheme.background}/20 active:scale-90 transition-transform ${favorites.includes(message.id)
+                                                ? appTheme.highlight
+                                                : appTheme.text
+                                            }`}
+                                        title="Bookmark"
+                                    >
                                         <FaBookmark size={12} />
                                     </button>
-                                    <button onClick={() => copyToClipboard(message.content || message.parts.map(p => p.content).join('\n'))} className={`p-1 rounded-full hover:${appTheme.background}/20 ${appTheme.text}`} title="Copy">
+
+                                    <button
+                                        onClick={() => copyToClipboard(message.content || message.parts.map(p => p.content).join('\n'))}
+                                        className={`p-1 rounded-full hover:${appTheme.background}/60 active:scale-90 transition-transform ${appTheme.text}`}
+                                        title="Copy"
+                                    >
                                         <FaCopy size={12} />
                                     </button>
                                 </div>
@@ -632,7 +687,7 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                                                 </div>
                                                 <SyntaxHighlighter
                                                     language={part.language}
-                                                    style={getHighlighterTheme()} // Use dynamic theme
+                                                    style={getHighlighterTheme()}
                                                     customStyle={{ margin: 0, borderRadius: '0.5rem', fontSize: `${fontSize - 1}px` }}
                                                     codeTagProps={{ style: { fontFamily: '"Fira Code", monospace' } }}
                                                 >
@@ -640,7 +695,6 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                                                 </SyntaxHighlighter>
                                             </div>
                                         ) : (
-                                            // Process text content to replace markdown bold with <strong>
                                             <div className="leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: processTextContent(part.content) }}></div>
                                         )}
                                     </div>
@@ -654,7 +708,7 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                     ))}
                     {isTyping && (
                         <div className="flex justify-start items-end gap-2">
-                            <div className={`w-7 h-7 ${appTheme.buttonPrimary} rounded-full flex items-center justify-center shrink-0`}>
+                            <div className={`w-7 h-7 ${appTheme.primary} rounded-full flex items-center justify-center shrink-0`}>
                                 <MdSmartToy className={appTheme.buttonText} />
                             </div>
                             <div className={`${appTheme.cardBg} p-3 rounded-2xl rounded-bl-lg`}>
@@ -670,6 +724,7 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                     )}
                     <div ref={messagesEndRef} />
                 </div>
+
                 {/* Footer */}
                 <div className={`px-3 pt-2 border-t shrink-0 ${appTheme.border}/30`}>
                     <div className={`flex gap-2 overflow-x-auto pb-2 custom-scrollbar`}>
@@ -705,7 +760,7 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
                                     {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
                                 </button>
                             }
-                            <button onClick={handleSendMessage} disabled={!inputMessage.trim() || isLoading} className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-200 shrink-0 ${appTheme.buttonPrimary} ${appTheme.buttonText} disabled:${appTheme.cardBg} disabled:cursor-not-allowed`} title="Send Message">
+                            <button onClick={handleSendMessage} disabled={!inputMessage.trim() || isLoading} className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-200 shrink-0 ${appTheme.primary} ${appTheme.buttonText} disabled:${appTheme.cardBg} disabled:cursor-not-allowed`} title="Send Message">
                                 {isLoading ? <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div> : <FaPaperPlane />}
                             </button>
                         </div>
@@ -719,6 +774,5 @@ const FloatingAIChat = ({ problem, currentCode, language, onCodeUpdate, appTheme
         </div>
     );
 };
-
 
 export default FloatingAIChat;

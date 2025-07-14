@@ -97,7 +97,6 @@ const DiscussPostDetail = () => {
     const fetchPost = useCallback(async () => {
         try {
             const { data } = await axiosClient.get(`/discuss/post/${slug}`);
-            console.log(data); // Inspect this data structure to confirm upvotes types
             setPost(data);
             setUpvoteCount(data.upvotes.length);
 
@@ -110,7 +109,6 @@ const DiscussPostDetail = () => {
             setComments(processedComments);
 
             if (currentUser) {
-                // Convert each ObjectId in data.upvotes to string for comparison with currentUser._id
                 setIsUpvoted(data.upvotes.map(id => id.toString()).includes(currentUser._id));
                 setIsBookmarked(data.bookmarks?.map(id => id.toString()).includes(currentUser._id) || false);
             }
@@ -135,22 +133,17 @@ const handleUpvote = async () => {
 
     setIsOperating(true);
     try {
-        // Optimistic update (frontend side for immediate feedback)
         const newIsUpvotedOptimistic = !isUpvoted;
         setIsUpvoted(newIsUpvotedOptimistic);
         setUpvoteCount(prev => newIsUpvotedOptimistic ? prev + 1 : prev - 1);
 
         await axiosClient.patch(`/discuss/up/${post._id}`);
 
-        // Re-fetch post to ensure counts are accurate after the operation
-        // This is a good fallback, as the backend is now fixed to return correct state.
         const { data } = await axiosClient.get(`/discuss/post/${slug}`);
-        setPost(data); // Update the entire post object
-        setUpvoteCount(data.upvotes.length); // Get actual count from fresh data
-        // Update isUpvoted based on actual fetched data
+        setPost(data);
+        setUpvoteCount(data.upvotes.length); 
         setIsUpvoted(data.upvotes.map(id => id.toString()).includes(currentUser._id));
     } catch (err) {
-        // Revert optimistic update on error
         setIsUpvoted(prev => !prev);
         setUpvoteCount(prev => isUpvoted ? prev - 1 : prev + 1);
         toast.error("Oops! Something went wrong");
@@ -159,17 +152,14 @@ const handleUpvote = async () => {
     }
 };
 
-    // Function to handle editing the main post
     const handleEditPost = () => {
         if (!currentUser || currentUser._id !== post.author._id) {
             toast.error("You are not authorized to edit this post.");
             return;
         }
-        // Navigate to the create/edit post page, passing current post data
         navigate(`/discuss/edit/${post.slug}`, { state: { post } });
     };
 
-    // Function to handle deleting the main post
     const handleDeletePost = async () => {
         if (!currentUser || currentUser._id !== post.author._id) {
             toast.error("You are not authorized to delete this post.");
@@ -181,10 +171,9 @@ const handleUpvote = async () => {
 
         setIsOperating(true);
         try {
-            console.log("Deleting post:", post._id);
             await axiosClient.delete(`/discuss/${post._id}`);
             toast.success("Post deleted successfully! 👋");
-            navigate('/discuss'); // Redirect to discussions list after deletion
+            navigate('/discuss');
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to delete post.");
         } finally {
@@ -200,12 +189,12 @@ const handleUpvote = async () => {
             return navigate('/login');
         }
 
-        setOperatingCommentId('new-comment'); // Indicate operation in progress
+        setOperatingCommentId('new-comment'); 
         try {
             const { data } = await axiosClient.post(`/discuss/${post._id}/comments`, {
                 content: newComment
             });
-            setComments([{ ...data, upvotes: data.upvotes || [] }, ...comments]); // Add new comment to top
+            setComments([{ ...data, upvotes: data.upvotes || [] }, ...comments]);
             setNewComment('');
             toast.success("Your thoughts have been shared! 🎉");
         } catch (err) {
@@ -222,7 +211,7 @@ const handleUpvote = async () => {
 
     const handleUpdateComment = async (commentId) => {
         if (!editCommentContent.trim() || operatingCommentId) return;
-        setOperatingCommentId(commentId); // Indicate operation in progress
+        setOperatingCommentId(commentId); 
 
         try {
             const { data } = await axiosClient.put(`/discuss/${post._id}/comments/${commentId}`, {
@@ -231,7 +220,7 @@ const handleUpvote = async () => {
             setComments(comments.map(comment =>
                 comment._id === commentId ? { ...data, upvotes: data.upvotes || [] } : comment
             ));
-            setEditingCommentId(null); // Exit editing mode
+            setEditingCommentId(null); 
             toast.success("Comment updated! ✨");
         } catch (err) {
             toast.error("Failed to update comment");
@@ -242,7 +231,7 @@ const handleUpvote = async () => {
 
     const handleDeleteComment = async (commentId) => {
         if (operatingCommentId || !window.confirm("Are you sure you want to delete this comment?")) return;
-        setOperatingCommentId(commentId); // Indicate operation in progress
+        setOperatingCommentId(commentId); 
 
         try {
             await axiosClient.delete(`/discuss/${post._id}/comments/${commentId}`);
@@ -260,10 +249,9 @@ const handleUpvote = async () => {
             if (!currentUser) toast.error("Login to show appreciation! 👍");
             return;
         }
-        setOperatingCommentId(commentId); // Indicate operation in progress
+        setOperatingCommentId(commentId); 
 
         try {
-            // Optimistic update for comment upvote
             setComments(comments.map(comment => {
                 if (comment._id === commentId) {
                     const newUpvotes = comment.upvotes.includes(currentUser._id)
@@ -276,7 +264,6 @@ const handleUpvote = async () => {
 
             await axiosClient.patch(`/discuss/${post._id}/comments/${commentId}/upvote`);
         } catch (err) {
-            // Revert optimistic update on error
             setComments(comments.map(comment => {
                 if (comment._id === commentId) {
                     const originalUpvotes = comment.upvotes.includes(currentUser._id)
@@ -292,7 +279,6 @@ const handleUpvote = async () => {
         }
     };
 
-    // Helper to determine if the theme's background is generally dark for prose styling
     const isOverallThemeDark = (appTheme) => {
         const bgClass = appTheme.background;
         if (bgClass.includes('black') || bgClass.includes('zinc-9') || bgClass.includes('gray-9') ||
@@ -304,9 +290,9 @@ const handleUpvote = async () => {
         const match = bgClass.match(/-(\d{2,3})$/);
         if (match) {
             const shade = parseInt(match[1]);
-            return shade >= 600; // Shades 600 and above are typically dark
+            return shade >= 600;
         }
-        return false; // Assume light otherwise
+        return false;
     };
 
 
@@ -331,9 +317,7 @@ const handleUpvote = async () => {
         </div>
     );
 
-    // Dynamic classes for post content column
     const postColumnClasses = `lg:order-1 ${showCommentsPanel ? 'lg:col-span-1' : 'lg:col-span-full'}`;
-    // Dynamic classes for comments panel column
     const commentsColumnClasses = `lg:order-2 lg:col-span-1 lg:sticky lg:top-28 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto custom-scrollbar ${showCommentsPanel ? 'lg:block' : 'lg:hidden'} transition-all duration-300 ease-in-out`;
 
 
@@ -342,9 +326,7 @@ const handleUpvote = async () => {
             <Header />
 
             <main className={`max-w-7xl mx-auto px-4 sm:px-6 py-6 ${showCommentsPanel ? 'lg:grid lg:grid-cols-2 lg:gap-8' : ''}`}>
-                {/* Left Column: Main Post Card */}
                 <div className={postColumnClasses}>
-                    {/* Back Button */}
                     <div className="mb-6">
                         <button
                             onClick={() => navigate(-1)}
@@ -356,10 +338,8 @@ const handleUpvote = async () => {
                     </div>
 
                     <article className={`${appTheme.cardBg} rounded-lg shadow border ${appTheme.border} overflow-hidden mb-6`}>
-                        {/* Post Header */}
                         <div className={`p-4 sm:p-6 border-b ${appTheme.border}`}>
                             <div className="flex items-start gap-4">
-                                {/* Author Avatar */}
                                 {post?.author?._id !== currentUser._id ? (
                                     <Link to={`/profile/${post?.author?._id}`} className="flex-shrink-0">
                                         <img
@@ -379,7 +359,6 @@ const handleUpvote = async () => {
                                 )}
 
 
-                                {/* Post Info */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
                                         <h2 className={`text-sm font-semibold ${appTheme.text}`}>{post?.author?.username}</h2>
@@ -389,7 +368,6 @@ const handleUpvote = async () => {
 
                                     <h1 className={`text-xl font-bold ${appTheme.text} mb-2 leading-tight`}>{post.title}</h1>
 
-                                    {/* Post Stats */}
                                     <div className={`flex items-center gap-4 text-xs ${appTheme.cardText}`}>
                                         <div className="flex items-center gap-1">
                                             <FiMessageCircle className={`${appTheme.cardText}/80`} />
@@ -407,7 +385,6 @@ const handleUpvote = async () => {
                                     </div>
                                 </div>
 
-                                {/* Action Buttons */}
                                 <div className="flex items-center gap-1 relative">
                                     <button
                                         onClick={handleUpvote}
@@ -427,7 +404,6 @@ const handleUpvote = async () => {
                                         <FaShare className="w-5 h-5" /> {/* Bigger Icon */}
                                     </button>
 
-                                    {/* Edit/Delete Buttons (visible only for author) */}
                                     {currentUser?._id === post?.author?._id && (
                                         <>
                                             <button
@@ -436,7 +412,7 @@ const handleUpvote = async () => {
                                                 className={`p-2 rounded-full ${appTheme.cardBg} ${appTheme.cardText} hover:${appTheme.highlight} hover:${appTheme.cardBg}/80 transition-colors`}
                                                 title="Edit Post"
                                             >
-                                                <FaEdit className="w-5 h-5" /> {/* Bigger Icon */}
+                                                <FaEdit className="w-5 h-5" /> 
                                             </button>
                                             <button
                                                 onClick={handleDeletePost}
@@ -444,12 +420,11 @@ const handleUpvote = async () => {
                                                 className={`p-2 rounded-full ${appTheme.cardBg} ${appTheme.errorColor} hover:${appTheme.errorColor}/80 hover:${appTheme.cardBg}/80 transition-colors`}
                                                 title="Delete Post"
                                             >
-                                                <FaTrash className="w-5 h-5" /> {/* Bigger Icon */}
+                                                <FaTrash className="w-5 h-5" /> 
                                             </button>
                                         </>
                                     )}
 
-                                    {/* Toggle Comments Panel Button (for desktop views) */}
                                     <button
                                         onClick={() => setShowCommentsPanel(!showCommentsPanel)}
                                         className={`hidden lg:flex items-center justify-center p-2 rounded-full transition-all duration-200 
@@ -463,7 +438,6 @@ const handleUpvote = async () => {
                             </div>
                         </div>
 
-                        {/* Post Content */}
                         <div className="p-4 sm:p-6">
                             <div
                                 className={`prose prose-sm max-w-none ${isOverallThemeDark(appTheme) ? 'prose-invert' : ''} ${appTheme.cardText} leading-relaxed`}
@@ -483,11 +457,10 @@ const handleUpvote = async () => {
                                     </div>
                                     <div className={`rounded-lg overflow-hidden border ${appTheme.border}`}>
                                         <MonacoEditor
-                                            height="300px" // Default height
-                                            // Dynamic height based on fullscreenPost status
+                                            height="300px" 
                                             style={{ minHeight: showCommentsPanel ? '300px' : 'calc(100vh - 300px)' }} // Adjust based on comments panel
                                             language={post.language}
-                                            theme={monacoEditorTheme} // Use dynamic theme
+                                            theme={monacoEditorTheme}
                                             value={post.code}
                                             options={{
                                                 readOnly: true,
@@ -515,7 +488,6 @@ const handleUpvote = async () => {
                     </article>
                 </div>
 
-                {/* Right Column: Comments Section */}
                 <div className={commentsColumnClasses}>
                     <section id="comments" className={`${appTheme.cardBg} rounded-lg shadow border ${appTheme.border} overflow-hidden`}>
                         <div className={`p-4 sm:p-6 border-b ${appTheme.border}`}>
@@ -526,7 +498,6 @@ const handleUpvote = async () => {
                                 </span>
                             </h3>
 
-                            {/* Comment Form */}
                             {currentUser ? (
                                 <form onSubmit={handleCommentSubmit} className="mb-6">
                                     <div className="flex gap-3">
@@ -575,7 +546,6 @@ const handleUpvote = async () => {
                             )}
                         </div>
 
-                        {/* Comments List */}
                         <div className="p-4 sm:p-6">
                             {comments.length > 0 ? (
                                 <div className="space-y-4">
@@ -583,13 +553,7 @@ const handleUpvote = async () => {
                                         comment && comment._id && (
                                             <div key={comment._id} className="group">
                                                 <div className="flex gap-3">
-                                                    <img
-                                                        src={comment?.author?.avatar}
-                                                        alt={comment?.author?.username}
-                                                        className={`w-7 h-7 rounded-full border ${appTheme.border} flex-shrink-0`}
-
-                                                    />
-
+                                                    <img src={comment?.author?.avatar} alt={comment?.author?.username} className={`w-7 h-7 rounded-full border ${appTheme.border} flex-shrink-0`}/>
                                                     <div className="flex-1">
                                                         <div className={`${appTheme.cardBg} rounded-lg p-3`}>
                                                             <div className="flex items-center justify-between mb-2">
