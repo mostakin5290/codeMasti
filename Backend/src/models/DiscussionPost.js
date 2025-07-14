@@ -21,7 +21,7 @@ const CommentSchema = new Schema({
         ref: 'User',
         required: true
     },
-    upvotes: [{
+    likes: [{
         type: Schema.Types.ObjectId,
         ref: 'User'
     }],
@@ -57,7 +57,7 @@ const DiscussionPostSchema = new Schema({
         ref: 'User', 
         required: true 
     },
-    upvotes: [{ 
+    likes: [{ 
         type: Schema.Types.ObjectId, 
         ref: 'User' 
     }],
@@ -79,9 +79,9 @@ DiscussionPostSchema.virtual('commentCount').get(function() {
     return this.comments.length;
 });
 
-// Virtual for upvote count
-DiscussionPostSchema.virtual('upvoteCount').get(function() {
-    return this.upvotes.length;
+// Virtual for like count
+DiscussionPostSchema.virtual('likeCount').get(function() {
+    return this.likes.length;
 });
 
 DiscussionPostSchema.pre('validate', function(next) {

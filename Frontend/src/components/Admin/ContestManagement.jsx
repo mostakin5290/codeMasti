@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     FaPlus, FaEdit, FaTrash, FaClock, FaUserFriends,
@@ -8,7 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-
+import ConfirmationModal from '../../components/common/ConfirmationModal'; // Import ConfirmationModal
 
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
@@ -39,30 +39,54 @@ const ContestManagement = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const contestsPerPage = 10;
 
-    useEffect(() => {
-        const fetchContests = async () => {
-            try {
-                const { data } = await axiosClient.get('/contests');
-                setContests(data);
-            } catch (error) {
-                toast.error('Failed to fetch contests');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchContests();
+    // State for Confirmation Modal
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [contestToDeleteId, setContestToDeleteId] = useState(null);
+    const [modalIsLoading, setModalIsLoading] = useState(false);
+
+
+    const fetchContests = useCallback(async () => {
+        try {
+            const { data } = await axiosClient.get('/contests');
+            setContests(data);
+        } catch (error) {
+            toast.error('Failed to fetch contests');
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    const handleDelete = async (contestId) => {
-        if (window.confirm('Are you sure you want to delete this contest?')) {
-            try {
-                await axiosClient.delete(`/contests/${contestId}`);
-                setContests(contests.filter(c => c._id !== contestId));
-                toast.success('Contest deleted successfully');
-            } catch (error) {
-                toast.error('Failed to delete contest');
-            }
+    useEffect(() => {
+        fetchContests();
+    }, [fetchContests]);
+
+    // Function to open the confirmation modal
+    const handleDeleteClick = (contestId) => {
+        setContestToDeleteId(contestId);
+        setShowDeleteModal(true);
+    };
+
+    // Function to handle the actual deletion after confirmation
+    const confirmDelete = async () => {
+        if (!contestToDeleteId) return;
+
+        setModalIsLoading(true);
+        try {
+            await axiosClient.delete(`/contests/${contestToDeleteId}`);
+            setContests(contests.filter(c => c._id !== contestToDeleteId));
+            toast.success('Contest deleted successfully');
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to delete contest');
+        } finally {
+            setModalIsLoading(false);
+            setShowDeleteModal(false);
+            setContestToDeleteId(null);
         }
+    };
+
+    const handleCancelDelete = () => {
+        setShowDeleteModal(false);
+        setContestToDeleteId(null);
     };
 
     const filteredContests = contests.filter(contest => {
@@ -108,15 +132,17 @@ const ContestManagement = () => {
         }
     };
 
-    if (loading) return <LoadingSpinner message="Loading contests..." />;
+    if (loading) return <LoadingSpinner message="Loading contests..." appTheme={appTheme} />;
+
+    const contestTitleToDelete = contestToDeleteId ? contests.find(c => c._id === contestToDeleteId)?.title : '';
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <h2 className={`text-2xl font-bold ${appTheme.text}`}>Manage Contests</h2>
+                <h2 className={`text-xl sm:text-2xl font-bold ${appTheme.text}`}>Manage Contests</h2>
                 <Link
                     to="/admin/contests/create"
-                    className={`flex items-center gap-2 px-4 py-2 ${appTheme.primary.replace('bg-', 'bg-gradient-to-r from-')} ${appTheme.highlight.replace('text-', 'to-')} ${appTheme.buttonText} rounded-lg font-semibold hover:shadow-lg transition-all duration-300`}
+                    className={`flex items-center justify-center gap-2 px-4 py-2 w-full md:w-auto ${appTheme.primary.replace('bg-', 'bg-gradient-to-r from-')} ${appTheme.highlight.replace('text-', 'to-')} ${appTheme.buttonText} rounded-lg font-semibold hover:shadow-lg transition-all duration-300`}
                 >
                     <FaPlus /> Create New Contest
                 </Link>
@@ -136,28 +162,28 @@ const ContestManagement = () => {
                         />
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap justify-center gap-2 mt-2 md:mt-0">
                         <button
                             onClick={() => setFilter('all')}
-                            className={`px-3 py-1 rounded-lg ${filter === 'all' ? `${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.buttonText}` : `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`}`}
+                            className={`px-2 py-1 sm:px-3 sm:py-1 rounded-lg text-sm transition-colors duration-200 ${filter === 'all' ? `${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.buttonText}` : `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`}`}
                         >
                             All
                         </button>
                         <button
                             onClick={() => setFilter('upcoming')}
-                            className={`px-3 py-1 rounded-lg flex items-center gap-1 ${filter === 'upcoming' ? `${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.buttonText}` : `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`}`}
+                            className={`px-2 py-1 sm:px-3 sm:py-1 rounded-lg flex items-center gap-1 text-sm transition-colors duration-200 ${filter === 'upcoming' ? `${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.buttonText}` : `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`}`}
                         >
                             <FaClock /> Upcoming
                         </button>
                         <button
                             onClick={() => setFilter('ongoing')}
-                            className={`px-3 py-1 rounded-lg flex items-center gap-1 ${filter === 'ongoing' ? `${appTheme.highlight.replace('text-', 'bg-')} ${appTheme.buttonText}` : `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`}`}
+                            className={`px-2 py-1 sm:px-3 sm:py-1 rounded-lg flex items-center gap-1 text-sm transition-colors duration-200 ${filter === 'ongoing' ? `${appTheme.highlight.replace('text-', 'bg-')} ${appTheme.buttonText}` : `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`}`}
                         >
                             <FaTrophy /> Ongoing
                         </button>
                         <button
                             onClick={() => setFilter('past')}
-                            className={`px-3 py-1 rounded-lg flex items-center gap-1 ${filter === 'past' ? `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.text}` : `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`}`}
+                            className={`px-2 py-1 sm:px-3 sm:py-1 rounded-lg flex items-center gap-1 text-sm transition-colors duration-200 ${filter === 'past' ? `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.text}` : `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`}`}
                         >
                             <FaCalendarAlt /> Past
                         </button>
@@ -166,24 +192,24 @@ const ContestManagement = () => {
             </div>
 
             {/* Contests Table */}
-            <div className={`overflow-hidden rounded-xl border ${appTheme.border}/20`}>
-                <table className="w-full">
+            <div className={`overflow-x-auto rounded-xl border ${appTheme.border}/20`}>
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className={`${appTheme.cardBg.replace('bg-', 'bg-')}/50`}>
                         <tr>
-                            <th className={`px-6 py-3 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider`}>Title</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider`}>Status</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider`}>Date</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider`}>Duration</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider`}>Problems</th>
-                            <th className={`px-6 py-3 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider`}>Participants</th>
-                            <th className={`px-6 py-3 text-right text-xs font-medium ${appTheme.text} uppercase tracking-wider`}>Actions</th>
+                            <th className={`px-3 py-2 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider sm:px-6 sm:py-3`}>Title</th>
+                            <th className={`px-3 py-2 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider sm:px-6 sm:py-3`}>Status</th>
+                            <th className={`px-3 py-2 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider sm:px-6 sm:py-3`}>Date</th>
+                            <th className={`px-3 py-2 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider sm:px-6 sm:py-3`}>Duration</th>
+                            <th className={`px-3 py-2 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider sm:px-6 sm:py-3`}>Problems</th>
+                            <th className={`px-3 py-2 text-left text-xs font-medium ${appTheme.text} uppercase tracking-wider sm:px-6 sm:py-3`}>Participants</th>
+                            <th className={`px-3 py-2 text-right text-xs font-medium ${appTheme.text} uppercase tracking-wider sm:px-6 sm:py-3`}>Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                         {currentContests.length > 0 ? (
                             currentContests.map(contest => (
                                 <tr key={contest._id} className={`hover:${appTheme.cardBg.replace('bg-', 'bg-')}/10`}>
-                                    <td className={`px-6 py-4 whitespace-nowrap ${appTheme.text} font-medium`}>
+                                    <td className={`px-3 py-3 sm:px-6 sm:py-4 ${appTheme.text} font-medium text-sm`}>
                                         <Link
                                             to={`/admin/contests/${contest._id}`}
                                             className="hover:underline"
@@ -191,44 +217,45 @@ const ContestManagement = () => {
                                             {contest.title}
                                         </Link>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-3 py-3 sm:px-6 sm:py-4">
                                         {getStatusBadge(contest)}
                                     </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap ${appTheme.cardText}`}>
+                                    <td className={`px-3 py-3 sm:px-6 sm:py-4 ${appTheme.cardText} text-sm`}>
                                         <div className="flex items-center gap-1">
                                             <FaCalendarAlt className="text-sm" />
                                             {new Date(contest.startTime).toLocaleDateString()}
                                         </div>
                                         <div className="text-xs">
-                                            {new Date(contest.startTime).toLocaleTimeString()} - {new Date(contest.endTime).toLocaleTimeString()}
+                                            {new Date(contest.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(contest.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                     </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap ${appTheme.cardText}`}>
+                                    <td className={`px-3 py-3 sm:px-6 sm:py-4 ${appTheme.cardText} text-sm`}>
                                         <div className="flex items-center gap-1">
                                             <FaClock className="text-sm" />
                                             {contest.duration} mins
                                         </div>
                                     </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap ${appTheme.cardText}`}>
+                                    <td className={`px-3 py-3 sm:px-6 sm:py-4 ${appTheme.cardText} text-sm`}>
                                         {contest.problems.length} problems
                                     </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap ${appTheme.cardText}`}>
+                                    <td className={`px-3 py-3 sm:px-6 sm:py-4 ${appTheme.cardText} text-sm`}>
                                         <div className="flex items-center gap-1">
                                             <FaUserFriends className="text-sm" />
                                             {contest.participants || 0}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div className="flex justify-end gap-2">
+                                    <td className="px-3 py-3 sm:px-6 sm:py-4 text-right text-sm font-medium">
+                                        <div className="flex justify-end gap-1 sm:gap-2">
                                             <Link
                                                 to={`/admin/contests/${contest._id}/edit`}
-                                                className={`p-2 ${appTheme.cardBg.replace('bg-', 'bg-')} rounded-lg ${appTheme.cardText} hover:${appTheme.primary.replace('bg-', 'bg-')} hover:${appTheme.buttonText} transition-colors`}
+                                                className={`p-1.5 sm:p-2 ${appTheme.cardBg.replace('bg-', 'bg-')} rounded-lg ${appTheme.cardText} hover:${appTheme.primary.replace('bg-', 'bg-')} hover:${appTheme.buttonText} transition-colors text-base`}
                                             >
                                                 <FaEdit />
                                             </Link>
                                             <button
-                                                onClick={() => handleDelete(contest._id)}
-                                                className={`p-2 ${appTheme.cardBg.replace('bg-', 'bg-')} rounded-lg ${appTheme.cardText} hover:${appTheme.errorColor.replace('text-', 'bg-')} hover:text-white transition-colors`}
+                                                onClick={() => handleDeleteClick(contest._id)} // Changed to open modal
+                                                className={`p-1.5 sm:p-2 ${appTheme.cardBg.replace('bg-', 'bg-')} rounded-lg ${appTheme.cardText} hover:${appTheme.errorColor.replace('text-', 'bg-')} hover:text-white transition-colors text-base`}
+                                                disabled={modalIsLoading} // Disable button when modal is loading
                                             >
                                                 <FaTrash />
                                             </button>
@@ -238,7 +265,7 @@ const ContestManagement = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="7" className={`px-6 py-4 text-center ${appTheme.cardText}`}>
+                                <td colSpan="7" className={`px-3 py-4 text-center ${appTheme.cardText} sm:px-6`}>
                                     No contests found
                                 </td>
                             </tr>
@@ -249,11 +276,11 @@ const ContestManagement = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-4">
+                <div className="flex justify-center items-center gap-1 sm:gap-2 mt-4">
                     <button
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                        className={`px-3 py-1 rounded-lg ${currentPage === 1 ? `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText} opacity-50` : `${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.buttonText}`}`}
+                        className={`px-2 py-1 rounded-lg text-sm ${currentPage === 1 ? `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText} opacity-50` : `${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.buttonText}`} transition-all duration-200`}
                     >
                         Previous
                     </button>
@@ -262,7 +289,7 @@ const ContestManagement = () => {
                         <button
                             key={page}
                             onClick={() => setCurrentPage(page)}
-                            className={`px-3 py-1 rounded-lg ${currentPage === page ? `${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.buttonText}` : `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`}`}
+                            className={`px-3 py-1 rounded-lg text-sm ${currentPage === page ? `${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.buttonText}` : `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`} transition-all duration-200`}
                         >
                             {page}
                         </button>
@@ -271,11 +298,32 @@ const ContestManagement = () => {
                     <button
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className={`px-3 py-1 rounded-lg ${currentPage === totalPages ? `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText} opacity-50` : `${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.buttonText}`}`}
+                        className={`px-2 py-1 rounded-lg text-sm ${currentPage === totalPages ? `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText} opacity-50` : `${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.buttonText}`} transition-all duration-200`}
                     >
                         Next
                     </button>
                 </div>
+            )}
+
+            {/* Confirmation Modal */}
+            {showDeleteModal && (
+                <ConfirmationModal
+                    isOpen={showDeleteModal}
+                    onClose={handleCancelDelete}
+                    onConfirm={confirmDelete}
+                    isLoading={modalIsLoading}
+                    title="Delete Contest?"
+                    confirmText="Delete Contest"
+                    appTheme={appTheme}
+                >
+                    <p className={`${appTheme.cardText}`}>
+                        Are you sure you want to permanently delete the contest:<br />
+                        <strong className={`${appTheme.primary.replace('bg-', 'text-')}`}>"{contestTitleToDelete}"</strong>?
+                    </p>
+                    <p className={`mt-2 text-sm ${appTheme.errorColor}`}>
+                        This action cannot be undone and will remove all associated data (problems, participant records, etc.).
+                    </p>
+                </ConfirmationModal>
             )}
         </div>
     );

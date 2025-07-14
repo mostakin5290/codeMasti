@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import MonacoEditor from '@monaco-editor/react';
 import DOMPurify from 'dompurify';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ConfirmationModal from '../../components/common/ConfirmationModal'; // Import ConfirmationModal
 import {
     FaBookmark,
     FaEdit,
@@ -68,16 +69,18 @@ const DiscussPostDetail = () => {
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isUpvoted, setIsUpvoted] = useState(false);
     const [isBookmarked, setIsBookmarked] = useState(false);
-    const [upvoteCount, setUpvoteCount] = useState(0);
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
     const [showSharePopup, setShowSharePopup] = useState(false);
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [editCommentContent, setEditCommentContent] = useState('');
-    const [isOperating, setIsOperating] = useState(false);
-    const [operatingCommentId, setOperatingCommentId] = useState(null);
+    const [isOperating, setIsOperating] = useState(false); // For post-level operations
+    const [operatingCommentId, setOperatingCommentId] = useState(null); // For comment-level operations (add/edit/delete/like)
+
+    // State for Confirmation Modal
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState(null); // { type: 'post', id: postId } or { type: 'comment', postId, commentId }
 
     const [showCommentsPanel, setShowCommentsPanel] = useState(true); // State to toggle comments panel
 
@@ -97,22 +100,24 @@ const DiscussPostDetail = () => {
     const fetchPost = useCallback(async () => {
         try {
             const { data } = await axiosClient.get(`/discuss/post/${slug}`);
-            setPost(data);
-            setUpvoteCount(data.upvotes.length);
-
+            const processedPost = {
+                ...data,
+                likes: data.likes || []
+            };
             const processedComments = data.comments?.map(comment => ({
                 ...comment,
                 _id: comment._id || `temp_${Math.random().toString(36).substring(2, 11)}`,
-                upvotes: comment.upvotes || []
+                likes: comment.likes || []
             })) || [];
 
+            setPost(processedPost);
             setComments(processedComments);
 
             if (currentUser) {
-                setIsUpvoted(data.upvotes.map(id => id.toString()).includes(currentUser._id));
                 setIsBookmarked(data.bookmarks?.map(id => id.toString()).includes(currentUser._id) || false);
             }
         } catch (err) {
+            console.error("Fetch post error:", err);
             setError("Hmm, this post seems to have vanished into the digital void 🤔");
             toast.error("Couldn't load the post");
         } finally {
@@ -124,33 +129,6 @@ const DiscussPostDetail = () => {
         fetchPost();
     }, [fetchPost]);
 
-const handleUpvote = async () => {
-    if (!currentUser) {
-        toast.error("Join us to show some love! 💙");
-        return navigate('/login');
-    }
-    if (isOperating) return;
-
-    setIsOperating(true);
-    try {
-        const newIsUpvotedOptimistic = !isUpvoted;
-        setIsUpvoted(newIsUpvotedOptimistic);
-        setUpvoteCount(prev => newIsUpvotedOptimistic ? prev + 1 : prev - 1);
-
-        await axiosClient.patch(`/discuss/up/${post._id}`);
-
-        const { data } = await axiosClient.get(`/discuss/post/${slug}`);
-        setPost(data);
-        setUpvoteCount(data.upvotes.length); 
-        setIsUpvoted(data.upvotes.map(id => id.toString()).includes(currentUser._id));
-    } catch (err) {
-        setIsUpvoted(prev => !prev);
-        setUpvoteCount(prev => isUpvoted ? prev - 1 : prev + 1);
-        toast.error("Oops! Something went wrong");
-    } finally {
-        setIsOperating(false);
-    }
-};
 
     const handleEditPost = () => {
         if (!currentUser || currentUser._id !== post.author._id) {
@@ -160,25 +138,14 @@ const handleUpvote = async () => {
         navigate(`/discuss/edit/${post.slug}`, { state: { post } });
     };
 
-    const handleDeletePost = async () => {
+    // Updated handleDeletePost to open modal
+    const handleDeletePost = () => {
         if (!currentUser || currentUser._id !== post.author._id) {
             toast.error("You are not authorized to delete this post.");
             return;
         }
-        if (!window.confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
-            return;
-        }
-
-        setIsOperating(true);
-        try {
-            await axiosClient.delete(`/discuss/${post._id}`);
-            toast.success("Post deleted successfully! 👋");
-            navigate('/discuss');
-        } catch (err) {
-            toast.error(err.response?.data?.message || "Failed to delete post.");
-        } finally {
-            setIsOperating(false);
-        }
+        setDeleteTarget({ type: 'post', id: post._id });
+        setShowDeleteModal(true);
     };
 
     const handleCommentSubmit = async (e) => {
@@ -189,15 +156,16 @@ const handleUpvote = async () => {
             return navigate('/login');
         }
 
-        setOperatingCommentId('new-comment'); 
+        setOperatingCommentId('new-comment');
         try {
             const { data } = await axiosClient.post(`/discuss/${post._id}/comments`, {
                 content: newComment
             });
-            setComments([{ ...data, upvotes: data.upvotes || [] }, ...comments]);
+            setComments(prevComments => [...prevComments, data.comment]);
             setNewComment('');
             toast.success("Your thoughts have been shared! 🎉");
         } catch (err) {
+            console.error("Add comment error:", err);
             toast.error("Failed to add comment");
         } finally {
             setOperatingCommentId(null);
@@ -210,74 +178,131 @@ const handleUpvote = async () => {
     };
 
     const handleUpdateComment = async (commentId) => {
-        if (!editCommentContent.trim() || operatingCommentId) return;
-        setOperatingCommentId(commentId); 
+        if (!editCommentContent.trim() || operatingCommentId === commentId) return;
+        setOperatingCommentId(commentId);
 
         try {
             const { data } = await axiosClient.put(`/discuss/${post._id}/comments/${commentId}`, {
                 content: editCommentContent
             });
             setComments(comments.map(comment =>
-                comment._id === commentId ? { ...data, upvotes: data.upvotes || [] } : comment
+                comment._id === commentId ? { ...data.comment, likes: comment.likes } : comment
             ));
-            setEditingCommentId(null); 
+            setEditingCommentId(null);
             toast.success("Comment updated! ✨");
         } catch (err) {
-            toast.error("Failed to update comment");
+            console.error("Update comment error:", err);
+            toast.error(err.response?.data?.message || "Failed to update comment");
         } finally {
             setOperatingCommentId(null);
         }
     };
 
-    const handleDeleteComment = async (commentId) => {
-        if (operatingCommentId || !window.confirm("Are you sure you want to delete this comment?")) return;
-        setOperatingCommentId(commentId); 
+    // Updated handleDeleteComment to open modal
+    const handleDeleteComment = (commentId) => {
+        if (operatingCommentId === commentId) return;
+        setDeleteTarget({ type: 'comment', postId: post._id, commentId: commentId });
+        setShowDeleteModal(true);
+    };
+
+    // --- New: Centralized confirmation handler for deletion ---
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
+
+        // Set loading state based on what's being deleted
+        if (deleteTarget.type === 'post') {
+            setIsOperating(true);
+        } else if (deleteTarget.type === 'comment') {
+            setOperatingCommentId(deleteTarget.commentId);
+        }
 
         try {
-            await axiosClient.delete(`/discuss/${post._id}/comments/${commentId}`);
-            setComments(comments.filter(comment => comment._id !== commentId));
-            toast.success("Comment deleted");
+            if (deleteTarget.type === 'post') {
+                await axiosClient.delete(`/discuss/${deleteTarget.id}`);
+                toast.success("Post deleted successfully! 👋");
+                navigate('/discuss'); // Navigate away after post deletion
+            } else if (deleteTarget.type === 'comment') {
+                await axiosClient.delete(`/discuss/${deleteTarget.postId}/comments/${deleteTarget.commentId}`);
+                setComments(comments.filter(comment => comment._id !== deleteTarget.commentId));
+                toast.success("Comment deleted");
+            }
         } catch (err) {
-            toast.error("Failed to delete comment");
+            console.error(`Delete ${deleteTarget.type} error:`, err);
+            toast.error(err.response?.data?.message || `Failed to delete ${deleteTarget.type}.`);
         } finally {
-            setOperatingCommentId(null);
+            // Reset all modal and loading states
+            setShowDeleteModal(false);
+            setDeleteTarget(null);
+            setIsOperating(false); // Ensure post-level operation is reset
+            setOperatingCommentId(null); // Ensure comment-level operation is reset
+        }
+    };
+    // --- End New: Centralized confirmation handler for deletion ---
+
+
+    // --- New: Handle Post Like/Unlike ---
+    const handlePostLike = async () => {
+        if (!currentUser) {
+            toast.error("Please login to like posts! ❤️");
+            return navigate('/login');
+        }
+        // Use a more specific loading state if you want to allow other post actions
+        // For now, `isOperating` works, but might block other UI updates.
+        // For production, consider `const [isLikingPost, setIsLikingPost] = useState(false);`
+        if (isOperating) return;
+        setIsOperating(true);
+
+        try {
+            const { data } = await axiosClient.put(`/discuss/post/${post._id}/like`);
+            setPost(prevPost => {
+                // Ensure prevPost.likes is an array before using includes/filter
+                const currentLikes = prevPost.likes || [];
+                const updatedLikes = data.isLiked
+                    ? [...currentLikes, currentUser._id]
+                    : currentLikes.filter(id => id.toString() !== currentUser._id.toString());
+                return { ...prevPost, likes: updatedLikes };
+            });
+            toast.success(data.message);
+        } catch (err) {
+            console.error("Post like error:", err);
+            toast.error(err.response?.data?.message || "Failed to toggle post like.");
+        } finally {
+            setIsOperating(false);
         }
     };
 
-    const handleCommentUpvote = async (commentId) => {
-        if (!currentUser || operatingCommentId) {
-            if (!currentUser) toast.error("Login to show appreciation! 👍");
-            return;
+    // --- New: Handle Comment Like/Unlike ---
+    const handleCommentLike = async (commentId) => {
+        if (!currentUser) {
+            toast.error("Please login to like comments! ❤️");
+            return navigate('/login');
         }
-        setOperatingCommentId(commentId); 
+        if (operatingCommentId === commentId) return;
+
+        setOperatingCommentId(commentId);
 
         try {
-            setComments(comments.map(comment => {
+            const { data } = await axiosClient.put(`/discuss/${post._id}/comments/${commentId}/like`);
+            setComments(prevComments => prevComments.map(comment => {
                 if (comment._id === commentId) {
-                    const newUpvotes = comment.upvotes.includes(currentUser._id)
-                        ? comment.upvotes.filter(id => id !== currentUser._id)
-                        : [...comment.upvotes, currentUser._id];
-                    return { ...comment, upvotes: newUpvotes };
+                    // Ensure comment.likes is an array before using includes/filter
+                    const currentLikes = comment.likes || [];
+                    const updatedLikes = data.isLiked
+                        ? [...currentLikes, currentUser._id]
+                        : currentLikes.filter(id => id.toString() !== currentUser._id.toString());
+                    return { ...comment, likes: updatedLikes };
                 }
                 return comment;
             }));
-
-            await axiosClient.patch(`/discuss/${post._id}/comments/${commentId}/upvote`);
+            toast.success(data.message);
         } catch (err) {
-            setComments(comments.map(comment => {
-                if (comment._id === commentId) {
-                    const originalUpvotes = comment.upvotes.includes(currentUser._id)
-                        ? comment.upvotes.filter(id => id !== currentUser._id)
-                        : [...comment.upvotes, currentUser._id];
-                    return { ...comment, upvotes: originalUpvotes };
-                }
-                return comment;
-            }));
-            toast.error("Failed to update vote");
+            console.error("Comment like error:", err);
+            toast.error(err.response?.data?.message || "Failed to toggle comment like.");
         } finally {
             setOperatingCommentId(null);
         }
     };
+
 
     const isOverallThemeDark = (appTheme) => {
         const bgClass = appTheme.background;
@@ -317,6 +342,8 @@ const handleUpvote = async () => {
         </div>
     );
 
+    const hasCurrentUserLikedPost = currentUser && post?.likes?.includes(currentUser._id);
+
     const postColumnClasses = `lg:order-1 ${showCommentsPanel ? 'lg:col-span-1' : 'lg:col-span-full'}`;
     const commentsColumnClasses = `lg:order-2 lg:col-span-1 lg:sticky lg:top-28 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto custom-scrollbar ${showCommentsPanel ? 'lg:block' : 'lg:hidden'} transition-all duration-300 ease-in-out`;
 
@@ -340,7 +367,7 @@ const handleUpvote = async () => {
                     <article className={`${appTheme.cardBg} rounded-lg shadow border ${appTheme.border} overflow-hidden mb-6`}>
                         <div className={`p-4 sm:p-6 border-b ${appTheme.border}`}>
                             <div className="flex items-start gap-4">
-                                {post?.author?._id !== currentUser._id ? (
+                                {post?.author?._id !== currentUser?._id ? (
                                     <Link to={`/profile/${post?.author?._id}`} className="flex-shrink-0">
                                         <img
                                             src={post?.author?.avatar}
@@ -386,22 +413,28 @@ const handleUpvote = async () => {
                                 </div>
 
                                 <div className="flex items-center gap-1 relative">
+                                    {/* Post Like Button */}
                                     <button
-                                        onClick={handleUpvote}
+                                        onClick={handlePostLike}
                                         disabled={isOperating}
-                                        className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-full transition-all duration-200 
-                                            ${isUpvoted ? `${appTheme.primary.replace('bg-', 'bg-')}/20 ${appTheme.highlight} fill-current` : `${appTheme.cardBg} ${appTheme.cardText} hover:${appTheme.cardBg}/80`}
+                                        className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-full transition-all duration-200
+                                            ${hasCurrentUserLikedPost ?
+                                                `${appTheme.primary.replace('bg-', 'bg-')}/20 ${appTheme.highlight} fill-current` :
+                                                `${appTheme.cardBg} ${appTheme.cardText} hover:${appTheme.cardBg}/80`
+                                            }
                                         `}
                                     >
-                                        <FiThumbsUp className={`${isUpvoted ? 'fill-current w-5 h-5' : 'w-5 h-5'}`} /> {/* Bigger Icon */}
-                                        <span className="font-medium">{upvoteCount}</span>
+                                        <FiThumbsUp className={`w-5 h-5 ${hasCurrentUserLikedPost ? 'fill-current' : ''}`} />
+                                        <span className="font-medium">{post?.likes?.length || 0}</span>
                                     </button>
+
 
                                     <button
                                         onClick={() => setShowSharePopup(true)}
                                         className={`p-2 rounded-full ${appTheme.cardBg} ${appTheme.cardText} hover:${appTheme.cardBg}/80 transition-colors`}
+                                        title="Share Post"
                                     >
-                                        <FaShare className="w-5 h-5" /> {/* Bigger Icon */}
+                                        <FaShare className="w-5 h-5" />
                                     </button>
 
                                     {currentUser?._id === post?.author?._id && (
@@ -412,27 +445,27 @@ const handleUpvote = async () => {
                                                 className={`p-2 rounded-full ${appTheme.cardBg} ${appTheme.cardText} hover:${appTheme.highlight} hover:${appTheme.cardBg}/80 transition-colors`}
                                                 title="Edit Post"
                                             >
-                                                <FaEdit className="w-5 h-5" /> 
+                                                <FaEdit className="w-5 h-5" />
                                             </button>
                                             <button
-                                                onClick={handleDeletePost}
+                                                onClick={handleDeletePost} // This now opens the modal
                                                 disabled={isOperating}
                                                 className={`p-2 rounded-full ${appTheme.cardBg} ${appTheme.errorColor} hover:${appTheme.errorColor}/80 hover:${appTheme.cardBg}/80 transition-colors`}
                                                 title="Delete Post"
                                             >
-                                                <FaTrash className="w-5 h-5" /> 
+                                                <FaTrash className="w-5 h-5" />
                                             </button>
                                         </>
                                     )}
 
                                     <button
                                         onClick={() => setShowCommentsPanel(!showCommentsPanel)}
-                                        className={`hidden lg:flex items-center justify-center p-2 rounded-full transition-all duration-200 
+                                        className={`hidden lg:flex items-center justify-center p-2 rounded-full transition-all duration-200
                                             ${showCommentsPanel ? `${appTheme.primary.replace('bg-', 'bg-')}/20 ${appTheme.highlight}` : `${appTheme.cardBg} ${appTheme.cardText} hover:${appTheme.cardBg}/80`}
                                         `}
                                         title={showCommentsPanel ? "Hide Comments" : "Show Comments"}
                                     >
-                                        {showCommentsPanel ? <FaComments className="w-5 h-5" /> : <FiChevronRight className="w-6 h-6" />} {/* Bigger Icon */}
+                                        {showCommentsPanel ? <FaComments className="w-5 h-5" /> : <FiChevronRight className="w-6 h-6" />}
                                     </button>
                                 </div>
                             </div>
@@ -457,8 +490,7 @@ const handleUpvote = async () => {
                                     </div>
                                     <div className={`rounded-lg overflow-hidden border ${appTheme.border}`}>
                                         <MonacoEditor
-                                            height="300px" 
-                                            style={{ minHeight: showCommentsPanel ? '300px' : 'calc(100vh - 300px)' }} // Adjust based on comments panel
+                                            height="300px"
                                             language={post.language}
                                             theme={monacoEditorTheme}
                                             value={post.code}
@@ -513,8 +545,7 @@ const handleUpvote = async () => {
                                                 onChange={(e) => setNewComment(e.target.value)}
                                                 className={`w-full ${appTheme.cardBg}/80 border ${appTheme.border} ${appTheme.text} rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-${appTheme.primary.split('-')[1]}-500 focus:border-transparent transition-all duration-200 resize-none text-sm placeholder-${appTheme.cardText.split('-')[1]}-400`}
                                                 placeholder="Share your thoughts..."
-                                                rows="3"
-                                                disabled={isOperating}
+                                                disabled={operatingCommentId === 'new-comment'}
                                             />
                                             <div className="flex justify-between items-center mt-2">
                                                 <div className={`text-xs ${appTheme.cardText}`}>
@@ -522,11 +553,11 @@ const handleUpvote = async () => {
                                                 </div>
                                                 <button
                                                     type="submit"
-                                                    disabled={isOperating || !newComment.trim()}
-                                                    className={`px-4 py-1.5 ${appTheme.primary} ${appTheme.buttonText} text-sm font-medium rounded-full hover:${appTheme.primaryHover} transition-all duration-200 ${(isOperating || !newComment.trim()) ? 'opacity-50 cursor-not-allowed' : ''
+                                                    disabled={operatingCommentId === 'new-comment' || !newComment.trim()}
+                                                    className={`px-4 py-1.5 ${appTheme.primary} ${appTheme.buttonText} text-sm font-medium rounded-full hover:${appTheme.primaryHover} transition-all duration-200 ${(operatingCommentId === 'new-comment' || !newComment.trim()) ? 'opacity-50 cursor-not-allowed' : ''
                                                         }`}
                                                 >
-                                                    {isOperating ? 'Posting...' : 'Post'}
+                                                    {operatingCommentId === 'new-comment' ? 'Posting...' : 'Post'}
                                                 </button>
                                             </div>
                                         </div>
@@ -572,15 +603,19 @@ const handleUpvote = async () => {
                                                                 </div>
 
                                                                 <div className="flex items-center gap-1">
+                                                                    {/* Comment Like Button */}
                                                                     <button
-                                                                        onClick={() => handleCommentUpvote(comment._id)}
+                                                                        onClick={() => handleCommentLike(comment._id)}
                                                                         disabled={operatingCommentId === comment._id}
-                                                                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all duration-200 
-                                                                            ${comment.upvotes.includes(currentUser?._id) ? `${appTheme.primary.replace('bg-', 'bg-')}/20 ${appTheme.highlight} fill-current` : `${appTheme.cardBg} ${appTheme.cardText} hover:${appTheme.cardBg}/80`}
+                                                                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all duration-200
+                                                                            ${currentUser && comment.likes.includes(currentUser._id) ?
+                                                                                `${appTheme.primary.replace('bg-', 'bg-')}/20 ${appTheme.highlight} fill-current` :
+                                                                                `${appTheme.cardBg} ${appTheme.cardText} hover:${appTheme.cardBg}/80`
+                                                                            }
                                                                         `}
                                                                     >
-                                                                        <FiThumbsUp className={`${comment.upvotes.includes(currentUser?._id) ? 'fill-current w-3 h-3' : 'w-3 h-3'}`} />
-                                                                        <span className="font-medium">{comment.upvotes.length}</span>
+                                                                        <FiThumbsUp className={`${currentUser && comment.likes.includes(currentUser._id) ? 'fill-current w-3 h-3' : 'w-3 h-3'}`} />
+                                                                        <span className="font-medium">{comment.likes.length || 0}</span>
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -622,14 +657,14 @@ const handleUpvote = async () => {
                                                                             <>
                                                                                 <button
                                                                                     onClick={() => handleEditComment(comment)}
-                                                                                    disabled={isOperating}
+                                                                                    disabled={operatingCommentId === comment._id}
                                                                                     className={`hover:${appTheme.highlight} flex items-center gap-0.5 transition-colors duration-200`}
                                                                                 >
                                                                                     <FaEdit size={10} /> Edit
                                                                                 </button>
                                                                                 <button
-                                                                                    onClick={() => handleDeleteComment(comment._id)}
-                                                                                    disabled={isOperating}
+                                                                                    onClick={() => handleDeleteComment(comment._id)} // This now opens the modal
+                                                                                    disabled={operatingCommentId === comment._id}
                                                                                     className={`hover:${appTheme.errorColor} flex items-center gap-0.5 transition-colors duration-200`}
                                                                                 >
                                                                                     <FaTrash size={10} /> Delete
@@ -666,6 +701,28 @@ const handleUpvote = async () => {
                     title={post.title}
                     onClose={() => setShowSharePopup(false)}
                 />
+            )}
+
+            {/* Confirmation Modal */}
+            {showDeleteModal && deleteTarget && (
+                <ConfirmationModal
+                    isOpen={showDeleteModal}
+                    onClose={() => { setShowDeleteModal(false); setDeleteTarget(null); }} // Clear target on close
+                    onConfirm={confirmDelete}
+                    isLoading={
+                        deleteTarget.type === 'post' ? isOperating : // Use isOperating for post deletion
+                        (deleteTarget.type === 'comment' && operatingCommentId === deleteTarget.commentId) // Use operatingCommentId for comment deletion
+                    }
+                    title={deleteTarget.type === 'post' ? 'Delete Discussion Post?' : 'Delete Comment?'}
+                    confirmText={deleteTarget.type === 'post' ? 'Delete Post' : 'Delete Comment'}
+                    appTheme={appTheme}
+                >
+                    {deleteTarget.type === 'post' ? (
+                        <p>Are you sure you want to permanently delete this discussion post? This action cannot be undone.</p>
+                    ) : (
+                        <p>Are you sure you want to permanently delete this comment? This action cannot be undone.</p>
+                    )}
+                </ConfirmationModal>
             )}
         </div>
     );

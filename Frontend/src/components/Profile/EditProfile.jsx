@@ -123,10 +123,10 @@ const EditProfile = () => {
         }
     };
 
-    const handlePasswordSubmit = async (e) => {
+const handlePasswordSubmit = async (e) => {
         e.preventDefault();
         if (passwordData.newPassword !== passwordData.confirmNewPassword) {
-            toast.error("Passwords don't match!");
+            toast.error("New passwords do not match!"); // More specific error message
             return;
         }
 
@@ -134,7 +134,8 @@ const EditProfile = () => {
         try {
             await axiosClient.put('/user/password', {
                 currentPassword: passwordData.currentPassword,
-                newPassword: passwordData.newPassword
+                newPassword: passwordData.newPassword,
+                confirmPassword: passwordData.confirmNewPassword // <-- ADD THIS LINE
             });
             toast.success('Password changed successfully!');
             setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });

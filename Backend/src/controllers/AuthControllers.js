@@ -144,11 +144,11 @@ const login = async (req, res) => {
         );
 
         res.cookie('token', token, {
-            maxAge: 7 * 24 * 60 * 60 * 1000,   
+            maxAge: 7 * 24 * 60 * 60 * 1000,
             httpOnly: true,
-            secure: true,          
+            secure: true,
             sameSite: 'None',
-            path: '/'              
+            path: '/'
         });
 
         const userResponse = {
@@ -178,99 +178,61 @@ const login = async (req, res) => {
 const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword, confirmPassword } = req.body;
-        const userId = req.user._id; // Extracted from JWT token
+        const userId = req.user._id;
 
-        // Validate input
         if (!currentPassword || !newPassword || !confirmPassword) {
             return res.status(400).json({
                 success: false,
-                message: "All fields are required"
+                message: "All password fields are required."
             });
         }
-
-        // Check if new passwords match
         if (newPassword !== confirmPassword) {
             return res.status(400).json({
                 success: false,
-                message: "New passwords do not match"
+                message: "New passwords do not match."
             });
         }
-
-        // Validate new password strength
         if (newPassword.length < 8) {
             return res.status(400).json({
                 success: false,
-                message: "Password must be at least 8 characters long"
+                message: "New password must be at least 8 characters long."
             });
         }
 
-        // Get user from database
         const user = await User.findById(userId);
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
+            return res.status(404).json({ success: false, message: "User not found." });
         }
 
-        // Verify current password
         const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
         if (!isPasswordValid) {
-            return res.status(401).json({
-                success: false,
-                message: "Current password is incorrect"
-            });
+            return res.status(401).json({ success: false, message: "Current password is incorrect." });
         }
 
-        // Check if new password is same as current
         if (currentPassword === newPassword) {
             return res.status(400).json({
                 success: false,
-                message: "New password must be different from current password"
+                message: "New password must be different from current password."
             });
         }
 
-        // Hash new password
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-        // Update password in database
-        user.password = hashedPassword;
+        user.password = await bcrypt.hash(newPassword, 10);
         await user.save();
 
-        // Invalidate all existing sessions (optional)
-        // This would require a token blacklist implementation
-        // Or using Redis to track valid tokens
-
-        // Generate new JWT token (optional)
-        const newToken = jwt.sign(
-            {
-                _id: user._id,
-                emailId: user.emailId,
-                role: user.role
-            },
-            process.env.JWT_KEY,
-            { expiresIn: '7d' }
-        );
-
-        // Set new cookie (optional)
-        res.cookie('token', newToken, {
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            httpOnly: true,
-            secure: true,          
-            sameSite: 'None',
-            path: '/' 
-        });
+        // Optionally, re-issue a new token or clear existing ones.
+        // For simplicity, we'll just send success.
+        // The token already has a maxAge so it will expire naturally.
 
         res.status(200).json({
             success: true,
-            message: "Password changed successfully"
+            message: "Password changed successfully!"
         });
 
     } catch (err) {
         console.error('Change password error:', err);
         res.status(500).json({
             success: false,
-            message: "An error occurred while changing password"
+            message: "An error occurred while changing password."
         });
     }
 };
@@ -694,9 +656,9 @@ const verifyOTP = async (req, res) => {
         res.cookie('token', token, {
             maxAge: 3600 * 1000, // 1 hour
             httpOnly: true,
-            secure: true,          
+            secure: true,
             sameSite: 'None',
-            path: '/' 
+            path: '/'
         });
 
         // Omit sensitive data from response
@@ -998,7 +960,6 @@ const getFullUserProfile = async (req, res) => {
     }
 };
 
-
 const googleLogin = async (req, res) => {
     try {
         const { code } = req.query;
@@ -1032,9 +993,9 @@ const googleLogin = async (req, res) => {
         res.cookie('token', token, {
             maxAge: 7 * 24 * 60 * 60 * 1000,
             httpOnly: true,
-            secure: true,          
+            secure: true,
             sameSite: 'None',
-            path: '/' 
+            path: '/'
         });
         const userData = {
             _id: existingUser._id,
@@ -1056,7 +1017,6 @@ const googleLogin = async (req, res) => {
         res.status(500).json({ success: false, message: "Google login failed. Please try again." });
     }
 }
-
 
 const initiateGithubLogin = (req, res) => {
     try {
@@ -1227,9 +1187,9 @@ const handleGithubCallback = async (req, res) => {
         res.cookie('token', token, {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             httpOnly: true,
-            secure: true,          
+            secure: true,
             sameSite: 'None',
-            path: '/' 
+            path: '/'
         });
 
         // For development, you might want to redirect to frontend
@@ -1266,6 +1226,184 @@ const handleGithubCallback = async (req, res) => {
     }
 };
 
+const getAllUsersForAdmin = async (req, res) => {
+    try {
+        const { search, filter } = req.query;
+        const query = {};
+
+        // Search functionality
+        if (search) {
+            const searchRegex = new RegExp(search, 'i'); // Case-insensitive search
+            query.$or = [
+                { firstName: searchRegex },
+                { lastName: searchRegex },
+                { emailId: searchRegex }
+            ];
+        }
+
+        // Filter functionality
+        if (filter === 'premium') {
+            query.isPremium = true;
+        } else if (filter === 'normal') {
+            query.isPremium = false;
+        } else if (filter === 'admin') {
+            query.role = 'admin';
+        } else if (filter === 'user') { // Renamed from 'normal_user' for clarity
+            query.role = 'user';
+        }
+
+        const users = await User.find(query)
+            .select('-password') // Exclude password from the result
+            .sort({ createdAt: -1 }); // Latest users first
+
+        res.status(200).json(users);
+    } catch (error) {
+        console.error('Error fetching users for admin:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while fetching users.'
+        });
+    }
+};
+
+const updateUserRole = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { role } = req.body; // New role: 'user' or 'admin'
+
+        // Basic validation for role
+        if (!role || !['user', 'admin'].includes(role)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid role provided. Must be "user" or "admin".'
+            });
+        }
+
+        // Prevent an admin from changing their own role (optional but recommended)
+        if (req.user._id.toString() === userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'You cannot change your own role.'
+            });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        user.role = role;
+        await user.save();
+        const updatedUserResponse = user.toObject(); // Convert Mongoose document to plain JS object
+        delete updatedUserResponse.password; // Remove password field
+
+        res.status(200).json({
+            success: true,
+            message: `User role updated to ${role} successfully.`,
+            user: updatedUserResponse // Return updated user without password
+        });
+
+    } catch (error) {
+        console.error('Error updating user role:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while updating user role.'
+        });
+    }
+};
+
+const toggleUserPremiumStatus = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { isPremium } = req.body; // boolean: true to make premium, false to revoke
+
+        // Validate boolean
+        if (typeof isPremium !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid premium status provided. Must be true or false.'
+            });
+        }
+
+        // Prevent an admin from changing their own premium status (optional but recommended for consistency)
+        if (req.user._id.toString() === userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'You cannot change your own premium status through this route.'
+            });
+        }
+
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        user.isPremium = isPremium;
+        // Optionally, you might want to manage the `activeSubscription` field here
+        // e.g., if setting to premium, create a dummy subscription or link an existing one.
+        // For simplicity, we'll just toggle `isPremium`.
+        await user.save();
+        const updatedUserResponse = user.toObject(); // Convert Mongoose document to plain JS object
+        delete updatedUserResponse.password;
+
+        res.status(200).json({
+            success: true,
+            message: `User premium status updated to ${isPremium} successfully.`,
+            user: updatedUserResponse
+        });
+
+    } catch (error) {
+        console.error('Error toggling user premium status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while toggling user premium status.'
+        });
+    }
+};
+
+const adminDeleteUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Prevent admin from deleting themselves
+        if (req.user._id.toString() === userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Admins cannot delete their own account using this route.'
+            });
+        }
+
+        const user = await User.findByIdAndDelete(userId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        // IMPORTANT: In a real application, when a user is deleted, you should
+        // also clean up all associated data (their posts, comments, submissions, etc.)
+        // This would involve finding all documents referencing this user's ID and deleting them.
+        // For example:
+        // await DiscussionPost.deleteMany({ author: userId });
+        // await ProblemSubmission.deleteMany({ user: userId });
+        // ... and so on for any other models that reference the User model.
+        // This is crucial for data integrity but beyond the scope of this request.
+
+        res.status(200).json({
+            success: true,
+            message: 'User deleted successfully.'
+        });
+
+    } catch (error) {
+        console.error('Error deleting user by admin:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while deleting user.'
+        });
+    }
+};
+
+
 
 module.exports = {
     register,
@@ -1281,5 +1419,9 @@ module.exports = {
     googleLogin,
     initiateGithubLogin,
     handleGithubCallback,
-    changePassword
+    changePassword,
+    getAllUsersForAdmin,
+    updateUserRole,
+    toggleUserPremiumStatus,
+    adminDeleteUser
 };

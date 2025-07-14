@@ -39,7 +39,7 @@ const getAllPosts = async (req, res) => {
         const query = search ? { title: { $regex: search, $options: 'i' } } : {};
 
         let sortOption = { createdAt: -1 };
-        if (sortBy === 'upvotes') sortOption = { upvoteCount: -1, createdAt: -1 };
+        if (sortBy === 'likes') sortOption = { likeCount: -1, createdAt: -1 };
 
         const posts = await DiscussionPost.aggregate([
             { $match: query },
@@ -47,13 +47,13 @@ const getAllPosts = async (req, res) => {
             {
                 $addFields: {
                     comments: { $ifNull: ["$comments", []] },
-                    upvotes: { $ifNull: ["$upvotes", []] }
+                    likes: { $ifNull: ["$likes", []] }
                 }
             },
             // Now calculate counts safely
             {
                 $addFields: {
-                    upvoteCount: { $size: "$upvotes" },
+                    likeCount: { $size: "$likes" },
                     commentCount: { $size: "$comments" }
                 }
             },
@@ -73,7 +73,7 @@ const getAllPosts = async (req, res) => {
                 $project: {
                     title: 1,
                     slug: 1,
-                    upvoteCount: 1,
+                    likeCount: 1,
                     commentCount: 1,
                     createdAt: 1,
                     comments: 1, // Include if needed
@@ -116,39 +116,42 @@ const getPostBySlug = async (req, res) => {
     }
 };
 
-const toggleUpvote = async (req, res) => {
+
+const togglePostLike = async (req, res) => {
     try {
-        const postId = req.params._id;
+        const postId = req.params.postId;
+        const userId = req.user.id; // User ID from userMiddleware
+
         const post = await DiscussionPost.findById(postId);
         if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
+            return res.status(404).json({ message: 'Post not found.' });
         }
 
-        const userId = req.user.id;
-        const upvoteIndex = post.upvotes.findIndex(
-            (upvotedUserId) => upvotedUserId.toString() === userId
-        );
+        const hasLiked = post.likes.includes(userId); // Check if user already liked
 
-        if (upvoteIndex === -1) {
-            post.upvotes.push(userId);
+        if (hasLiked) {
+            // User has liked, so unlike it (pull userId from likes array)
+            post.likes.pull(userId);
         } else {
-            post.upvotes.splice(upvoteIndex, 1);
+            // User has not liked, so like it (add userId to likes array)
+            post.likes.addToSet(userId); // Use addToSet to prevent duplicates
         }
 
         await post.save();
+
         res.json({
             success: true,
-            upvotes: post.upvotes,
-            upvoteCount: post.upvotes.length
+            message: hasLiked ? 'Post unliked successfully.' : 'Post liked successfully.',
+            likeCount: post.likes.length,
+            isLiked: !hasLiked // Indicate the current state after the toggle
         });
+
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            success: false,
-            message: 'Server Error'
-        });
+        res.status(500).json({ message: 'Server error while toggling post like.' });
     }
 };
+
 
 const deletePost = async (req, res) => {
     try {
@@ -256,7 +259,7 @@ const addComment = async (req, res) => {
         const newComment = {
             content,
             author: userId,
-            upvotes: []
+            likes: []
         };
 
         post.comments.push(newComment);
@@ -281,6 +284,47 @@ const addComment = async (req, res) => {
         });
     }
 };
+
+const toggleCommentLike = async (req, res) => {
+    try {
+        const { postId, commentId } = req.params;
+        const userId = req.user.id;
+
+        const post = await DiscussionPost.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found.' });
+        }
+
+        const comment = post.comments.id(commentId); // Find the subdocument (comment) by its ID
+        if (!comment) {
+            return res.status(404).json({ message: 'Comment not found.' });
+        }
+
+        const hasLiked = comment.likes.includes(userId);
+
+        if (hasLiked) {
+            // User has liked, so unlike it
+            comment.likes.pull(userId);
+        } else {
+            // User has not liked, so like it
+            comment.likes.addToSet(userId); // Use addToSet to prevent duplicates
+        }
+
+        await post.save(); // Save the parent document to persist changes to the embedded comment
+
+        res.json({
+            success: true,
+            message: hasLiked ? 'Comment unliked successfully.' : 'Comment liked successfully.',
+            likeCount: comment.likes.length,
+            isLiked: !hasLiked // Indicate the current state after the toggle
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error while toggling comment like.' });
+    }
+};
+
 
 const updateComment = async (req, res) => {
     try {
@@ -360,45 +404,6 @@ const deleteComment = async (req, res) => {
     }
 };
 
-const toggleCommentUpvote = async (req, res) => {
-    try {
-        const { postId, commentId } = req.params;
-        const userId = req.user.id;
-
-        const post = await DiscussionPost.findById(postId);
-        if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
-        }
-
-        const comment = post.comments.id(commentId);
-        if (!comment) {
-            return res.status(404).json({ message: 'Comment not found' });
-        }
-
-        const upvoteIndex = comment.upvotes.indexOf(userId);
-
-        if (upvoteIndex === -1) {
-            comment.upvotes.push(userId);
-        } else {
-            comment.upvotes.splice(upvoteIndex, 1);
-        }
-
-        await post.save();
-
-        res.json({
-            success: true,
-            upvotes: comment.upvotes,
-            upvoteCount: comment.upvotes.length
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while updating comment vote'
-        });
-    }
-};
 
 const getPostsByUserId = async (req, res) => {
     const { userId } = req.params;
@@ -435,11 +440,11 @@ module.exports = {
     createPost,
     getAllPosts,
     getPostBySlug,
-    toggleUpvote,
+    togglePostLike,
     addComment,
+    toggleCommentLike,
     updateComment,
     deleteComment,
-    toggleCommentUpvote,
     getPostsByUserId,
     deletePost,
     updatePost

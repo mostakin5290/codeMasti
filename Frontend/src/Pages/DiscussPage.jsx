@@ -55,8 +55,7 @@ const DiscussPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [activeFilter, setActiveFilter] = useState('all');
-    const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
-    const [popularDiscussions, setPopularDiscussions] = useState([]); // Dummy data used
+    const [popularDiscussions, setPopularDiscussions] = useState([]);
 
     const fetchPosts = useCallback(async () => {
         setLoading(true);
@@ -73,17 +72,15 @@ const DiscussPage = () => {
             });
             setPosts(data.posts);
             setTotalPages(data.totalPages);
+            console.log(data.posts)
 
-            // Generate dummy popular discussions from the first 3 posts
+            // Generate popular discussions from the fetched posts
+            // This is correct as `likeCount` is provided by the aggregate
             setPopularDiscussions(data.posts.slice(0, 3).map(post => ({
                 ...post,
-                upvoteCount: post.upvoteCount,
+                likeCount: post.likeCount,
                 commentCount: post.commentCount
             })));
-
-
-            // Simulate bookmarks - in a real app, this would come from the API
-            setBookmarkedPosts([]);
 
         } catch (err) {
             setError('Failed to fetch discussions. Please try again later.');
@@ -97,6 +94,7 @@ const DiscussPage = () => {
         fetchPosts();
     }, [fetchPosts]);
 
+    // Calculate unique authors and total comments based on fetched posts
     const uniqueAuthors = [...new Set(posts.map(post => post.author._id))];
     const totalComments = posts.reduce((sum, post) => sum + (post.commentCount || 0), 0);
 
@@ -148,6 +146,7 @@ const DiscussPage = () => {
                             <span className="flex items-center gap-1">
                                 <FaUser className={`${appTheme.primary}/80`} />
                                 {post.author.username}
+                                {/* Assuming post.author.isVerified exists if needed */}
                                 {post.author.isVerified && (
                                     <span className={`${appTheme.infoColor}`} title="Verified User">
                                         ✓
@@ -174,10 +173,11 @@ const DiscussPage = () => {
                     <div className="flex-shrink-0 flex items-center gap-3">
                         <div
                             className={`flex items-center gap-1.5 px-3 py-1 ${appTheme.cardBg}/5 rounded-full hover:${appTheme.primary}/20 cursor-not-allowed transition-colors`}
-                            title="Upvotes"
+                            title="likes"
                         >
                             <FiThumbsUp />
-                            <span className={`font-medium ${appTheme.text}`}>{post.upvoteCount}</span>
+                            {/* Corrected: Use post.likeCount as provided by the backend aggregation */}
+                            <span className={`font-medium ${appTheme.text}`}>{post.likeCount}</span>
                         </div>
                         <div
                             className={`flex items-center gap-1.5 px-3 py-1 ${appTheme.cardBg}/5 rounded-full hover:${appTheme.secondary}/20 cursor-not-allowed  transition-colors`}
@@ -245,7 +245,7 @@ const DiscussPage = () => {
                                                         <span>{post.author.username}</span>
                                                         <div className="flex items-center gap-2">
                                                             <span className="flex items-center gap-1">
-                                                                <FiThumbsUp size={10} /> {post.upvoteCount}
+                                                                <FiThumbsUp size={10} /> {post.likeCount}
                                                             </span>
                                                             <span className="flex items-center gap-1">
                                                                 <FaCommentDots size={10} /> {post.commentCount}
@@ -299,7 +299,7 @@ const DiscussPage = () => {
                                         className={`col-span-2 pl-3 ${appTheme.cardBg}/10 border-${appTheme.border.split('-')[1]}-200 text-${appTheme.text} rounded-xl shadow-sm py-2 px-4 focus:outline-none focus:ring-2 focus:ring-${appTheme.primary.split('-')[1]}-500 focus:border-transparent appearance-none`}
                                     >
                                         <option value="latest">Latest</option>
-                                        <option value="upvotes">Most Upvoted</option>
+                                        <option value="likes">Most liked</option>
                                         <option value="comments">Most Comments</option>
                                         <option value="views">Most Viewed</option>
                                     </select>
@@ -327,7 +327,7 @@ const DiscussPage = () => {
                                     </div>
                                 ) : posts.length > 0 ? (
                                     <>
-                                        {/* Pinned posts first */}
+                                        {/* Pinned posts first (if 'isPinned' property comes from backend) */}
                                         {posts.filter(p => p.isPinned).map(post => (
                                             <DiscussionListItem key={post._id} post={post} />
                                         ))}
