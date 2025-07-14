@@ -1168,7 +1168,7 @@ export const THEMES = [
         iconBg: 'bg-gray-500/10',
         gradientFrom: 'from-gray-950',
         gradientTo: 'to-black',
-        isPremium: false,
+        isPremium: true,
     },
     {
         name: 'Cyberpunk',
