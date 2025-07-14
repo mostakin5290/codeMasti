@@ -134,7 +134,7 @@ const ProblemPanel = ({ problem, activeTab, setActiveTab, submissionHistory, tes
                         <button
                             key={id}
                             className={`group flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 relative overflow-hidden ${activeTab === id
-                                ? `${theme.buttonPrimary} ${theme.text}  shadow-lg`
+                                ? `${theme.buttonPrimary} ${theme.buttonText}  shadow-lg`
                                 : `${theme.text} hover:${theme.text} hover:${theme.cardBg} hover:shadow-md`
                                 }`}
                             onClick={() => setActiveTab(id)}
@@ -172,7 +172,7 @@ const ProblemPanel = ({ problem, activeTab, setActiveTab, submissionHistory, tes
     );
 };
 
-// TerminalLine (unchanged)
+
 const TerminalLine = ({ type, message, appTheme }) => {
     const theme = { ...defaultTheme, ...appTheme };
 
@@ -206,7 +206,7 @@ const TerminalLine = ({ type, message, appTheme }) => {
     );
 };
 
-// Helper to safely display JSON or string (unchanged)
+
 const safeDisplayValue = (value) => {
     if (typeof value === 'object' && value !== null) {
         try {
@@ -836,22 +836,22 @@ const Codefield = () => {
                             <div className="flex space-x-1">
                                 <button
                                     className={`group px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${activeConsoleTab === 'input'
-                                        ? `${appTheme.background} ${appTheme.text} shadow-lg`
+                                        ? `${appTheme.buttonPrimary} ${appTheme.buttonText} shadow-lg`
                                         : `${appTheme.cardText} hover:${appTheme.text} hover:${appTheme.background}/40`
                                         }`}
                                     onClick={() => setActiveConsoleTab('input')}
                                 >
-                                    <FaTerminal className={`w-3 h-3 inline mr-2 group-hover:scale-110 transition-transform duration-300 ${appTheme.highlightSecondary}`} />
+                                    <FaTerminal className={`w-3 h-3 inline mr-2 group-hover:scale-110 transition-transform duration-300 `} />
                                     Input
                                 </button>
                                 <button
                                     className={`group px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${activeConsoleTab === 'result'
-                                        ? `${appTheme.background} ${appTheme.text} shadow-lg`
+                                        ? `${appTheme.buttonPrimary} ${appTheme.buttonText} shadow-lg`
                                         : `${appTheme.cardText} hover:${appTheme.text} hover:${appTheme.background}/40`
                                         }`}
                                     onClick={() => setActiveConsoleTab('result')}
                                 >
-                                    <IoMdFlash className={`w-3 h-3 inline mr-2 group-hover:scale-110 transition-transform duration-300 ${appTheme.highlightTertiary}`} />
+                                    <IoMdFlash className={`w-3 h-3 inline mr-2 group-hover:scale-110 transition-transform duration-300 `} />
                                     Result
                                 </button>
                             </div>

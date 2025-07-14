@@ -62,7 +62,7 @@ const FAQsPage = () => {
                 <section className="text-center max-w-4xl mx-auto mb-16">
                     <FiHelpCircle className={`${appTheme.highlight} text-6xl mx-auto mb-4`} />
                     <h1 className={`text-5xl font-extrabold ${appTheme.text} sm:text-6xl animate-fade-in-down`}>
-                        <span className={`text-transparent bg-clip-text ${getPrimaryGradientClasses()}`}>
+                        <span className={` bg-clip-text ${getPrimaryGradientClasses()}`}>
                             Frequently Asked Questions
                         </span>
                     </h1>

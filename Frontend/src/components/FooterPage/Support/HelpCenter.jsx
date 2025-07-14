@@ -68,7 +68,7 @@ const HelpCenter = () => {
                 <section className="text-center max-w-4xl mx-auto px-4 mb-16">
                     <FiHelpCircle className={`${appTheme.highlight} text-6xl mx-auto mb-4`} />
                     <h1 className={`text-5xl font-extrabold ${appTheme.text} sm:text-6xl animate-fade-in-down`}>
-                        <span className={`text-transparent bg-clip-text ${getPrimaryGradientClasses()}`}>
+                        <span className={` bg-clip-text ${getPrimaryGradientClasses()}`}>
                             Help Center
                         </span>
                     </h1>
@@ -138,7 +138,7 @@ const HelpCenter = () => {
                             </p>
                             <a
                                 href="/contact"
-                                className={`inline-flex items-center gap-2 px-8 py-3 rounded-lg ${getPrimaryGradientClasses()} ${appTheme.buttonText} font-medium hover:shadow-lg ${getPrimaryHoverShadowClass()} transition-all transform hover:scale-[1.02]`}
+                                className={`inline-flex items-center gap-2 px-8 py-3 rounded-lg ${appTheme.buttonPrimary} ${appTheme.buttonText} font-medium hover:shadow-lg  transition-all transform hover:scale-[1.02]`}
                             >
                                 Send a Message <FiChevronRight />
                             </a>

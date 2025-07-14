@@ -45,7 +45,7 @@ const AboutPage = () => {
                 {/* Hero Section */}
                 <div className="text-center max-w-4xl mx-auto px-4">
                     <h1 className={`text-5xl font-extrabold ${appTheme.text} sm:text-6xl animate-fade-in-down`}>
-                        <span className={`text-transparent bg-clip-text ${getPrimaryGradientClasses()}`}>
+                        <span className={`bg-clip-text ${getPrimaryGradientClasses()}`}>
                             CodeMasti:
                         </span>
                         <span> Sharpening the World's Coders</span>
@@ -152,8 +152,8 @@ const AboutPage = () => {
                             Be a part of a dynamic community that’s shaping the future of competitive programming and technical interview preparation.
                         </p>
                         <a
-                            href="/register"
-                            className={`px-8 py-4 rounded-lg ${getPrimaryGradientClasses()} ${appTheme.buttonText} font-medium hover:shadow-lg ${getPrimaryHoverShadowClass()} transition-all transform hover:scale-[1.02] inline-flex items-center justify-center`}
+                            href="/problems"
+                            className={`px-8 py-4 rounded-lg ${appTheme.buttonPrimary} ${appTheme.buttonText} font-medium hover:shadow-lg  transition-all transform hover:scale-[1.02] inline-flex items-center justify-center`}
                         >
                             Start Your Coding Journey <FiChevronRight className="ml-2" />
                         </a>

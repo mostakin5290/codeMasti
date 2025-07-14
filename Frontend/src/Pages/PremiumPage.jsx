@@ -42,7 +42,7 @@ const PremiumPage = () => {
             ],
             highlight: false,
             ctaText: 'Start Monthly',
-            ctaLink: '/subscribe/monthly', // LINK CHANGED
+            ctaLink: '/subscribe/monthly', 
         },
         {
             name: 'Yearly Premium',
@@ -112,7 +112,7 @@ const PremiumPage = () => {
                         {/* Point to SubscribePage, passing 'monthly' as default */}
                         <Link
                             to="/subscribe/monthly"
-                            className={`inline-flex items-center justify-center px-8 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${appTheme.buttonText} transform hover:scale-105`}
+                            className={`inline-flex items-center justify-center px-8 py-4 ${appTheme.buttonPrimary}  rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${appTheme.buttonText} transform hover:scale-105`}
                         >
                             Get Premium Now <FaCrown className="ml-2" />
                         </Link>
@@ -160,7 +160,7 @@ const PremiumPage = () => {
 
                                     <Link
                                         to={plan.ctaLink}
-                                        className={`mt-auto inline-flex items-center justify-center w-full px-8 py-3 rounded-lg ${plan.highlight ? getPrimaryGradient() : `${appTheme.background}/10 border ${appTheme.border}`} ${appTheme.buttonText} font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}
+                                        className={`mt-auto inline-flex items-center justify-center w-full px-8 py-3 rounded-lg ${`${appTheme.buttonPrimary} border ${appTheme.border}`} ${appTheme.buttonText} font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}
                                     >
                                         {plan.ctaText}
                                     </Link>
@@ -236,7 +236,7 @@ const PremiumPage = () => {
                         {/* Point to SubscribePage, passing 'monthly' as default */}
                         <Link
                             to="/subscribe/monthly"
-                            className={`inline-flex items-center justify-center px-10 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-xl shadow-lg hover:shadow-2xl ${appTheme.buttonText} transform hover:scale-105`}
+                            className={`inline-flex items-center justify-center px-10 py-4 ${appTheme.buttonPrimary} rounded-lg transition-all duration-300 font-semibold text-xl shadow-lg hover:shadow-2xl ${appTheme.buttonText} transform hover:scale-105`}
                         >
                             Choose Your Plan Today
                             <FaCrown className="ml-3 text-2xl" />

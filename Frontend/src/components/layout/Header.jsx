@@ -84,7 +84,7 @@ const Header = () => {
     // Inactive link hover: background will be a lighter shade of the main background
     const navLinkInactive = `${theme.cardText} hover:${theme.text} hover:${theme.background.replace('bg-', 'bg-')}/50`;
     // Active state uses primary color as solid background
-    const navLinkActive = `${theme.text} ${theme.primary} shadow-lg`;
+    const navLinkActive = `${theme.buttonText} ${theme.primary} shadow-lg`;
 
     const getNavLinkClass = ({ isActive }) =>
         `${navLinkBase} ${isActive ? navLinkActive : navLinkInactive}`;
