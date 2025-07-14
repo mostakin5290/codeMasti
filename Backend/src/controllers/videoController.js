@@ -14,7 +14,7 @@ const generateUploadSignature = async (req, res) => {
         const { problemId } = req.params;
 
         // --- FIX HERE: Change req.result._id to req.admin._id ---
-        const userId = req.admin._id;
+        const userId = req.user._id;
         // --- End FIX ---
 
         // Verify problem exists
@@ -65,7 +65,7 @@ const saveVideoMetadata = async (req, res) => {
         } = req.body;
 
         // --- FIX HERE: Change req.result._id to req.admin._id ---
-        const userId = req.admin._id;
+        const userId = req.user._id;
         // --- End FIX ---
 
         // Verify the upload with Cloudinary
@@ -140,7 +140,7 @@ const deleteVideo = async (req, res) => {
     try {
         const { videoId } = req.params; // Changed to videoId
         // --- FIX HERE: Change req.result._id to req.admin._id ---
-        const userId = req.admin._id; // Admin's ID
+        const userId = req.user._id; // Admin's ID
         // --- End FIX ---
 
         // Find and delete the video document by its _id.
