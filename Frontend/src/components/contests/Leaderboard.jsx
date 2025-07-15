@@ -25,10 +25,10 @@ const Leaderboard = ({ rankings, appTheme: propAppTheme }) => {
     }
 
     const rankColor = (rank) => {
-        if (rank === 1) return appTheme.highlight; // Primary highlight for 1st place
-        if (rank === 2) return appTheme.highlightSecondary; // Secondary highlight for 2nd place
-        if (rank === 3) return appTheme.highlightTertiary; // Tertiary highlight for 3rd place
-        return appTheme.cardText; // Muted text for others
+        if (rank === 1) return appTheme.highlight;
+        if (rank === 2) return appTheme.highlightSecondary; 
+        if (rank === 3) return appTheme.highlightTertiary; 
+        return appTheme.cardText;
     };
 
     return (

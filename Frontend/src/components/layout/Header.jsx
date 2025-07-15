@@ -208,7 +208,7 @@ const Header = () => {
                                                             <p className={`text-base font-semibold ${theme.text}`}>{user?.firstName} {user?.lastName}</p>
                                                             <p className={`text-sm ${theme.cardText} truncate`}>{user?.email}</p>
                                                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${theme.successColor.replace('text-', 'bg-')}/20 ${theme.highlightSecondary} border ${theme.highlightSecondary.replace('text-', 'border-')}/30 mt-1`}>
-                                                                {user.role === 'admin' ? 'Admin' : "Member"}
+                                                                {(user.role === 'admin' && user.role === 'co-admin') ? 'Admin' : "Member"}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -228,7 +228,7 @@ const Header = () => {
                                                             <span>Your Profile</span>
                                                         </div >
                                                     </NavLink>
-                                                    {user.role === 'admin' && (
+                                                    {(user.role === 'admin'||user.role === 'co-admin') && (
                                                         <NavLink to="/admin" className={`${userMenuItem} ${theme.cardText} hover:${theme.text}`} onClick={closeAllMenus}>
                                                             <div className="flex items-center">
                                                                 <svg className={`mr-3 h-5 w-5 ${theme.highlightTertiary}`} xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">

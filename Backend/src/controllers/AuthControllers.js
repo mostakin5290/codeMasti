@@ -766,20 +766,76 @@ const adminRegister = async (req, res) => {
     try {
         validUser(req.body);
 
-        const { emailId, password } = req.body;
+        const { emailId, password, firstName, lastName, role } = req.body;
 
-        req.body.password = await bcrypt.hash(password, 10);
-        req.body.role = 'admin';
+        if (!role || !['admin', 'co-admin'].includes(role)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid role specified. Must be 'admin' or 'co-admin'."
+            });
+        }
 
-        const newAdmin = await User.create(req.body);
+        const existingUser = await User.findOne({ emailId });
+        if (existingUser) {
+            return res.status(409).json({
+                success: false,
+                message: "Email already registered for another user."
+            });
+        }
 
-        const token = jwt.sign({ _id: newAdmin._id, emailId: emailId, role: 'admin' }, process.env.JWT_KEY, { expiresIn: '1h' })
+        if (role === 'admin') {
+            const currentAdminCount = await User.countDocuments({ role: 'admin' });
+            if (currentAdminCount > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "An 'admin' account already exists. Only one 'admin' is allowed. Consider creating a 'co-admin' instead."
+                });
+            }
+        }
 
-        res.cookie('token', token, { maxAge: 3600 * 1000 })
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        res.status(201).send("Admin registered successfully");
+
+        const newUser = await User.create({
+            firstName,
+            lastName,
+            emailId,
+            password: hashedPassword,
+            role: role // Use the role from the request body
+        });
+
+        const userResponse = {
+            _id: newUser._id,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            emailId: newUser.emailId,
+            role: newUser.role
+        };
+
+        res.status(201).json({
+            success: true,
+            message: `${newUser.role} account created successfully.`,
+            user: userResponse
+        });
+
+        // req.body.password = await bcrypt.hash(password, 10);
+        // req.body.role = 'admin';
+        // const newAdmin = await User.create(req.body);
+        // const token = jwt.sign({ _id: newAdmin._id, emailId: emailId, role: 'admin' }, process.env.JWT_KEY, { expiresIn: '1h' })
+        // res.cookie('token', token, { maxAge: 3600 * 1000 })
+        // res.status(201).send("Admin registered successfully");
     } catch (err) {
-        res.status(400).send(`Error:${err}`);
+        console.error('Admin Registration error:', err);
+        if (err.code === 11000) {
+            return res.status(409).json({
+                success: false,
+                message: "Email already registered"
+            });
+        }
+        res.status(500).json({
+            success: false,
+            message: `An error occurred during ${req.body.role || 'admin'} account creation.`
+        });
     }
 };
 
@@ -1246,12 +1302,15 @@ const getAllUsersForAdmin = async (req, res) => {
             query.isPremium = true;
         } else if (filter === 'normal') {
             query.isPremium = false;
-        } else if (filter === 'admin') {
+        } else if (filter === 'admin') { // Filter specifically for 'admin'
             query.role = 'admin';
-        } else if (filter === 'user') { // Renamed from 'normal_user' for clarity
+        } else if (filter === 'co-admin') { // Filter specifically for 'co-admin'
+            query.role = 'co-admin';
+        } else if (filter === 'user') { // Filter for regular 'user'
             query.role = 'user';
+        } else if (filter === 'all_admins') { // New filter to get both admin and co-admin
+            query.role = { $in: ['admin', 'co-admin'] };
         }
-
         const users = await User.find(query)
             .select('-password') // Exclude password from the result
             .sort({ createdAt: -1 }); // Latest users first
@@ -1269,10 +1328,10 @@ const getAllUsersForAdmin = async (req, res) => {
 const updateUserRole = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { role } = req.body; // New role: 'user' or 'admin'
-
+        const { role: newRole } = req.body; // New role: 'user' or 'admin'
+        const performingUser = req.user;
         // Basic validation for role
-        if (!role || !['user', 'admin'].includes(role)) {
+        if (!newRole || !['user', 'admin', 'co-admin'].includes(newRole)) {
             return res.status(400).json({
                 success: false,
                 message: 'Invalid role provided. Must be "user" or "admin".'
@@ -1280,26 +1339,57 @@ const updateUserRole = async (req, res) => {
         }
 
         // Prevent an admin from changing their own role (optional but recommended)
-        if (req.user._id.toString() === userId) {
+        if (performingUser._id.toString() === userId) {
             return res.status(403).json({
                 success: false,
-                message: 'You cannot change your own role.'
+                message: 'You cannot change your own role directly using this route. If you want to transfer the admin role, promote another user to admin.'
             });
         }
 
-        const user = await User.findById(userId);
-        if (!user) {
+        const userToUpdate = await User.findById(userId);
+        if (!userToUpdate) {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
+        // --- Permission Checks based on performingUser's role and target user's current/new role ---
 
-        user.role = role;
-        await user.save();
-        const updatedUserResponse = user.toObject(); // Convert Mongoose document to plain JS object
+        // 1. Co-admin cannot demote an admin.
+        if (userToUpdate.role === 'admin' && performingUser.role === 'co-admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Co-administrators are not authorized to demote admin accounts.'
+            });
+        }
+
+        if (newRole === 'admin' && performingUser.role === 'co-admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Co-administrators are not authorized to promote users to admin.'
+            });
+        }
+
+        if (newRole === 'admin' && performingUser.role === 'admin') {
+            const existingAdmin = await User.findOne({ role: 'admin' });
+
+            // If there's an existing admin AND it's not the user we are trying to promote
+            if (existingAdmin && existingAdmin._id.toString() !== userToUpdate._id.toString()) {
+                // This means the current admin is trying to promote a DIFFERENT user to 'admin'.
+                // To maintain "only one admin", the existing admin is demoted.
+                existingAdmin.role = 'user'; // Demote current admin to regular 'user'
+                await existingAdmin.save();
+                console.log(`Admin role transferred: Old admin ${existingAdmin.emailId} demoted to user.`);
+            }
+            // If existingAdmin is null, it means no admin exists, so the promotion is valid.
+            // If existingAdmin is the same as userToUpdate, it means the target is already admin, no change needed.
+        }
+
+        userToUpdate.role = newRole;
+        await userToUpdate.save();
+        const updatedUserResponse = userToUpdate.toObject(); // Convert Mongoose document to plain JS object
         delete updatedUserResponse.password; // Remove password field
 
         res.status(200).json({
             success: true,
-            message: `User role updated to ${role} successfully.`,
+            message: `User role updated to ${newRole} successfully.`,
             user: updatedUserResponse // Return updated user without password
         });
 
@@ -1365,30 +1455,52 @@ const toggleUserPremiumStatus = async (req, res) => {
 const adminDeleteUser = async (req, res) => {
     try {
         const { userId } = req.params;
+        const performingUser = req.user;
 
-        // Prevent admin from deleting themselves
-        if (req.user._id.toString() === userId) {
+        if (performingUser._id.toString() === userId) {
             return res.status(403).json({
                 success: false,
-                message: 'Admins cannot delete their own account using this route.'
+                message: 'You cannot delete your own account using this administrative route.'
             });
         }
 
-        const user = await User.findByIdAndDelete(userId);
+        const userToDelete = await User.findById(userId);
 
-        if (!user) {
+        if (!userToDelete) {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
+        // --- Permission Logic for Deletion ---
+        // 1. Co-admin CANNOT delete an admin.
+        if (userToDelete.role === 'admin' && performingUser.role === 'co-admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Co-administrators are not authorized to delete admin accounts.'
+            });
+        }
+
+        // 2. The primary (and only) admin cannot be deleted via this route.
+        // This covers cases where an admin tries to delete themselves or the single existing admin.
+        if (userToDelete.role === 'admin' && performingUser.role === 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'The primary admin account cannot be deleted via this route. Please reassign the admin role first if needed.'
+            });
+        }
+
+         // At this point:
+        // - An 'admin' can delete any 'user' or 'co-admin'.
+        // - A 'co-admin' can delete any 'user' or 'co-admin'.
+        // No further checks needed for 'user' or 'co-admin' deletion.
+
+        await User.findByIdAndDelete(userId);
+
         // IMPORTANT: In a real application, when a user is deleted, you should
         // also clean up all associated data (their posts, comments, submissions, etc.)
-        // This would involve finding all documents referencing this user's ID and deleting them.
-        // For example:
-        // await DiscussionPost.deleteMany({ author: userId });
-        // await ProblemSubmission.deleteMany({ user: userId });
-        // ... and so on for any other models that reference the User model.
-        // This is crucial for data integrity but beyond the scope of this request.
+        // This is crucial for data integrity but is outside the scope of this request.
 
+
+    
         res.status(200).json({
             success: true,
             message: 'User deleted successfully.'

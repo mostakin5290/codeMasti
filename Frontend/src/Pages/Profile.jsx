@@ -107,8 +107,9 @@ function ProfilePage() {
                 let postsTotal = 0;
                 try {
                     const postsResponse = await axiosClient.get(`/discuss/user/${userIdToFetch}/posts?page=${postsCurrentPage}&limit=${postsPerPage}`);
-                    postsData = postsResponse.data.posts || [];
-                    postsTotal = postsResponse.data.totalPosts || 0; // Use totalPosts from backend if available
+                    postsData = postsResponse?.data?.posts;
+                    postsTotal = postsData.length ; 
+                    console.log(postsData)// Use totalPosts from backend if available
                 } catch (err) {
                     console.log("No solution posts found for user, using empty array.", err);
                 }

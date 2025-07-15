@@ -41,18 +41,35 @@ const getAllUsers = async (req, res) => {
 
 const deleteUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
-        if (user) {
-            if (user.role === 'admin') {
-                return res.status(400).json({ message: 'Cannot delete an admin account.' });
-            }
-            await User.deleteOne({ _id: user._id });
-            // Optional: Also delete user's submissions
-            // await Submission.deleteMany({ userId: user._id });
-            res.json({ message: 'User removed' });
-        } else {
-            res.status(404).json({ message: 'User not found' });
+        const userToDeleteId = req.params.id;
+        const performingUser = req.user;
+
+        if (performingUser._id.toString() === userToDeleteId) {
+            return res.status(403).json({ message: 'You cannot delete your own account using this administrative route.' });
         }
+
+        const userToDelete = await User.findById(userToDeleteId);
+
+        if (!userToDelete) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        // --- Permission Logic for Deletion (Same as adminDeleteUser) ---
+        // 1. Co-admin CANNOT delete an admin.
+        if (userToDelete.role === 'admin' && performingUser.role === 'co-admin') {
+            return res.status(403).json({
+                message: 'Co-administrators are not authorized to delete admin accounts.'
+            });
+        }
+
+        // 2. The primary (and only) admin cannot be deleted via this route.
+        if (userToDelete.role === 'admin' && performingUser.role === 'admin') {
+            return res.status(403).json({
+                message: 'The primary admin account cannot be deleted via this route. Please reassign the admin role first if needed.'
+            });
+        }
+
+        await User.deleteOne({ _id: userToDelete._id });
+        res.json({ message: 'User removed successfully.' });
     } catch (error) {
         console.error("Error in deleteUser:", error);
         res.status(500).json({ message: 'Error deleting user' });
