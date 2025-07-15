@@ -43,11 +43,7 @@ const AdminUsersPage = () => {
     const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
-            // Pass search and filter parameters to the API
-            // IMPORTANT: Your backend route for this is /admin/users, not /user
-            // I will assume this is just a typo in the provided snippet and keep it as /user
-            // but ensure your actual API endpoint matches.
-            const { data } = await axiosClient.get('user', { // Changed to /admin/users as per backend setup
+            const { data } = await axiosClient.get('user', { 
                 params: {
                     search: searchTerm,
                     filter: filterBy
@@ -90,14 +86,14 @@ const AdminUsersPage = () => {
             let payload = {};
 
             if (type === 'delete') {
-                endpoint = `/admin/users/${user._id}`;
+                endpoint = `/user/${user._id}`;
                 successMessage = 'User deleted successfully!';
             } else if (type === 'toggleRole') {
-                endpoint = `/admin/users/${user._id}/role`;
+                endpoint = `/user/${user._id}/role`;
                 payload = { role: newRole };
                 successMessage = `User role updated to ${newRole} successfully!`;
             } else if (type === 'togglePremium') {
-                endpoint = `/admin/users/${user._id}/premium`;
+                endpoint = `/user/${user._id}/premium`;
                 payload = { isPremium: newPremiumStatus };
                 successMessage = `User premium status updated to ${newPremiumStatus ? 'Premium' : 'Normal'} successfully!`;
             }
