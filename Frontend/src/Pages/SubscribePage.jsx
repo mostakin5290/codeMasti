@@ -46,7 +46,7 @@ const SubscribePage = () => {
     const [currentPlan, setCurrentPlan] = useState(null);
 
     const pricingPlans = {
-        monthly: { name: 'Monthly Premium', amount: 14.99, description: 'Perfect for short-term access and flexible learning.', features: [
+        monthly: { name: 'Monthly Premium', amount: 1.99, description: 'Perfect for short-term access and flexible learning.', features: [
             'Access to all Premium Problems', 'Unlimited Solutions & Explanations',
             'Exclusive Interview Roadmaps', 'Priority Community Support', 'Ad-free Experience',
         ]},
