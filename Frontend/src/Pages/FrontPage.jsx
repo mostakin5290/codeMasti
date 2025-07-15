@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { FiSearch, FiTrendingUp, FiCode, FiAward, FiUsers, FiStar, FiZap, FiChevronRight } from 'react-icons/fi';
 import SplashCursor from '../components/animation/SplashCursor'
-import ToothedToggle from '../components/button/ToothedToggle';
-import PowerSwitch from '../components/button/PowerSwitch';
 
 
 const FrontPage = () => {
@@ -119,18 +117,9 @@ const FrontPage = () => {
                                 <FiCode className="text-white text-xl" />
                             </div>
                             <h1 className="text-3xl font-bold text-white">
-                                Code<span className="  bg-clip-text bg-gradient-to-r from-primary to-secondary">Mukti</span>
+                                Code<span className="  bg-clip-text bg-gradient-to-r from-primary to-secondary">Masti</span>
                             </h1>
                         </div>
-                        {/* <div className="hidden md:flex items-center">
-                            <div className="flex justify-end">
-                                <div className="flex items-center space-x-2">
-                                    
-                                    <ToothedToggle isOn={!disAnimation} toggle={toggleAnimation} />
-                                    
-                                </div>
-                            </div>
-                        </div> */}
                         <div className="flex items-center space-x-4">
                             <a href="/login" className="font-medium text-white/90 hover:text-white transition-colors hidden md:block px-4 py-2 rounded-lg hover:bg-white/5">
                                 Login
