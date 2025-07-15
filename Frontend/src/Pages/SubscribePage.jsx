@@ -50,7 +50,7 @@ const SubscribePage = () => {
             'Access to all Premium Problems', 'Unlimited Solutions & Explanations',
             'Exclusive Interview Roadmaps', 'Priority Community Support', 'Ad-free Experience',
         ]},
-        yearly: { name: 'Yearly Premium', amount: 119.99, description: 'Best value for long-term commitment and maximum savings.', features: [
+        yearly: { name: 'Yearly Premium', amount: 21.49, description: 'Best value for long-term commitment and maximum savings.', features: [
             'All Monthly Premium features', 'Save over 30% annually',
             'Early access to new features', 'Personalized Progress Reviews', 'Exclusive Beta Access',
         ]},

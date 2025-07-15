@@ -30,13 +30,13 @@ const PremiumPage = () => {
     const pricingPlans = [
         {
             name: 'Monthly Premium',
-            price: '1.99', // Price as a string, no currency symbol
+            price: '1.99',
             period: '/month',
             description: 'Perfect for short-term access and flexible learning.',
             features: [
                 'Access to all Premium Problems',
                 'Unlimited Solutions & Explanations',
-                'Exclusive Interview Roadmaps',
+                '50+ Themes Access',
                 'Priority Community Support',
                 'Ad-free Experience',
             ],
@@ -46,19 +46,19 @@ const PremiumPage = () => {
         },
         {
             name: 'Yearly Premium',
-            price: '119.99', // Price as a string, no currency symbol
+            price: '21.49',
             period: '/year',
             description: 'Best value for long-term commitment and maximum savings.',
             features: [
                 'All Monthly Premium features',
-                'Save over 30% annually',
+                'Save over 10% annually',
                 'Early access to new features',
                 'Personalized Progress Reviews',
                 'Exclusive Beta Access',
             ],
             highlight: true,
             ctaText: 'Go Yearly & Save',
-            ctaLink: '/subscribe/yearly', // LINK CHANGED
+            ctaLink: '/subscribe/yearly',
         },
     ];
 
@@ -94,7 +94,7 @@ const PremiumPage = () => {
         <div className={`min-h-screen ${appTheme.background} ${appTheme.text} font-sans overflow-x-hidden`}>
             <Header />
 
-            <main className="py-20">
+            <main>
                 {/* Hero Section */}
                 <section className="relative overflow-hidden py-20 text-center">
                     <div className="absolute inset-0 z-0">
