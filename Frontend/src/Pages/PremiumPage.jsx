@@ -30,7 +30,7 @@ const PremiumPage = () => {
     const pricingPlans = [
         {
             name: 'Monthly Premium',
-            price: '14.99', // Price as a string, no currency symbol
+            price: '1.99', // Price as a string, no currency symbol
             period: '/month',
             description: 'Perfect for short-term access and flexible learning.',
             features: [
@@ -42,7 +42,7 @@ const PremiumPage = () => {
             ],
             highlight: false,
             ctaText: 'Start Monthly',
-            ctaLink: '/subscribe/monthly', 
+            ctaLink: '/subscribe/monthly',
         },
         {
             name: 'Yearly Premium',
