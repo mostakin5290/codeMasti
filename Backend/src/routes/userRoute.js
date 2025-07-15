@@ -7,7 +7,6 @@ const {
     verifyOTP,
     logout,
     getFullUserProfile,
-    adminRegister,
     deleteUserAccount,
     updateUserProfile,
     getUserProfile,
@@ -17,8 +16,10 @@ const {
     changePassword,
     getAllUsersForAdmin,
     updateUserRole,
-    toggleUserPremiumStatus,
-    adminDeleteUser
+    adminDeleteUser,
+    toggleUserPremiumStatus
+
+
 } = require('../controllers/AuthControllers');
 const userMiddleware = require('../middleware/userMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
@@ -50,12 +51,12 @@ authRouter.put('/profile', userMiddleware, updateUserProfile);
 authRouter.delete('/account', userMiddleware, deleteUserAccount);
 authRouter.get('/allDetails/:userId', getFullUserProfile);
 
-// Admin routes
-authRouter.post('/adminRegister', adminMiddleware, adminRegister); // Existing admin register
+
 authRouter.get('/', adminMiddleware, getAllUsersForAdmin); // New: Get all users for admin
 authRouter.put('/:userId/role', adminMiddleware, updateUserRole); // New: Update user role
-authRouter.put('/:userId/premium', adminMiddleware, toggleUserPremiumStatus); // New: Toggle user 
 authRouter.delete('/:userId', adminMiddleware, adminDeleteUser); // New: Admin delete user
+authRouter.put('/:userId/premium', adminMiddleware, toggleUserPremiumStatus); // New: Toggle user 
+
 
 // Authentication check route
 authRouter.get('/check', userMiddleware, (req, res) => {

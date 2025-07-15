@@ -38,7 +38,6 @@ const getAllUsers = async (req, res) => {
     }
 };
 
-
 const deleteUser = async (req, res) => {
     try {
         const userToDeleteId = req.params.id;
@@ -76,7 +75,6 @@ const deleteUser = async (req, res) => {
     }
 };
 
-
 const getSiteContent = async (req, res) => {
     try {
         const content = await SiteContent.findOne({ key: req.params.key });
@@ -91,9 +89,6 @@ const getSiteContent = async (req, res) => {
     }
 };
 
-// @desc    Update site content
-// @route   PUT /api/admin/site-content/:key
-// @access  Private/Admin
 const updateSiteContent = async (req, res) => {
     try {
         const { content } = req.body;
@@ -109,10 +104,12 @@ const updateSiteContent = async (req, res) => {
     }
 };
 
+
 module.exports = {
     getDashboardStats,
     getAllUsers,
     deleteUser,
     getSiteContent,
-    updateSiteContent
+    updateSiteContent,
+
 };

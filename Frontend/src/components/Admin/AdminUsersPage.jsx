@@ -236,7 +236,7 @@ const AdminUsersPage = () => {
                                                 {canModifyTarget && (
                                                     <>
                                                         {/* Promote to Admin (Only if current user is admin, and target is not already admin) */}
-                                                        {currentUser.role === 'admin' && user.role !== 'admin' && (
+                                                        {/* {currentUser.role === 'admin' && user.role !== 'admin' && (
                                                             <button
                                                                 onClick={() => openConfirmModal('toggleRole', user, 'admin')}
                                                                 className={`mt-1 px-2 py-1 rounded-md text-xs transition-colors duration-200
@@ -248,7 +248,7 @@ const AdminUsersPage = () => {
                                                             >
                                                                 Promote to Admin
                                                             </button>
-                                                        )}
+                                                        )} */}
 
                                                         {/* Promote to Co-Admin (If current user is admin or co-admin, and target is user) */}
                                                         {(currentUser.role === 'admin' || currentUser.role === 'co-admin') && user.role === 'user' && (
@@ -261,7 +261,7 @@ const AdminUsersPage = () => {
                                                                 title="Promote to Co-Admin"
                                                                 disabled={modalIsLoading}
                                                             >
-                                                                Promote to Co-Admin
+                                                                Promote
                                                             </button>
                                                         )}
 
@@ -276,7 +276,7 @@ const AdminUsersPage = () => {
                                                                 title="Demote to User"
                                                                 disabled={modalIsLoading}
                                                             >
-                                                                Demote to User
+                                                                Demote
                                                             </button>
                                                         )}
 

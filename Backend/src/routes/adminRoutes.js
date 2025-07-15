@@ -7,15 +7,18 @@ const {
     deleteUser,
     getSiteContent,
     updateSiteContent
+
 } = require('../controllers/adminController.js');
 
 
-router.get('/stats',adminMiddleware, getDashboardStats);
+router.get('/stats', adminMiddleware, getDashboardStats);
 
-router.get('/users',adminMiddleware,getAllUsers);
+router.get('/users', adminMiddleware, getAllUsers);
 // router.route('/users').get(getAllUsers);
-router.delete('/users/:id',adminMiddleware,deleteUser);
-router.get('/site-content/:key',adminMiddleware,getSiteContent);
-router.put('/site-content/:key',adminMiddleware,updateSiteContent);
+router.delete('/users/:id', adminMiddleware, deleteUser);
+router.get('/site-content/:key', adminMiddleware, getSiteContent);
+router.put('/site-content/:key', adminMiddleware, updateSiteContent);
+
+
 
 module.exports = router;

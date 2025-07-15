@@ -7,8 +7,6 @@ const redisClient = require('../config/redis')
 const { oauth2client } = require('../utils/googleConfig');
 const { github } = require('../utils/githubConfig')
 const axios = require('axios');
-const passport = require('passport');
-const LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
 const otpGenerator = require('otp-generator')
 const validator = require('validator');
 const nodemailer = require('nodemailer');
@@ -1282,6 +1280,7 @@ const handleGithubCallback = async (req, res) => {
     }
 };
 
+
 const getAllUsersForAdmin = async (req, res) => {
     try {
         const { search, filter } = req.query;
@@ -1401,6 +1400,68 @@ const updateUserRole = async (req, res) => {
         });
     }
 };
+const adminDeleteUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const performingUser = req.user;
+
+        if (performingUser._id.toString() === userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'You cannot delete your own account using this administrative route.'
+            });
+        }
+
+        const userToDelete = await User.findById(userId);
+
+        if (!userToDelete) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        // --- Permission Logic for Deletion ---
+        // 1. Co-admin CANNOT delete an admin.
+        if (userToDelete.role === 'admin' && performingUser.role === 'co-admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Co-administrators are not authorized to delete admin accounts.'
+            });
+        }
+
+        // 2. The primary (and only) admin cannot be deleted via this route.
+        // This covers cases where an admin tries to delete themselves or the single existing admin.
+        if (userToDelete.role === 'admin' && performingUser.role === 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'The primary admin account cannot be deleted via this route. Please reassign the admin role first if needed.'
+            });
+        }
+
+        // At this point:
+        // - An 'admin' can delete any 'user' or 'co-admin'.
+        // - A 'co-admin' can delete any 'user' or 'co-admin'.
+        // No further checks needed for 'user' or 'co-admin' deletion.
+
+        await User.findByIdAndDelete(userId);
+
+        // IMPORTANT: In a real application, when a user is deleted, you should
+        // also clean up all associated data (their posts, comments, submissions, etc.)
+        // This is crucial for data integrity but is outside the scope of this request.
+
+
+
+        res.status(200).json({
+            success: true,
+            message: 'User deleted successfully.'
+        });
+
+    } catch (error) {
+        console.error('Error deleting user by admin:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while deleting user.'
+        });
+    }
+};
 
 const toggleUserPremiumStatus = async (req, res) => {
     try {
@@ -1452,70 +1513,6 @@ const toggleUserPremiumStatus = async (req, res) => {
     }
 };
 
-const adminDeleteUser = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const performingUser = req.user;
-
-        if (performingUser._id.toString() === userId) {
-            return res.status(403).json({
-                success: false,
-                message: 'You cannot delete your own account using this administrative route.'
-            });
-        }
-
-        const userToDelete = await User.findById(userId);
-
-        if (!userToDelete) {
-            return res.status(404).json({ success: false, message: 'User not found.' });
-        }
-
-        // --- Permission Logic for Deletion ---
-        // 1. Co-admin CANNOT delete an admin.
-        if (userToDelete.role === 'admin' && performingUser.role === 'co-admin') {
-            return res.status(403).json({
-                success: false,
-                message: 'Co-administrators are not authorized to delete admin accounts.'
-            });
-        }
-
-        // 2. The primary (and only) admin cannot be deleted via this route.
-        // This covers cases where an admin tries to delete themselves or the single existing admin.
-        if (userToDelete.role === 'admin' && performingUser.role === 'admin') {
-            return res.status(403).json({
-                success: false,
-                message: 'The primary admin account cannot be deleted via this route. Please reassign the admin role first if needed.'
-            });
-        }
-
-         // At this point:
-        // - An 'admin' can delete any 'user' or 'co-admin'.
-        // - A 'co-admin' can delete any 'user' or 'co-admin'.
-        // No further checks needed for 'user' or 'co-admin' deletion.
-
-        await User.findByIdAndDelete(userId);
-
-        // IMPORTANT: In a real application, when a user is deleted, you should
-        // also clean up all associated data (their posts, comments, submissions, etc.)
-        // This is crucial for data integrity but is outside the scope of this request.
-
-
-    
-        res.status(200).json({
-            success: true,
-            message: 'User deleted successfully.'
-        });
-
-    } catch (error) {
-        console.error('Error deleting user by admin:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while deleting user.'
-        });
-    }
-};
-
-
 
 module.exports = {
     register,
@@ -1534,6 +1531,6 @@ module.exports = {
     changePassword,
     getAllUsersForAdmin,
     updateUserRole,
-    toggleUserPremiumStatus,
-    adminDeleteUser
+    adminDeleteUser,
+    toggleUserPremiumStatus
 };
