@@ -47,7 +47,7 @@ const AdminUsersPage = () => {
             // IMPORTANT: Your backend route for this is /admin/users, not /user
             // I will assume this is just a typo in the provided snippet and keep it as /user
             // but ensure your actual API endpoint matches.
-            const { data } = await axiosClient.get('/admin/users', { // Changed to /admin/users as per backend setup
+            const { data } = await axiosClient.get('user', { // Changed to /admin/users as per backend setup
                 params: {
                     search: searchTerm,
                     filter: filterBy
