@@ -217,7 +217,7 @@ const AdminUsersPage = () => {
                                         <td className="px-3 py-4 sm:px-6 sm:py-4">
                                             <div className='flex flex-col items-start'> 
                                                 {user.role === 'admin' && (
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${appTheme.primary.replace('bg-', 'bg-')}/10 ${appTheme.primary} border ${appTheme.primary.replace('bg-', 'border-')}/30`}>
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.primary} border ${appTheme.primary.replace('bg-', 'border-')}`}>
                                                         <FaUserShield className="mr-1" />Admin
                                                     </span>
                                                 )}
@@ -297,13 +297,13 @@ const AdminUsersPage = () => {
                                                         
                                                         {/* Message for Co-admin trying to modify Admin */}
                                                         {currentUser.role === 'co-admin' && user.role === 'admin' && (
-                                                            <p className={`mt-1 text-xs ${appTheme.warningColor}`}>Co-admin cannot change admin role</p>
+                                                            <p className={`mt-1 text-xs ${appTheme.warningColor}`}>not change</p>
                                                         )}
                                                     </>
                                                 )}
                                                 {/* Message for current logged-in user */}
                                                 {!canModifyTarget && ( 
-                                                    <p className={`mt-1 text-xs ${appTheme.cardText}/70`}>Cannot modify self</p>
+                                                    <p className={`mt-1 text-xs ${appTheme.cardText}/70`}></p>
                                                 )}
                                             </div>
                                         </td>
