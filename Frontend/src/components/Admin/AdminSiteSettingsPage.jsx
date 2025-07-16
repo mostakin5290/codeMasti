@@ -3,7 +3,8 @@ import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useTheme } from '../../context/ThemeContext';
-import { FiCheckCircle, FiLoader } from 'react-icons/fi'; // Import icons for feedback
+import { FiCheckCircle, FiLoader } from 'react-icons/fi';
+import { useSelector } from 'react-redux'; // Make sure Redux is correctly set up for auth state
 
 const defaultAppTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
@@ -20,13 +21,14 @@ const defaultAppTheme = {
 
 const AdminSiteSettingsPage = () => {
     const [loading, setLoading] = useState(true);
+    const { user } = useSelector((state) => state.auth); // Get user from Redux state
     const [siteSettings, setSiteSettings] = useState(null);
     const [formData, setFormData] = useState({
         monthlyPlanPrice: '',
         yearlyPlanPrice: ''
     });
-    const [isSubmitting, setIsSubmitting] = useState(false); // NEW: State for submission status
-    const [showSuccessIcon, setShowSuccessIcon] = useState(false); // NEW: State for temporary success icon
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showSuccessIcon, setShowSuccessIcon] = useState(false);
 
     const { theme: appThemeFromContext } = useTheme();
     const appTheme = { ...defaultAppTheme, ...appThemeFromContext };
@@ -37,7 +39,8 @@ const AdminSiteSettingsPage = () => {
 
     const fetchSiteSettings = async () => {
         try {
-            const response = await axiosClient.get('/admin/premium-plan'); // Corrected endpoint name
+            // Corrected endpoint name to /admin/premium-plan as per our new backend structure
+            const response = await axiosClient.get('/admin/premium-plan');
             setSiteSettings(response.data);
             setFormData({
                 monthlyPlanPrice: response.data.monthlyPlanPrice,
@@ -60,8 +63,15 @@ const AdminSiteSettingsPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsSubmitting(true); // Set submitting state to true
-        setShowSuccessIcon(false); // Hide success icon if visible from a previous submission
+
+        // Prevent submission if not an admin
+        if (user?.role !== 'admin') {
+            toast.error('You do not have permission to update these settings.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setShowSuccessIcon(false);
 
         try {
             const dataToSend = {
@@ -69,17 +79,18 @@ const AdminSiteSettingsPage = () => {
                 yearlyPlanPrice: parseFloat(formData.yearlyPlanPrice)
             };
 
-            await axiosClient.put('/admin/premium-plan', dataToSend); // Corrected endpoint name
+            // Corrected endpoint name to /admin/premium-plan
+            await axiosClient.put('/admin/premium-plan', dataToSend);
             toast.success('Site settings updated successfully');
-            setShowSuccessIcon(true); // Show success icon
-            setTimeout(() => setShowSuccessIcon(false), 3000); // Hide after 3 seconds
-            fetchSiteSettings(); // Re-fetch to ensure UI reflects the latest data
+            setShowSuccessIcon(true);
+            setTimeout(() => setShowSuccessIcon(false), 3000);
+            fetchSiteSettings();
         } catch (error) {
             console.error("Site settings update error:", error);
             toast.error(error.response?.data?.message || 'Operation failed');
-            setShowSuccessIcon(false); // Ensure icon is hidden on error
+            setShowSuccessIcon(false);
         } finally {
-            setIsSubmitting(false); // Reset submitting state
+            setIsSubmitting(false);
         }
     };
 
@@ -89,6 +100,12 @@ const AdminSiteSettingsPage = () => {
     if (loading) {
         return <LoadingSpinner message="Loading site settings..." appTheme={appTheme} />;
     }
+
+    // Determine if the form fields and button should be disabled
+    // This will be true if:
+    // 1. A submission is in progress (`isSubmitting`)
+    // 2. The user is NOT an admin (`user?.role !== 'admin'`)
+    const isFormDisabled = isSubmitting || user?.role !== 'admin';
 
     return (
         <div className={`min-h-screen ${appTheme.background} ${appTheme.text} p-6`}>
@@ -114,7 +131,7 @@ const AdminSiteSettingsPage = () => {
                                     min="0"
                                     step="0.01"
                                     required
-                                    disabled={isSubmitting} // Disable input during submission
+                                    disabled={isFormDisabled} // Disabled based on role or submitting state
                                 />
                             </div>
 
@@ -130,29 +147,37 @@ const AdminSiteSettingsPage = () => {
                                     min="0"
                                     step="0.01"
                                     required
-                                    disabled={isSubmitting} // Disable input during submission
+                                    disabled={isFormDisabled} // Disabled based on role or submitting state
                                 />
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4"> {/* NEW: Container for button and feedback */}
-                            <button
-                                type="submit"
-                                className={`px-6 py-3 rounded ${getPrimaryButtonClasses()} font-medium flex items-center justify-center gap-2`}
-                                disabled={isSubmitting} // Disable button during submission
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <FiLoader className="animate-spin" /> Updating...
-                                    </>
-                                ) : (
-                                    'Update Prices'
+                        {/* Only render the update button and feedback if the user is an admin */}
+                        {(user?.role === 'admin') ? (
+                            <div className="flex items-center gap-4">
+                                <button
+                                    type="submit"
+                                    className={`px-6 py-3 rounded ${getPrimaryButtonClasses()} font-medium flex items-center justify-center gap-2`}
+                                    disabled={isFormDisabled} // Still disabled during submission
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <FiLoader className="animate-spin" /> Updating...
+                                        </>
+                                    ) : (
+                                        'Update Prices'
+                                    )}
+                                </button>
+                                {showSuccessIcon && (
+                                    <FiCheckCircle className={`${appTheme.successColor} text-3xl transition-all duration-300 transform scale-125`} />
                                 )}
-                            </button>
-                            {showSuccessIcon && ( // NEW: Display success icon conditionally
-                                <FiCheckCircle className={`${appTheme.successColor} text-3xl transition-all duration-300 transform scale-125`} />
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            // Optional: Message for non-admin users
+                            <p className={`${appTheme.cardText} mt-4 text-lg font-semibold`}>
+                                You do not have permission to update these settings.
+                            </p>
+                        )}
                     </form>
                 </div>
             </div>
