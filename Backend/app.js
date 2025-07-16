@@ -73,10 +73,10 @@ const InitalizeConnection = async () => {
             redisClient.connect()
         ]);
         console.log('db Connected');
-
         app.listen(process.env.PORT, () => {
             console.log('Server started at port:' + process.env.PORT);
-        });
+        }
+    );
     } catch (err) {
         console.error("Error during server initialization:", err);
         process.exit(1);

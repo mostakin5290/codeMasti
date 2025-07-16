@@ -60,7 +60,7 @@ const AdminLayout = () => {
         if (path.includes('/admin/problems/edit')) return "Edit Problem";
         if (path.includes('/admin/problems')) return "Problems Dashboard";
         if (path.includes('/admin/contests')) return "Contest Management";
-        if (path.includes('/admin/settings')) return "Site Settings";
+        if (path.includes('/admin/settings')) return "Premium Plan";
         if (path.includes('admin/daily-challenges')) return "Daily Challenges";
 
         return "Admin Dashboard";
@@ -83,7 +83,7 @@ const AdminLayout = () => {
         { to: "/admin/users", icon: FaUsers, label: "Users", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` },
         { to: "/admin/problems", icon: FaList, label: "Problems List", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` },
         { to: "/admin/contests", icon: FaPlus, label: "Contest Management", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` },
-        { to: "/admin/settings", icon: FaCog, label: "Site Settings", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` },
+        { to: "/admin/settings", icon: FaCog, label: "Premium Plan", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` },
         { to: "/admin/daily-challenges", icon: FireOutlined, label: "Daily Challenges",color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` }
     ];
 
@@ -169,7 +169,7 @@ const AdminLayout = () => {
                 {/* Overlay for mobile (themed) */}
                 {sidebarOpen && (
                     <div
-                        className={`lg:hidden fixed inset-0 ${appTheme.background}/50 backdrop-blur-sm z-30`}
+                        className={`lg:hidden  fixed inset-0 ${appTheme.background}/50 backdrop-blur-sm z-30`}
                         onClick={() => setSidebarOpen(false)}
                     ></div>
                 )}

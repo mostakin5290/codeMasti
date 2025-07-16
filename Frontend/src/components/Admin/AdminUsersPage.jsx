@@ -297,7 +297,7 @@ const AdminUsersPage = () => {
                                                         
                                                         {/* Message for Co-admin trying to modify Admin */}
                                                         {currentUser.role === 'co-admin' && user.role === 'admin' && (
-                                                            <p className={`mt-1 text-xs ${appTheme.warningColor}`}>not change</p>
+                                                            <p className={`mt-1 text-xs ${appTheme.warningColor}`}>can't change</p>
                                                         )}
                                                     </>
                                                 )}
@@ -371,7 +371,7 @@ const AdminUsersPage = () => {
                     }
                     confirmText={
                         modalAction.type === 'delete' ? 'Delete Permanently' :
-                            modalAction.type === 'toggleRole' ? `Confirm ${modalAction.newRole === 'admin' ? 'Promotion' : 'Demotion'}` :
+                            modalAction.type === 'toggleRole' ? `Confirm ${modalAction.newRole === 'co-admin' ? 'Promotion' : 'Demotion'}` :
                                 modalAction.type === 'togglePremium' ? `Confirm ${modalAction.newPremiumStatus ? 'Grant' : 'Revoke'}` :
                                     'Confirm'
                     }

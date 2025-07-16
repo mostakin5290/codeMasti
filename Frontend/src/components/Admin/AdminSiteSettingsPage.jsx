@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { useTheme } from '../../context/ThemeContext'; // Import useTheme
+import { useTheme } from '../../context/ThemeContext';
+import { FiCheckCircle, FiLoader } from 'react-icons/fi'; // Import icons for feedback
 
-// Default theme for fallback
 const defaultAppTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
     primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
@@ -19,76 +19,142 @@ const defaultAppTheme = {
 };
 
 const AdminSiteSettingsPage = () => {
-    const [aboutContent, setAboutContent] = useState('');
     const [loading, setLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
+    const [siteSettings, setSiteSettings] = useState(null);
+    const [formData, setFormData] = useState({
+        monthlyPlanPrice: '',
+        yearlyPlanPrice: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false); // NEW: State for submission status
+    const [showSuccessIcon, setShowSuccessIcon] = useState(false); // NEW: State for temporary success icon
 
-    // Get theme from context
     const { theme: appThemeFromContext } = useTheme();
     const appTheme = { ...defaultAppTheme, ...appThemeFromContext };
 
     useEffect(() => {
-        const fetchContent = async () => {
-            setLoading(true);
-            try {
-                const { data } = await axiosClient.get('/admin/site-content/about');
-                setAboutContent(data.content);
-            } catch (error) {
-                toast.error("Could not fetch site content.");
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchContent();
+        fetchSiteSettings();
     }, []);
 
-    const handleSave = async () => {
-        setIsSaving(true);
+    const fetchSiteSettings = async () => {
         try {
-            await axiosClient.put('/admin/site-content/about', { content: aboutContent });
-            toast.success("About page content updated successfully!");
+            const response = await axiosClient.get('/admin/site-settings'); // Corrected endpoint name
+            setSiteSettings(response.data);
+            setFormData({
+                monthlyPlanPrice: response.data.monthlyPlanPrice,
+                yearlyPlanPrice: response.data.yearlyPlanPrice
+            });
+            setLoading(false);
         } catch (error) {
-            toast.error("Failed to save content.");
-        } finally {
-            setIsSaving(false);
+            toast.error('Failed to fetch site settings');
+            setLoading(false);
         }
     };
 
-    if (loading) {
-        // Pass appTheme to LoadingSpinner
-        return <LoadingSpinner message="Loading settings..." appTheme={appTheme} />;
-    }
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
 
-    // Helper for primary button gradient
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true); // Set submitting state to true
+        setShowSuccessIcon(false); // Hide success icon if visible from a previous submission
+
+        try {
+            const dataToSend = {
+                monthlyPlanPrice: parseFloat(formData.monthlyPlanPrice),
+                yearlyPlanPrice: parseFloat(formData.yearlyPlanPrice)
+            };
+
+            await axiosClient.put('/admin/site-settings', dataToSend); // Corrected endpoint name
+            toast.success('Site settings updated successfully');
+            setShowSuccessIcon(true); // Show success icon
+            setTimeout(() => setShowSuccessIcon(false), 3000); // Hide after 3 seconds
+            fetchSiteSettings(); // Re-fetch to ensure UI reflects the latest data
+        } catch (error) {
+            console.error("Site settings update error:", error);
+            toast.error(error.response?.data?.message || 'Operation failed');
+            setShowSuccessIcon(false); // Ensure icon is hidden on error
+        } finally {
+            setIsSubmitting(false); // Reset submitting state
+        }
+    };
+
     const getPrimaryButtonClasses = () =>
         `bg-gradient-to-r ${appTheme.primary.replace('bg-', 'from-')} ${appTheme.secondary.replace('bg-', 'to-')} hover:${appTheme.primaryHover.replace('bg-', 'from-')} hover:${appTheme.secondaryHover.replace('bg-', 'to-')} ${appTheme.buttonText}`;
 
+    if (loading) {
+        return <LoadingSpinner message="Loading site settings..." appTheme={appTheme} />;
+    }
+
     return (
-        <div>
-            <h2 className={`text-2xl font-bold ${appTheme.text} mb-4`}>About Page Content</h2>
-            <p className={`${appTheme.cardText} mb-6`}>
-                Edit the content for the public "About Us" page. You can use Markdown for formatting.
-            </p>
-            <div className="form-control">
-                <textarea
-                    className={`textarea textarea-bordered h-96 ${appTheme.cardBg} ${appTheme.text} font-mono text-base rounded-lg border ${appTheme.border} focus:outline-none focus:ring-2 focus:ring-${appTheme.primary.split('-')[1]}-500 focus:border-transparent transition-all duration-200`}
-                    value={aboutContent}
-                    onChange={(e) => setAboutContent(e.target.value)}
-                    placeholder="Enter About Us content here..."
-                ></textarea>
-            </div>
-            <div className="mt-6">
-                <button
-                    onClick={handleSave}
-                    className={`px-6 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${getPrimaryButtonClasses()}`}
-                    disabled={isSaving}
-                >
-                    {isSaving ? (
-                        <span className={`w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin ${appTheme.buttonText}`} /> // Dynamic spinner
-                    ) : (
-                        'Save Content'
-                    )}
-                </button>
+        <div className={`min-h-screen ${appTheme.background} ${appTheme.text} p-6`}>
+            <div className="max-w-4xl mx-auto">
+                <h1 className={`text-3xl font-bold mb-8 ${appTheme.highlight}`}>Site Settings</h1>
+
+                {/* Single Form for Price Updates */}
+                <div className={`mb-8 p-6 rounded-lg ${appTheme.cardBg} ${appTheme.border} border`}>
+                    <h2 className={`text-xl font-semibold mb-4 ${appTheme.highlightSecondary}`}>
+                        Update Premium Plan Prices
+                    </h2>
+                    <form onSubmit={handleSubmit}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label className={`block mb-2 ${appTheme.cardText}`}>Monthly Plan Price (₹)</label>
+                                <input
+                                    type="number"
+                                    name="monthlyPlanPrice"
+                                    value={formData.monthlyPlanPrice}
+                                    onChange={handleInputChange}
+                                    className={`w-full p-3 rounded ${appTheme.cardBg} ${appTheme.border} border ${appTheme.cardText}`}
+                                    placeholder="e.g. 1.99"
+                                    min="0"
+                                    step="0.01"
+                                    required
+                                    disabled={isSubmitting} // Disable input during submission
+                                />
+                            </div>
+
+                            <div>
+                                <label className={`block mb-2 ${appTheme.cardText}`}>Yearly Plan Price (₹)</label>
+                                <input
+                                    type="number"
+                                    name="yearlyPlanPrice"
+                                    value={formData.yearlyPlanPrice}
+                                    onChange={handleInputChange}
+                                    className={`w-full p-3 rounded ${appTheme.cardBg} ${appTheme.border} border ${appTheme.cardText}`}
+                                    placeholder="e.g. 21.49"
+                                    min="0"
+                                    step="0.01"
+                                    required
+                                    disabled={isSubmitting} // Disable input during submission
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4"> {/* NEW: Container for button and feedback */}
+                            <button
+                                type="submit"
+                                className={`px-6 py-3 rounded ${getPrimaryButtonClasses()} font-medium flex items-center justify-center gap-2`}
+                                disabled={isSubmitting} // Disable button during submission
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <FiLoader className="animate-spin" /> Updating...
+                                    </>
+                                ) : (
+                                    'Update Prices'
+                                )}
+                            </button>
+                            {showSuccessIcon && ( // NEW: Display success icon conditionally
+                                <FiCheckCircle className={`${appTheme.successColor} text-3xl transition-all duration-300 transform scale-125`} />
+                            )}
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );

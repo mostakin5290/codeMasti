@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { useTheme } from '../context/ThemeContext';
 import { FiCheckCircle, FiStar, FiZap, FiAward, FiBookOpen, FiClock, FiUsers } from 'react-icons/fi';
-import { FaCrown, FaQuestionCircle } from 'react-icons/fa'; // FaDollarSign is not used, removed.
+import { FaCrown, FaQuestionCircle } from 'react-icons/fa';
+import axiosClient from '../api/axiosClient';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 
 // Default theme for the app context (unchanged)
 const defaultAppTheme = {
@@ -24,38 +26,69 @@ const PremiumPage = () => {
     const { theme: appThemeFromContext } = useTheme();
     const appTheme = { ...defaultAppTheme, ...(appThemeFromContext) };
 
-    const getPrimaryGradient = () => `bg-gradient-to-r ${appTheme.primary.replace('bg-', 'from-')} ${appTheme.secondary.replace('bg-', 'to-')}`;
-    const getPrimaryGradientHover = () => `hover:${appTheme.primaryHover.replace('bg-', 'from-')} hover:${appTheme.secondaryHover.replace('bg-', 'to-')}`;
+    const [monthlyPrice, setMonthlyPrice] = useState(null);
+    const [yearlyPrice, setYearlyPrice] = useState(null);
+    const [loadingPrices, setLoadingPrices] = useState(true);
+    const [errorFetchingPrices, setErrorFetchingPrices] = useState(false);
 
+    useEffect(() => {
+        const fetchPrices = async () => {
+            try {
+                setLoadingPrices(true);
+                setErrorFetchingPrices(false);
+                const response = await axiosClient.get('/admin/premium-plan');
+                console.log(response.data)
+                setMonthlyPrice(response.data.monthlyPlanPrice);
+                setYearlyPrice(response.data.yearlyPlanPrice);
+            } catch (error) {
+                console.error("Failed to fetch premium prices:", error);
+                setErrorFetchingPrices(true);
+                setMonthlyPrice(1.99);
+                setYearlyPrice(21.49);
+            } finally {
+                setLoadingPrices(false);
+            }
+        };
+
+        fetchPrices();
+    }, []); // Empty dependency array means this runs once on component mount
+
+    // Hardcoded features for the plans (as requested, these are not dynamic from DB)
+    const monthlyFeatures = [
+        'Access to all Premium Problems',
+        'Unlimited Solutions & Explanations',
+        '50+ Themes Access',
+        'Priority Community Support',
+        'Ad-free Experience',
+    ];
+
+    const yearlyFeatures = [
+        'All Monthly Premium features',
+        'Save over 10% annually',
+        'Early access to new features',
+        'Personalized Progress Reviews',
+        'Exclusive Beta Access',
+    ];
+
+    // Dynamically construct pricingPlans using fetched prices
     const pricingPlans = [
         {
             name: 'Monthly Premium',
-            price: '1.99',
+            // Display price or 'Loading...'/'Error' while fetching/if error
+            price: monthlyPrice !== null ? monthlyPrice.toFixed(2) : '...',
             period: '/month',
             description: 'Perfect for short-term access and flexible learning.',
-            features: [
-                'Access to all Premium Problems',
-                'Unlimited Solutions & Explanations',
-                '50+ Themes Access',
-                'Priority Community Support',
-                'Ad-free Experience',
-            ],
+            features: monthlyFeatures,
             highlight: false,
             ctaText: 'Start Monthly',
             ctaLink: '/subscribe/monthly',
         },
         {
             name: 'Yearly Premium',
-            price: '21.49',
+            price: yearlyPrice !== null ? yearlyPrice.toFixed(2) : '...',
             period: '/year',
             description: 'Best value for long-term commitment and maximum savings.',
-            features: [
-                'All Monthly Premium features',
-                'Save over 10% annually',
-                'Early access to new features',
-                'Personalized Progress Reviews',
-                'Exclusive Beta Access',
-            ],
+            features: yearlyFeatures,
             highlight: true,
             ctaText: 'Go Yearly & Save',
             ctaLink: '/subscribe/yearly',
@@ -86,9 +119,42 @@ const PremiumPage = () => {
         },
         {
             question: 'What payment methods do you accept?',
-            answer: 'We accept all major credit cards (Visa, MasterCard, American Express), UPI, NetBanking, and Wallets through Razorpay.' // Updated for Razorpay
+            answer: 'We accept all major credit cards (Visa, MasterCard, American Express), UPI, NetBanking, and Wallets through Razorpay.'
         }
     ];
+
+    // Display loading spinner while prices are being fetched
+    if (loadingPrices) {
+        return (
+            <div className={`min-h-screen ${appTheme.background}`}>
+                <Header />
+                <LoadingSpinner message="Loading premium prices..." appTheme={appTheme} />
+                <Footer />
+            </div>
+        );
+    }
+
+    // Display generic error if fetching failed and fallback prices couldn't be used
+    if (errorFetchingPrices && (monthlyPrice === null || yearlyPrice === null)) {
+         return (
+            <div className={`min-h-screen ${appTheme.background} ${appTheme.text} flex flex-col justify-center items-center`}>
+                <Header />
+                <div className="text-center p-8">
+                    <h2 className="text-3xl font-bold mb-4">Error Loading Prices</h2>
+                    <p className="text-xl">
+                        Could not load premium prices. Displaying default values. Please refresh or try again later.
+                    </p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className={`mt-6 px-6 py-3 rounded ${appTheme.primary} ${appTheme.buttonText} font-medium`}
+                    >
+                        Retry
+                    </button>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
 
     return (
         <div className={`min-h-screen ${appTheme.background} ${appTheme.text} font-sans overflow-x-hidden`}>
@@ -109,10 +175,9 @@ const PremiumPage = () => {
                         <p className={`text-xl md:text-2xl ${appTheme.cardText} max-w-3xl mx-auto mb-8`}>
                             Go beyond basics with CodeCrack Premium. Access exclusive content, advanced tools, and accelerate your journey to coding mastery.
                         </p>
-                        {/* Point to SubscribePage, passing 'monthly' as default */}
                         <Link
-                            to="/subscribe/monthly"
-                            className={`inline-flex items-center justify-center px-8 py-4 ${appTheme.buttonPrimary}  rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${appTheme.buttonText} transform hover:scale-105`}
+                            to={pricingPlans[0].ctaLink}
+                            className={`inline-flex items-center justify-center px-8 py-4 ${appTheme.primary} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${appTheme.buttonText} transform hover:scale-105`}
                         >
                             Get Premium Now <FaCrown className="ml-2" />
                         </Link>
@@ -144,7 +209,7 @@ const PremiumPage = () => {
                                     )}
                                     <h3 className={`text-2xl font-bold mb-4 ${plan.highlight ? appTheme.highlight : appTheme.text}`}>{plan.name}</h3>
                                     <div className="flex items-end mb-4">
-                                        <span className={`text-5xl font-extrabold ${appTheme.text}`}>₹{plan.price}</span> {/* Display Rupee symbol */}
+                                        <span className={`text-5xl font-extrabold ${appTheme.text}`}>₹{plan.price}</span>
                                         <span className={`text-xl ${appTheme.cardText} ml-1`}>{plan.period}</span>
                                     </div>
                                     <p className={`mb-6 ${appTheme.cardText}`}>{plan.description}</p>
@@ -160,7 +225,7 @@ const PremiumPage = () => {
 
                                     <Link
                                         to={plan.ctaLink}
-                                        className={`mt-auto inline-flex items-center justify-center w-full px-8 py-3 rounded-lg ${`${appTheme.buttonPrimary} border ${appTheme.border}`} ${appTheme.buttonText} font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}
+                                        className={`mt-auto inline-flex items-center justify-center w-full px-8 py-3 rounded-lg ${appTheme.primary} ${appTheme.buttonText} font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}
                                     >
                                         {plan.ctaText}
                                     </Link>
@@ -233,10 +298,9 @@ const PremiumPage = () => {
                         <p className={`text-xl ${appTheme.cardText} max-w-2xl mx-auto mb-8`}>
                             Join thousands of ambitious developers taking their coding to the next level.
                         </p>
-                        {/* Point to SubscribePage, passing 'monthly' as default */}
                         <Link
-                            to="/subscribe/monthly"
-                            className={`inline-flex items-center justify-center px-10 py-4 ${appTheme.buttonPrimary} rounded-lg transition-all duration-300 font-semibold text-xl shadow-lg hover:shadow-2xl ${appTheme.buttonText} transform hover:scale-105`}
+                            to={pricingPlans[0].ctaLink}
+                            className={`inline-flex items-center justify-center px-10 py-4 ${appTheme.primary} rounded-lg transition-all duration-300 font-semibold text-xl shadow-lg hover:shadow-2xl ${appTheme.buttonText} transform hover:scale-105`}
                         >
                             Choose Your Plan Today
                             <FaCrown className="ml-3 text-2xl" />

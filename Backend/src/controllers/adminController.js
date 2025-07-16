@@ -1,7 +1,8 @@
 const User = require('../models/user.js');
 const Problem = require('../models/problem.js');
 const Submission = require('../models/submission.js');
-const SiteContent = require('../models/siteContentModel.js');
+// Removed: const PaymentPlan = require('../models/PaymentPlan.js');
+const PremiumPlan = require('../models/PaymentPlan.js'); // NEW IMPORT
 
 const getDashboardStats = async (req, res) => {
     try {
@@ -52,18 +53,17 @@ const deleteUser = async (req, res) => {
         if (!userToDelete) {
             return res.status(404).json({ message: 'User not found' });
         }
-        // --- Permission Logic for Deletion (Same as adminDeleteUser) ---
-        // 1. Co-admin CANNOT delete an admin.
+        // --- Permission Logic for Deletion ---
         if (userToDelete.role === 'admin' && performingUser.role === 'co-admin') {
             return res.status(403).json({
                 message: 'Co-administrators are not authorized to delete admin accounts.'
             });
         }
 
-        // 2. The primary (and only) admin cannot be deleted via this route.
-        if (userToDelete.role === 'admin' && performingUser.role === 'admin') {
+        const adminCount = await User.countDocuments({ role: 'admin' });
+        if (userToDelete.role === 'admin' && adminCount === 1) {
             return res.status(403).json({
-                message: 'The primary admin account cannot be deleted via this route. Please reassign the admin role first if needed.'
+                message: 'The last remaining admin account cannot be deleted via this route. Please ensure another admin account exists or reassign the role.'
             });
         }
 
@@ -75,41 +75,89 @@ const deleteUser = async (req, res) => {
     }
 };
 
-const getSiteContent = async (req, res) => {
+// NEW FUNCTION: Get the single site settings document
+const getPremiumPlan = async (req, res) => {
     try {
-        const content = await SiteContent.findOne({ key: req.params.key });
-        if (content) {
-            res.json(content);
-        } else {
-            res.json({ key: req.params.key, content: `Welcome to the ${req.params.key} page! Please add your content.` });
+        // Find the single settings document. If it doesn't exist, create it with default values.
+        let settings = await PremiumPlan.findById('PremiumPlanSingleton');
+        if (!settings) {
+            settings = new PremiumPlan({ _id: 'PremiumPlanSingleton' });
+            await settings.save();
         }
+        res.json(settings);
     } catch (error) {
-        console.error("Error in getSiteContent:", error);
-        res.status(500).json({ message: "Server Error" });
+        console.error("Error in getPremiumPlan:", error);
+        res.status(500).json({ message: "Server Error: Failed to fetch site settings." });
     }
 };
 
-const updateSiteContent = async (req, res) => {
+// NEW FUNCTION: Update the single site settings document
+const updatePremiumPlan = async (req, res) => {
     try {
-        const { content } = req.body;
-        const updatedContent = await SiteContent.findOneAndUpdate(
-            { key: req.params.key },
-            { content },
-            { new: true, upsert: true }
+        const { monthlyPlanPrice, yearlyPlanPrice } = req.body;
+
+        if (monthlyPlanPrice !== undefined && (typeof monthlyPlanPrice !== 'number' || monthlyPlanPrice < 0)) {
+            return res.status(400).json({ message: 'Monthly plan price must be a non-negative number.' });
+        }
+        if (yearlyPlanPrice !== undefined && (typeof yearlyPlanPrice !== 'number' || yearlyPlanPrice < 0)) {
+            return res.status(400).json({ message: 'Yearly plan price must be a non-negative number.' });
+        }
+
+        const updateData = {};
+        if (monthlyPlanPrice !== undefined) updateData.monthlyPlanPrice = monthlyPlanPrice;
+        if (yearlyPlanPrice !== undefined) updateData.yearlyPlanPrice = yearlyPlanPrice;
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ message: 'No valid fields provided for update.' });
+        }
+
+        const updatedSettings = await PremiumPlan.findOneAndUpdate(
+            { _id: 'PremiumPlanSingleton' },
+            { $set: updateData },   
+            { new: true, upsert: true, runValidators: true }
         );
-        res.json(updatedContent);
+
+        res.json(updatedSettings);
     } catch (error) {
-        console.error("Error in updateSiteContent:", error);
-        res.status(500).json({ message: 'Error updating content' });
+        console.error("Error in updatePremiumPlan:", error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: error.message });
+        }
+        res.status(500).json({ message: 'Error updating site settings' });
     }
 };
+
+const createPremiumPlan = async (req, res) => {
+    try {
+        // Check if the singleton plan already exists
+        const existingPlan = await PremiumPlan.findById('premiumPlanSingleton');
+        if (existingPlan) {
+            return res.status(400).json({ message: 'Premium plan already exists' });
+        }
+
+        // Create new plan using defaults or provided body
+        const newPlan = new PremiumPlan({
+            _id: 'premiumPlanSingleton',
+            monthlyPlanPrice: req.body.monthlyPlanPrice,
+            yearlyPlanPrice: req.body.yearlyPlanPrice,
+        });
+
+        await newPlan.save();
+        res.status(201).json({ message: 'Premium plan created successfully', plan: newPlan });
+    } catch (error) {
+        console.error('Error creating premium plan:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
 
 
 module.exports = {
     getDashboardStats,
     getAllUsers,
     deleteUser,
-    getSiteContent,
-    updateSiteContent,
-
+    getPremiumPlan,  
+    updatePremiumPlan ,
+    createPremiumPlan 
 };
