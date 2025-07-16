@@ -1464,15 +1464,11 @@ const adminDeleteUser = async (req, res) => {
     }
 };
 
-
 const toggleUserPremiumStatus = async (req, res) => {
     try {
         const { userId } = req.params;
-        // isPremium is still part of the payload, indicating grant/revoke
-        // duration and customMonths are new for granting premium
         const { isPremium, duration, customMonths } = req.body; 
 
-        // Validate isPremium (boolean check)
         if (typeof isPremium !== 'boolean') {
             return res.status(400).json({
                 success: false,
@@ -1480,7 +1476,6 @@ const toggleUserPremiumStatus = async (req, res) => {
             });
         }
 
-        // Prevent an admin from changing their own premium status
         if (req.user._id.toString() === userId) {
             return res.status(403).json({
                 success: false,
@@ -1494,7 +1489,7 @@ const toggleUserPremiumStatus = async (req, res) => {
         }
 
         if (isPremium) { // Granting premium status
-            // Validate duration for granting premium
+            // ... (your existing logic for granting premium remains the same)
             if (!duration) {
                 return res.status(400).json({
                     success: false,
@@ -1503,15 +1498,15 @@ const toggleUserPremiumStatus = async (req, res) => {
             }
 
             let endDate = new Date();
-            let planType; // To store what kind of plan it is
-            const startDate = new Date(); // Subscription starts now
+            let planType;
+            const startDate = new Date(); 
             
             if (duration === '1month') {
                 endDate.setMonth(endDate.getMonth() + 1);
                 planType = 'monthly';
             } else if (duration === '2month') {
                 endDate.setMonth(endDate.getMonth() + 2);
-                planType = 'custom_duration'; // Could be 'monthly' or a special type
+                planType = 'custom_duration';
             } else if (duration === '3month') {
                 endDate.setMonth(endDate.getMonth() + 3);
                 planType = 'custom_duration';
@@ -1538,14 +1533,13 @@ const toggleUserPremiumStatus = async (req, res) => {
             // Create a new subscription record
             const newSubscription = new Subscription({
                 userId: user._id,
-                plan: planType, // e.g., 'monthly', 'yearly', 'custom_duration'
+                plan: planType,
                 amount: 0, // Admin granted, no cost
                 currency: 'N/A', // Not applicable for free grant
                 startDate: startDate,
                 endDate: endDate,
                 status: 'active',
-                source: 'admin_grant',
-                // razorpayOrderId, razorpayPaymentId, razorpaySignature will be null by default
+                source: 'admin_grant', // Mark this as admin granted
             });
             await newSubscription.save();
 
@@ -1554,20 +1548,29 @@ const toggleUserPremiumStatus = async (req, res) => {
             
         } else { // Revoking premium status
             user.isPremium = false;
-            // If there's an active subscription, mark it as cancelled
+            // If there's an active subscription, handle it based on its source
             if (user.activeSubscription) {
                 const activeSub = await Subscription.findById(user.activeSubscription);
                 if (activeSub) {
-                    activeSub.status = 'cancelled';
-                    await activeSub.save();
+                    if (activeSub.source === 'admin_grant') {
+                        // If it was an admin grant, delete it completely
+                        await Subscription.findByIdAndDelete(activeSub._id);
+                        console.log(`Admin-granted subscription ${activeSub._id} for user ${user._id} deleted.`);
+                    } else {
+                        // If it was a paid subscription (e.g., Razorpay), just mark it cancelled
+                        activeSub.status = 'cancelled';
+                        activeSub.endDate = new Date(); // Set end date to now for immediate revocation
+                        await activeSub.save();
+                        console.log(`Paid subscription ${activeSub._id} for user ${user._id} cancelled.`);
+                    }
                 }
             }
-            user.activeSubscription = null; // Clear the reference
+            user.activeSubscription = null; // Always clear the reference
         }
 
-        await user.save(); // Save the updated user document
-        const updatedUserResponse = user.toObject(); // Convert Mongoose document to plain JS object
-        delete updatedUserResponse.password; // Remove password field for security
+        await user.save();
+        const updatedUserResponse = user.toObject();
+        delete updatedUserResponse.password;
 
         res.status(200).json({
             success: true,
@@ -1575,7 +1578,8 @@ const toggleUserPremiumStatus = async (req, res) => {
             user: updatedUserResponse
         });
 
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error toggling user premium status:', error);
         res.status(500).json({
             success: false,

@@ -33,19 +33,19 @@ const subscriptionSchema = new Schema({
     razorpayOrderId: {
         type: String,
         required: false, // Made optional
-        unique: true,
-        sparse: true // Allows nulls, but unique if not null
+        // unique: true,
+        // sparse: true 
     },
     razorpayPaymentId: {
         type: String,
-        required: false, // Made optional
-        unique: true,
-        sparse: true
+        required: false,
+        // unique: true,
+        // sparse: true
     },
     razorpaySignature: {
         type: String,
         required: false, // Made optional
-        sparse: true
+        // sparse: true
     },
     status: {
         type: String,
