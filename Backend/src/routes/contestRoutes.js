@@ -11,18 +11,18 @@ const {Createnewcontest,
     SubmitSolutionDuringContest,
     StartContestParticipation,
     GetContestLeaderboard} = require('../controllers/contestController')
-const adminMiddleware = require("../middleware/adminMiddleware");
+const coAdminMiddleware = require("../middleware/coAdminMiddleware");
 const userMiddleware = require('../middleware/userMiddleware');
 
 
 // Admin
-contestRoute.post('/',adminMiddleware,Createnewcontest)
-contestRoute.get('/',adminMiddleware,ListAllContests);
-contestRoute.get('/:id',adminMiddleware,GetContestDetails);
-contestRoute.put('/:id',adminMiddleware,UpdateContest);
-contestRoute.post('/:id/problems',adminMiddleware,AddProblemToContest);
-contestRoute.delete('/:id', adminMiddleware,DeleteContest);
-contestRoute.delete('/:id/problems/:problemId',adminMiddleware,RemoveProblemFromContest);
+contestRoute.post('/',coAdminMiddleware,Createnewcontest)
+contestRoute.get('/',coAdminMiddleware,ListAllContests);
+contestRoute.get('/:id',coAdminMiddleware,GetContestDetails);
+contestRoute.put('/:id',coAdminMiddleware,UpdateContest);
+contestRoute.post('/:id/problems',coAdminMiddleware,AddProblemToContest);
+contestRoute.delete('/:id', coAdminMiddleware,DeleteContest);
+contestRoute.delete('/:id/problems/:problemId',coAdminMiddleware,RemoveProblemFromContest);
 
 
 // User

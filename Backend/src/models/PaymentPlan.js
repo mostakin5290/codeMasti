@@ -9,13 +9,11 @@ const premiumPlanSchema = new mongoose.Schema({
     monthlyPlanPrice: {
         type: Number,
         required: true,
-        default: 1.99,
         min: 0,
     },
     yearlyPlanPrice: {
         type: Number,
         required: true,
-        default: 21.49,
         min: 0,
     },
 }, { timestamps: true });

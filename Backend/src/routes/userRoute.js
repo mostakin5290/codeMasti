@@ -22,7 +22,8 @@ const {
 
 } = require('../controllers/AuthControllers');
 const userMiddleware = require('../middleware/userMiddleware');
-const adminMiddleware = require('../middleware/adminMiddleware');
+const coAdminMiddleware = require('../middleware/coAdminMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware.js')
 
 // Local authentication routes
 authRouter.post('/register', register);
@@ -52,10 +53,10 @@ authRouter.delete('/account', userMiddleware, deleteUserAccount);
 authRouter.get('/allDetails/:userId', getFullUserProfile);
 
 
-authRouter.get('/', adminMiddleware, getAllUsersForAdmin); // New: Get all users for admin
-authRouter.put('/:userId/role', adminMiddleware, updateUserRole); // New: Update user role
+authRouter.get('/', coAdminMiddleware, getAllUsersForAdmin); // New: Get all users for admin
+authRouter.put('/:userId/role', coAdminMiddleware, updateUserRole); // New: Update user role
 authRouter.delete('/:userId', adminMiddleware, adminDeleteUser); // New: Admin delete user
-authRouter.put('/:userId/premium', adminMiddleware, toggleUserPremiumStatus); // New: Toggle user 
+authRouter.put('/:userId/premium', coAdminMiddleware, toggleUserPremiumStatus); 
 
 
 // Authentication check route

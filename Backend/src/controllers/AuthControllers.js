@@ -10,6 +10,7 @@ const axios = require('axios');
 const otpGenerator = require('otp-generator')
 const validator = require('validator');
 const nodemailer = require('nodemailer');
+const Subscription = require('../models/subscription')
 
 
 const register = async (req, res) => {
@@ -1463,12 +1464,15 @@ const adminDeleteUser = async (req, res) => {
     }
 };
 
+
 const toggleUserPremiumStatus = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { isPremium } = req.body; // boolean: true to make premium, false to revoke
+        // isPremium is still part of the payload, indicating grant/revoke
+        // duration and customMonths are new for granting premium
+        const { isPremium, duration, customMonths } = req.body; 
 
-        // Validate boolean
+        // Validate isPremium (boolean check)
         if (typeof isPremium !== 'boolean') {
             return res.status(400).json({
                 success: false,
@@ -1476,7 +1480,7 @@ const toggleUserPremiumStatus = async (req, res) => {
             });
         }
 
-        // Prevent an admin from changing their own premium status (optional but recommended for consistency)
+        // Prevent an admin from changing their own premium status
         if (req.user._id.toString() === userId) {
             return res.status(403).json({
                 success: false,
@@ -1484,23 +1488,90 @@ const toggleUserPremiumStatus = async (req, res) => {
             });
         }
 
-
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        user.isPremium = isPremium;
-        // Optionally, you might want to manage the `activeSubscription` field here
-        // e.g., if setting to premium, create a dummy subscription or link an existing one.
-        // For simplicity, we'll just toggle `isPremium`.
-        await user.save();
+        if (isPremium) { // Granting premium status
+            // Validate duration for granting premium
+            if (!duration) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Duration is required to grant premium.'
+                });
+            }
+
+            let endDate = new Date();
+            let planType; // To store what kind of plan it is
+            const startDate = new Date(); // Subscription starts now
+            
+            if (duration === '1month') {
+                endDate.setMonth(endDate.getMonth() + 1);
+                planType = 'monthly';
+            } else if (duration === '2month') {
+                endDate.setMonth(endDate.getMonth() + 2);
+                planType = 'custom_duration'; // Could be 'monthly' or a special type
+            } else if (duration === '3month') {
+                endDate.setMonth(endDate.getMonth() + 3);
+                planType = 'custom_duration';
+            } else if (duration === '1year') {
+                endDate.setFullYear(endDate.getFullYear() + 1);
+                planType = 'yearly';
+            } else if (duration === 'custom') {
+                const monthsToAdd = parseInt(customMonths, 10);
+                if (isNaN(monthsToAdd) || monthsToAdd <= 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Valid positive custom months are required for custom duration.'
+                    });
+                }
+                endDate.setMonth(endDate.getMonth() + monthsToAdd);
+                planType = 'custom_duration';
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid premium duration specified.'
+                });
+            }
+
+            // Create a new subscription record
+            const newSubscription = new Subscription({
+                userId: user._id,
+                plan: planType, // e.g., 'monthly', 'yearly', 'custom_duration'
+                amount: 0, // Admin granted, no cost
+                currency: 'N/A', // Not applicable for free grant
+                startDate: startDate,
+                endDate: endDate,
+                status: 'active',
+                source: 'admin_grant',
+                // razorpayOrderId, razorpayPaymentId, razorpaySignature will be null by default
+            });
+            await newSubscription.save();
+
+            user.isPremium = true;
+            user.activeSubscription = newSubscription._id;
+            
+        } else { // Revoking premium status
+            user.isPremium = false;
+            // If there's an active subscription, mark it as cancelled
+            if (user.activeSubscription) {
+                const activeSub = await Subscription.findById(user.activeSubscription);
+                if (activeSub) {
+                    activeSub.status = 'cancelled';
+                    await activeSub.save();
+                }
+            }
+            user.activeSubscription = null; // Clear the reference
+        }
+
+        await user.save(); // Save the updated user document
         const updatedUserResponse = user.toObject(); // Convert Mongoose document to plain JS object
-        delete updatedUserResponse.password;
+        delete updatedUserResponse.password; // Remove password field for security
 
         res.status(200).json({
             success: true,
-            message: `User premium status updated to ${isPremium} successfully.`,
+            message: `User premium status updated to ${isPremium ? 'Premium' : 'Normal'} successfully.`,
             user: updatedUserResponse
         });
 
@@ -1512,6 +1583,7 @@ const toggleUserPremiumStatus = async (req, res) => {
         });
     }
 };
+
 
 
 module.exports = {

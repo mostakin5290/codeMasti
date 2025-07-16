@@ -53,7 +53,6 @@ const userSchema = new Schema({
     },
     avatar: { 
         type: String,
-        default: 'https://uxwing.com/wp-content/themes/uxwing/download/business-professional-services/business-professional-icon.png' 
     },
     socialLinks: { 
         github: String,

@@ -1,3 +1,4 @@
+// models/Subscription.js
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
@@ -7,16 +8,16 @@ const subscriptionSchema = new Schema({
         ref: 'User',
         required: true,
     },
-    plan: {
+    plan: { // This refers to the specific plan like 'monthly', 'yearly', or 'custom' for admin grants
         type: String,
-        enum: ['monthly', 'yearly'],
+        enum: ['monthly', 'yearly', 'custom_duration'], // Added 'custom_duration'
         required: true
     },
-    amount: {
+    amount: { // For admin grants, can be 0 or a dummy value
         type: Number,
         required: true
     },
-    currency: {
+    currency: { // For admin grants, can be 'N/A' or 'INR'
         type: String,
         default: 'INR',
         required: true
@@ -31,16 +32,19 @@ const subscriptionSchema = new Schema({
     },
     razorpayOrderId: {
         type: String,
-        required: true,
-        unique: true
-    },
-    razorpayPaymentId: {
-        type: String,
+        required: false, // Made optional
         unique: true,
         sparse: true // Allows nulls, but unique if not null
     },
+    razorpayPaymentId: {
+        type: String,
+        required: false, // Made optional
+        unique: true,
+        sparse: true
+    },
     razorpaySignature: {
         type: String,
+        required: false, // Made optional
         sparse: true
     },
     status: {
@@ -48,6 +52,11 @@ const subscriptionSchema = new Schema({
         enum: ['pending', 'active', 'expired', 'cancelled', 'failed'],
         default: 'pending'
     },
+    source: { // NEW FIELD: To differentiate between Razorpay and Admin grants
+        type: String,
+        enum: ['razorpay', 'admin_grant'],
+        default: 'razorpay'
+    }
 }, {
     timestamps: true // Adds createdAt and updatedAt
 });

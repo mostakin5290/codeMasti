@@ -14,24 +14,24 @@ const {
     getPreviousChallenges,
     deleteDailyChallenge
 } = require('../controllers/problemControllers');
-const adminMiddleware = require('../middleware/adminMiddleware');
+const coAdminMiddleware = require('../middleware/coAdminMiddleware');
 const userMiddleware = require('../middleware/userMiddleware');
 
 // Admin-only problem management routes
-problemRouter.post('/create', adminMiddleware, createProblem);
-problemRouter.put('/update/:id', adminMiddleware, updateProblem);
-problemRouter.delete('/delete/:id', adminMiddleware, deleteProblem);
+problemRouter.post('/create', coAdminMiddleware, createProblem);
+problemRouter.put('/update/:id', coAdminMiddleware, updateProblem);
+problemRouter.delete('/delete/:id', coAdminMiddleware, deleteProblem);
 
 // Problem access routes
 problemRouter.get('/problemById/:id', userMiddleware, getProblemById);
 problemRouter.get('/getAllProblem', userMiddleware, getAllProblem);
-problemRouter.get('/problemByIdForAdmin/:id', adminMiddleware, getProblemByIdForAdmin);
+problemRouter.get('/problemByIdForAdmin/:id', coAdminMiddleware, getProblemByIdForAdmin);
 problemRouter.get('/search', userMiddleware, searchProblems);
 
 // Daily Challenge routes
 problemRouter.get('/daily', userMiddleware, getTodayChallenge);
 problemRouter.get('/daily/streak', userMiddleware, getUserStreak);
-problemRouter.post('/daily/set', adminMiddleware, setDailyChallenge);
+problemRouter.post('/daily/set', coAdminMiddleware, setDailyChallenge);
 problemRouter.get('/daily/previous', userMiddleware, getPreviousChallenges);
-problemRouter.delete('/daily/:id', adminMiddleware, deleteDailyChallenge);
+problemRouter.delete('/daily/:id', coAdminMiddleware, deleteDailyChallenge);
 module.exports = problemRouter;

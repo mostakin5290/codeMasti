@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
-const adminMiddleware = async (req, res, next) => {
+const coAdminMiddleware = async (req, res, next) => {
     try {
 
         const { token } = req.cookies;
@@ -24,7 +24,7 @@ const adminMiddleware = async (req, res, next) => {
         }
 
 
-        if (user.role !== 'admin') {
+        if (user.role !== 'admin' && user.role !== 'co-admin') {
             return res.status(403).json({ message: 'Forbidden: Only administrators are authorized to perform this action.' });
         }
 
@@ -32,7 +32,7 @@ const adminMiddleware = async (req, res, next) => {
         next();
 
     } catch (err) {
-        console.error("Admin Middleware Error:", err); // Log the actual error for debugging
+        console.error("Co Admin Middleware Error:", err); // Log the actual error for debugging
         if (err.name === 'TokenExpiredError') {
             return res.status(401).json({ message: 'Authentication failed: Token has expired.' });
         }
@@ -44,4 +44,4 @@ const adminMiddleware = async (req, res, next) => {
     }
 };
 
-module.exports = adminMiddleware;
+module.exports = coAdminMiddleware;

@@ -7,7 +7,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { useTheme } from '../context/ThemeContext';
 import { FaCrown, FaCheckCircle, FaSpinner, FaRupeeSign } from 'react-icons/fa';
-import { useSelector } from 'react-redux'; // Import useSelector
+import { useSelector } from 'react-redux';
 
 // Default theme for consistency (unchanged)
 const defaultAppTheme = {
@@ -36,26 +36,65 @@ const loadRazorpayScript = () => {
 
 const SubscribePage = () => {
     const navigate = useNavigate();
-    const { planType } = useParams();
+    const { planType } = useParams(); // 'monthly' or 'yearly'
     const { theme: appThemeFromContext } = useTheme();
     const appTheme = { ...defaultAppTheme, ...(appThemeFromContext) };
-    const { user: currentUser } = useSelector(state => state.auth); // Get currentUser from Redux
+    const { user: currentUser } = useSelector(state => state.auth);
 
     const [loadingRazorpay, setLoadingRazorpay] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [currentPlan, setCurrentPlan] = useState(null);
 
-    const pricingPlans = {
-        monthly: { name: 'Monthly Premium', amount: 1.99, description: 'Perfect for short-term access and flexible learning.', features: [
-            'Access to all Premium Problems', 'Unlimited Solutions & Explanations',
-            'Exclusive Interview Roadmaps', 'Priority Community Support', 'Ad-free Experience',
-        ]},
-        yearly: { name: 'Yearly Premium', amount: 21.49, description: 'Best value for long-term commitment and maximum savings.', features: [
-            'All Monthly Premium features', 'Save over 30% annually',
-            'Early access to new features', 'Personalized Progress Reviews', 'Exclusive Beta Access',
-        ]},
-    };
+    // Combined loading state for initial data fetch
+    const [loadingPage, setLoadingPage] = useState(true);
 
+    // State to hold the fetched premium plan details (contains both monthly and yearly prices)
+    const [premiumPlanDetails, setPremiumPlanDetails] = useState(null);
+
+    // Define features and descriptions here as they are not coming from /admin/premium-plan
+    const monthlyFeatures = [
+        'Access to all Premium Problems', 'Unlimited Solutions & Explanations',
+        'Exclusive Interview Roadmaps', 'Priority Community Support', 'Ad-free Experience',
+    ];
+    const yearlyFeatures = [
+        'All Monthly Premium features', 'Save over 30% annually',
+        'Early access to new features', 'Personalized Progress Reviews', 'Exclusive Beta Access',
+    ];
+
+    // Fetch the single premium plan details
+    useEffect(() => {
+        const fetchPremiumPlan = async () => {
+            try {
+                setLoadingPage(true);
+                const response = await axiosClient.get('/admin/premium-plan'); // Call the new single endpoint
+                const data = response.data;
+
+                if (!data || (planType === 'monthly' && !data.monthlyPlanPrice) || (planType === 'yearly' && !data.yearlyPlanPrice)) {
+                    toast.error('Premium plan details are incomplete or not found.');
+                    navigate('/premium'); // Redirect if data is missing
+                    return;
+                }
+
+                setPremiumPlanDetails(data); // Store the entire object
+
+            } catch (error) {
+                console.error("Failed to fetch premium plan details:", error);
+                if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+                    toast.error('You are not authorized to view subscription plans. Please log in.');
+                    navigate('/login');
+                } else {
+                    toast.error('Failed to load subscription options. Please try again later.');
+                }
+                navigate('/premium'); // Redirect on error
+            } finally {
+                setLoadingPage(false); // Always set loading to false in finally
+            }
+        };
+
+        fetchPremiumPlan();
+    }, [planType, navigate]);
+
+
+    // Load Razorpay SDK
     useEffect(() => {
         const loadScript = async () => {
             const loaded = await loadRazorpayScript();
@@ -65,21 +104,41 @@ const SubscribePage = () => {
             setLoadingRazorpay(false);
         };
         loadScript();
+    }, []);
 
-        if (planType && pricingPlans[planType]) {
-            setCurrentPlan(pricingPlans[planType]);
-        } else {
-            toast.error('Invalid subscription plan selected. Redirecting to Premium page.');
-            navigate('/premium');
+    // Derive the current plan to display once premiumPlanDetails is available
+    const currentDisplayPlan = React.useMemo(() => {
+        if (!premiumPlanDetails) return null;
+
+        if (planType === 'monthly') {
+            return {
+                name: `Monthly Premium - ${new Date().getFullYear()}`, // Or a more dynamic month/year from a PaymentPlan document if you still use them for naming
+                price: premiumPlanDetails.monthlyPlanPrice,
+                features: monthlyFeatures,
+                description: 'Perfect for short-term access and flexible learning.',
+                planType: 'monthly', // Add planType for backend identification
+                _id: premiumPlanDetails._id // Use the _id of the PremiumPlan singleton for the backend call
+            };
+        } else if (planType === 'yearly') {
+            return {
+                name: `Yearly Premium - ${new Date().getFullYear()}`,
+                price: premiumPlanDetails.yearlyPlanPrice,
+                features: yearlyFeatures,
+                description: 'Best value for long-term commitment and maximum savings.',
+                planType: 'yearly', // Add planType for backend identification
+                _id: premiumPlanDetails._id // Use the _id of the PremiumPlan singleton for the backend call
+            };
         }
-    }, [planType, navigate]);
+        return null;
+    }, [premiumPlanDetails, planType, monthlyFeatures, yearlyFeatures]); // Include features in dependencies
 
     const handleSubscribe = async () => {
-        if (loadingRazorpay || isProcessing || !currentPlan) {
+        // Ensure all necessary data is loaded and not already processing
+        if (loadingRazorpay || isProcessing || !currentDisplayPlan) {
+            toast.info("Still loading or processing. Please wait a moment.");
             return;
         }
 
-        // Basic check: user must be logged in to subscribe
         if (!currentUser) {
             toast.error('Please log in to subscribe.');
             navigate('/login');
@@ -90,9 +149,11 @@ const SubscribePage = () => {
         toast.info('Initiating payment. Please wait...');
 
         try {
+            // Pass the _id of the PremiumPlan singleton, and the specific amount/planType
             const response = await axiosClient.post('/payment/create-order', {
-                amount: currentPlan.amount,
-                plan: planType
+                planId: currentDisplayPlan._id, // This will be "premiumPlanSingleton"
+                amount: currentDisplayPlan.price,
+                plan: currentDisplayPlan.planType // 'monthly' or 'yearly'
             });
 
             if (!response.data.success) {
@@ -106,24 +167,25 @@ const SubscribePage = () => {
                 amount: amount,
                 currency: currency,
                 name: "CodeCrack Premium Subscription",
-                description: currentPlan.name,
+                description: currentDisplayPlan.name,
                 order_id: orderId,
                 receipt: receipt,
                 handler: function (response) {
-                    // This is for frontend confirmation. Backend webhook handles actual activation.
                     toast.success('Payment successful! Your subscription is being activated.');
                     navigate('/home?status=premium-activated');
                 },
                 prefill: {
                     name: currentUser.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}` : "CodeCrack User",
-                    email: currentUser.email || "user@example.com",
-                    contact: currentUser.phone || "" // Add user's phone number if available in your user model
+                    email: currentUser.emailId || "user@example.com",
+                    contact: currentUser.phone || ""
                 },
                 notes: {
-                    problem: "Premium Subscription" // This note will be visible in Razorpay dashboard
+                    planType: currentDisplayPlan.planType,
+                    planId: currentDisplayPlan._id,
+                    userId: currentUser._id,
                 },
                 theme: {
-                    color: appTheme.primary.replace('bg-', '#') 
+                    color: appTheme.primary.replace('bg-', '#')
                 }
             };
 
@@ -141,12 +203,7 @@ const SubscribePage = () => {
             console.error('Error initiating payment:', error);
             toast.error(error.response?.data?.message || 'Failed to initiate payment. Please try again.');
         } finally {
-            // This 'finally' block ensures processing state is reset if an error occurs *before* Razorpay pop-up opens
-            // Or if Razorpay.open() fails for some reason.
-            // The actual payment.failed handler within Razorpay's options will also reset it.
-            // Consider if a setTimeout is needed here if rzp.open() itself might cause issues but not immediately call on.payment.failed
-            // For now, it's generally fine.
-            if (!window.Razorpay) { // Only reset if Razorpay pop-up didn't open (e.g., SDK not loaded)
+            if (typeof window.Razorpay === 'undefined' || !currentDisplayPlan) {
                 setIsProcessing(false);
             }
         }
@@ -155,7 +212,8 @@ const SubscribePage = () => {
     const getPrimaryGradient = () => `bg-gradient-to-r ${appTheme.primary.replace('bg-', 'from-')} ${appTheme.secondary.replace('bg-', 'to-')}`;
     const getPrimaryGradientHover = () => `hover:${appTheme.primaryHover.replace('bg-', 'from-')} hover:${appTheme.secondaryHover.replace('bg-', 'to-')}`;
 
-    if (!currentPlan || loadingRazorpay) {
+    // Show loading spinner if initial page data (premiumPlanDetails) or Razorpay SDK is loading
+    if (loadingPage || loadingRazorpay || !currentDisplayPlan) {
         return (
             <div className={`min-h-screen ${appTheme.background} ${appTheme.text} flex flex-col justify-center items-center`}>
                 <FaSpinner className={`text-4xl animate-spin ${appTheme.highlight}`} />
@@ -182,18 +240,18 @@ const SubscribePage = () => {
                 <section className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <div className={`relative ${appTheme.cardBg} rounded-xl shadow-lg border ${appTheme.border} p-8 flex flex-col items-center`}>
                         <FaCrown className={`text-6xl ${appTheme.highlight} mb-4`} />
-                        <h2 className={`text-3xl font-bold mb-2 ${appTheme.text}`}>{currentPlan.name}</h2>
+                        <h2 className={`text-3xl font-bold mb-2 ${appTheme.text}`}>{currentDisplayPlan.name}</h2>
                         <div className="flex items-end mb-4">
                             <FaRupeeSign className={`text-3xl ${appTheme.text}`} />
-                            <span className={`text-5xl font-extrabold ${appTheme.text}`}>{currentPlan.amount}</span>
+                            <span className={`text-5xl font-extrabold ${appTheme.text}`}>{currentDisplayPlan.price}</span>
                             <span className={`text-xl ${appTheme.cardText} ml-1`}>
                                 {planType === 'monthly' ? '/month' : '/year'}
                             </span>
                         </div>
-                        <p className={`mb-6 ${appTheme.cardText}`}>{currentPlan.description}</p>
-                        
+                        <p className={`mb-6 ${appTheme.cardText}`}>{currentDisplayPlan.description}</p>
+
                         <ul className="space-y-3 mb-8 text-left w-full">
-                            {currentPlan.features.map((feature, i) => (
+                            {currentDisplayPlan.features.map((feature, i) => (
                                 <li key={i} className={`flex items-center gap-3 ${appTheme.cardText}`}>
                                     <FaCheckCircle className={`${appTheme.successColor} flex-shrink-0 text-lg`} />
                                     <span>{feature}</span>
@@ -203,7 +261,7 @@ const SubscribePage = () => {
 
                         <button
                             onClick={handleSubscribe}
-                            disabled={isProcessing || loadingRazorpay}
+                            disabled={isProcessing}
                             className={`inline-flex items-center justify-center w-full px-8 py-3 rounded-lg ${getPrimaryGradient()} ${getPrimaryGradientHover()} ${appTheme.buttonText} font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                             {isProcessing ? (
@@ -211,7 +269,7 @@ const SubscribePage = () => {
                                     <FaSpinner className="animate-spin mr-2" /> Processing...
                                 </>
                             ) : (
-                                `Pay ₹${currentPlan.amount} ${planType === 'monthly' ? 'Monthly' : 'Yearly'}`
+                                `Pay ₹${currentDisplayPlan.price} ${currentDisplayPlan.planType === 'monthly' ? 'Monthly' : 'Yearly'}`
                             )}
                         </button>
                     </div>

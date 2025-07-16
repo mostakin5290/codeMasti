@@ -1,17 +1,91 @@
 const User = require('../models/user.js');
 const Problem = require('../models/problem.js');
 const Submission = require('../models/submission.js');
-// Removed: const PaymentPlan = require('../models/PaymentPlan.js');
 const PremiumPlan = require('../models/PaymentPlan.js'); // NEW IMPORT
 
 const getDashboardStats = async (req, res) => {
     try {
+        // Basic Stats
         const [totalUsers, totalProblems, totalSubmissions] = await Promise.all([
             User.countDocuments(),
             Problem.countDocuments(),
             Submission.countDocuments()
         ]);
-        res.json({ totalUsers, totalProblems, totalSubmissions });
+
+        // User Role Counts
+        const usersByRole = await User.aggregate([
+            { $group: { _id: "$role", count: { $sum: 1 } } }
+        ]);
+        const roleCounts = usersByRole.reduce((acc, item) => {
+            acc[item._id] = item.count;
+            return acc;
+        }, { user: 0, admin: 0, 'co-admin': 0 }); // Initialize to 0 for all roles
+
+        // Premium User Counts
+        const premiumUsers = await User.countDocuments({ isPremium: true });
+        const nonPremiumUsers = totalUsers - premiumUsers;
+
+        // Recently Registered Users (e.g., last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const newUsersLast30Days = await User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } });
+
+        // Problem Difficulty Counts
+        const problemsByDifficulty = await Problem.aggregate([
+            { $group: { _id: "$difficulty", count: { $sum: 1 } } }
+        ]);
+        const difficultyCounts = problemsByDifficulty.reduce((acc, item) => {
+            acc[item._id] = item.count;
+            return acc;
+        }, { Easy: 0, Medium: 0, Hard: 0 }); // Initialize
+
+        // Submission Status Counts
+        const submissionsByStatus = await Submission.aggregate([
+            { $group: { _id: "$status", count: { $sum: 1 } } }
+        ]);
+        const statusCounts = submissionsByStatus.reduce((acc, item) => {
+            acc[item._id] = item.count;
+            return acc;
+        }, {}); // Dynamic statuses
+
+        // Top 5 Most Solved Problems
+        const topSolvedProblems = await Submission.aggregate([
+            { $match: { status: 'Accepted' } }, // Only count accepted submissions
+            { $group: { _id: "$problemId", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 5 },
+            {
+                $lookup: {
+                    from: 'problems', // The collection name for Problem model
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'problemDetails'
+                }
+            },
+            { $unwind: '$problemDetails' }, // Flatten the array
+            {
+                $project: {
+                    _id: 0,
+                    title: '$problemDetails.title',
+                    difficulty: '$problemDetails.difficulty',
+                    solvedCount: '$count'
+                }
+            }
+        ]);
+
+
+        res.json({
+            totalUsers,
+            totalProblems,
+            totalSubmissions,
+            usersByRole: roleCounts,
+            premiumUsers,
+            nonPremiumUsers,
+            newUsersLast30Days,
+            problemsByDifficulty: difficultyCounts,
+            submissionsByStatus: statusCounts,
+            topSolvedProblems,
+        });
     } catch (error) {
         console.error("Error in getDashboardStats:", error);
         res.status(500).json({ message: "Server Error" });

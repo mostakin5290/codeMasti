@@ -43,8 +43,6 @@ const PremiumPage = () => {
             } catch (error) {
                 console.error("Failed to fetch premium prices:", error);
                 setErrorFetchingPrices(true);
-                setMonthlyPrice(1.99);
-                setYearlyPrice(21.49);
             } finally {
                 setLoadingPrices(false);
             }

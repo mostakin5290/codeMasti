@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
-// Added FaUserCog for co-admin, FaUserAlt for regular user
 import { FaTrash, FaCheckCircle, FaUserShield, FaCrown, FaSearch, FaFilter, FaUserCog, FaUserAlt } from 'react-icons/fa'; 
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import ConfirmationModal from '../../components/common/ConfirmationModal';
+import ConfirmationModal from '../../components/common/ConfirmationModal'; 
 import { useTheme } from '../../context/ThemeContext';
 import { useSelector } from 'react-redux';
 
@@ -23,21 +22,21 @@ const defaultAppTheme = {
 };
 
 const AdminUsersPage = () => {
-    const { user: currentUser } = useSelector(state => state.auth); // Get current logged-in user
+    const { user: currentUser } = useSelector(state => state.auth); 
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // State for Search and Filter
     const [searchTerm, setSearchTerm] = useState('');
-    // Updated filter options to include 'co-admin' and 'all_admins'
     const [filterBy, setFilterBy] = useState('all'); 
 
-    // State for Confirmation Modal
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [modalAction, setModalAction] = useState(null); 
     const [modalIsLoading, setModalIsLoading] = useState(false); 
 
-    // Get theme from context
+    // NEW STATES for Premium Duration
+    const [selectedPremiumDuration, setSelectedPremiumDuration] = useState('1month');
+    const [customMonthsInput, setCustomMonthsInput] = useState('');
+
     const { theme: appThemeFromContext } = useTheme();
     const appTheme = { ...defaultAppTheme, ...appThemeFromContext };
 
@@ -65,7 +64,6 @@ const AdminUsersPage = () => {
     }, [fetchUsers]); 
 
     // --- Modal Confirmation Handlers ---
-
     const openConfirmModal = (actionType, user, newRole = null, newPremiumStatus = null) => {
         setModalAction({
             type: actionType,
@@ -73,11 +71,35 @@ const AdminUsersPage = () => {
             newRole,
             newPremiumStatus
         });
+        // Reset premium duration selection when opening modal for *granting* premium
+        if (actionType === 'togglePremium' && newPremiumStatus) { 
+            setSelectedPremiumDuration('1month'); // Default to 1 month
+            setCustomMonthsInput('');
+        }
         setShowConfirmModal(true);
     };
 
     const handleConfirmAction = async () => {
         if (!modalAction) return;
+
+        // Frontend check: If co-admin tries to delete, prevent API call
+        if (currentUser.role === 'co-admin' && modalAction.type === 'delete') {
+            toast.error("You are not authorized to delete user accounts.");
+            setShowConfirmModal(false);
+            setModalAction(null);
+            return; 
+        }
+
+        // Frontend validation for premium grant (only when granting, not revoking)
+        if (modalAction.type === 'togglePremium' && modalAction.newPremiumStatus) { 
+            if (selectedPremiumDuration === 'custom') {
+                const months = parseInt(customMonthsInput, 10);
+                if (isNaN(months) || months <= 0) {
+                    toast.error('Please enter a valid positive number of months for custom duration.');
+                    return;
+                }
+            }
+        }
 
         setModalIsLoading(true); 
 
@@ -97,7 +119,15 @@ const AdminUsersPage = () => {
             } else if (type === 'togglePremium') {
                 endpoint = `/user/${user._id}/premium`;
                 payload = { isPremium: newPremiumStatus };
-                successMessage = `User premium status updated to ${newPremiumStatus ? 'Premium' : 'Normal'} successfully!`;
+                if (newPremiumStatus) { // If granting premium, include duration info
+                    payload.duration = selectedPremiumDuration;
+                    if (selectedPremiumDuration === 'custom') {
+                        payload.customMonths = parseInt(customMonthsInput, 10);
+                    }
+                    successMessage = `User premium access granted for ${selectedPremiumDuration === 'custom' ? customMonthsInput + ' months' : selectedPremiumDuration.replace('month', ' Month').replace('year', ' Year')}!`;
+                } else { // If revoking premium
+                    successMessage = `User premium status revoked!`;
+                }
             }
 
             if (type === 'delete') {
@@ -107,7 +137,7 @@ const AdminUsersPage = () => {
             }
 
             toast.success(successMessage);
-            fetchUsers(); 
+            fetchUsers(); // Refresh the user list
         } catch (err) {
             console.error('Admin action error:', err);
             toast.error(err.response?.data?.message || 'An error occurred.');
@@ -115,12 +145,18 @@ const AdminUsersPage = () => {
             setModalIsLoading(false); 
             setShowConfirmModal(false); 
             setModalAction(null); 
+            // Reset premium selection states after action or cancel
+            setSelectedPremiumDuration('1month');
+            setCustomMonthsInput('');
         }
     };
 
     const handleCancelAction = () => {
         setShowConfirmModal(false);
         setModalAction(null);
+        // Reset premium selection states on cancel
+        setSelectedPremiumDuration('1month');
+        setCustomMonthsInput('');
     };
 
     // --- Search and Filter Handlers ---
@@ -139,6 +175,12 @@ const AdminUsersPage = () => {
             </div>
         );
     }
+
+    // Determine if the "Confirm" button in the modal should be disabled
+    const disableConfirmButtonInModal = modalIsLoading || 
+                                       (modalAction?.type === 'delete' && currentUser.role === 'co-admin') ||
+                                       (modalAction?.type === 'togglePremium' && modalAction.newPremiumStatus && selectedPremiumDuration === 'custom' && (isNaN(parseInt(customMonthsInput, 10)) || parseInt(customMonthsInput, 10) <= 0));
+
 
     return (
         <div className={`min-h-screen ${appTheme.background} p-4 sm:p-6 lg:p-8`}>
@@ -164,9 +206,9 @@ const AdminUsersPage = () => {
                     className={`w-full sm:w-1/4 ${appTheme.cardBg}/10 border ${appTheme.border} ${appTheme.text} rounded-lg shadow-sm py-2 px-4 focus:outline-none focus:ring-2 focus:ring-${appTheme.primary.split('-')[1]}-500 focus:border-transparent appearance-none`}
                 >
                     <option value="all">All Users</option>
-                    <option value="all_admins">All Admin Roles</option> {/* New filter option */}
+                    <option value="all_admins">All Admin Roles</option> 
                     <option value="admin">Admins</option>
-                    <option value="co-admin">Co-Admins</option> {/* New filter option */}
+                    <option value="co-admin">Co-Admins</option> 
                     <option value="user">Regular Users</option>
                     <option value="premium">Premium Users</option>
                     <option value="normal">Non-Premium Users</option> 
@@ -196,8 +238,7 @@ const AdminUsersPage = () => {
                             users.map(user => {
                                 const isCurrentUser = currentUser && currentUser._id === user._id;
 
-                                // `canModifyTarget` means the target user is NOT the current logged-in user.
-                                // Further specific checks are needed for role-based permissions.
+                                // canModifyTarget: User cannot modify themselves.
                                 const canModifyTarget = !isCurrentUser; 
 
                                 return (
@@ -235,22 +276,6 @@ const AdminUsersPage = () => {
                                                 {/* Action Buttons for Role Change */}
                                                 {canModifyTarget && (
                                                     <>
-                                                        {/* Promote to Admin (Only if current user is admin, and target is not already admin) */}
-                                                        {/* {currentUser.role === 'admin' && user.role !== 'admin' && (
-                                                            <button
-                                                                onClick={() => openConfirmModal('toggleRole', user, 'admin')}
-                                                                className={`mt-1 px-2 py-1 rounded-md text-xs transition-colors duration-200
-                                                                ${appTheme.cardBg}/50 ${appTheme.text} hover:${appTheme.cardBg}/70
-                                                                text-${appTheme.primary.split('-')[1]}-500
-                                                                `}
-                                                                title="Promote to Admin"
-                                                                disabled={modalIsLoading}
-                                                            >
-                                                                Promote to Admin
-                                                            </button>
-                                                        )} */}
-
-                                                        {/* Promote to Co-Admin (If current user is admin or co-admin, and target is user) */}
                                                         {(currentUser.role === 'admin' || currentUser.role === 'co-admin') && user.role === 'user' && (
                                                             <button
                                                                 onClick={() => openConfirmModal('toggleRole', user, 'co-admin')}
@@ -265,7 +290,6 @@ const AdminUsersPage = () => {
                                                             </button>
                                                         )}
 
-                                                        {/* Demote to User (If current user is admin, and target is admin or co-admin) */}
                                                         {currentUser.role === 'admin' && (user.role === 'admin' || user.role === 'co-admin') && (
                                                             <button
                                                                 onClick={() => openConfirmModal('toggleRole', user, 'user')}
@@ -280,7 +304,6 @@ const AdminUsersPage = () => {
                                                             </button>
                                                         )}
 
-                                                        {/* Demote to User (If current user is co-admin, and target is co-admin) */}
                                                         {currentUser.role === 'co-admin' && user.role === 'co-admin' && (
                                                             <button
                                                                 onClick={() => openConfirmModal('toggleRole', user, 'user')}
@@ -294,14 +317,9 @@ const AdminUsersPage = () => {
                                                                 Demote to User
                                                             </button>
                                                         )}
-                                                        
-                                                        {/* Message for Co-admin trying to modify Admin */}
-                                                        {currentUser.role === 'co-admin' && user.role === 'admin' && (
-                                                            <p className={`mt-1 text-xs ${appTheme.warningColor}`}>can't change</p>
-                                                        )}
                                                     </>
                                                 )}
-                                                {/* Message for current logged-in user */}
+                                                {/* Message for current logged-in user (no action) */}
                                                 {!canModifyTarget && ( 
                                                     <p className={`mt-1 text-xs ${appTheme.cardText}/70`}></p>
                                                 )}
@@ -342,7 +360,6 @@ const AdminUsersPage = () => {
                                                 onClick={() => openConfirmModal('delete', user)}
                                                 className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${appTheme.errorColor.replace('text-', 'border-')}/50 ${appTheme.errorColor} hover:${appTheme.errorColor.replace('text-', 'bg-')}/10 transition-all duration-200`}
                                                 title="Delete User"
-                                                // Disable if: modal is loading, it's the current user, or the target user has 'admin' role
                                                 disabled={modalIsLoading || isCurrentUser || user.role === 'admin'} 
                                             >
                                                 <FaTrash />
@@ -363,6 +380,8 @@ const AdminUsersPage = () => {
                     onClose={handleCancelAction}
                     onConfirm={handleConfirmAction}
                     isLoading={modalIsLoading}
+                    // Pass disableConfirm to the modal
+                    disableConfirm={disableConfirmButtonInModal} 
                     title={
                         modalAction.type === 'delete' ? 'Delete User?' :
                             modalAction.type === 'toggleRole' ? `Change ${modalAction.user.firstName}'s Role?` :
@@ -370,9 +389,9 @@ const AdminUsersPage = () => {
                                     'Confirm Action'
                     }
                     confirmText={
-                        modalAction.type === 'delete' ? 'Delete Permanently' :
+                        modalAction.type === 'delete' ? (currentUser.role === 'co-admin' ? 'Not Authorized' : 'Delete Permanently') : 
                             modalAction.type === 'toggleRole' ? `Confirm ${modalAction.newRole === 'co-admin' ? 'Promotion' : 'Demotion'}` :
-                                modalAction.type === 'togglePremium' ? `Confirm ${modalAction.newPremiumStatus ? 'Grant' : 'Revoke'}` :
+                                modalAction.type === 'togglePremium' ? `Confirm ${modalAction.newPremiumStatus ? 'Grant Premium' : 'Revoke Premium'}` : // Updated text for premium
                                     'Confirm'
                     }
                     cancelText="Cancel"
@@ -380,11 +399,18 @@ const AdminUsersPage = () => {
                 >
                     {modalAction.type === 'delete' && (
                         <>
-                            <p className={`${appTheme.cardText}`}>Are you sure you want to permanently delete user: <br /> <strong className={`${appTheme.primary.replace('bg-', 'text-')}`}>{modalAction.user.firstName} {modalAction.user.lastName}</strong> ({modalAction.user.emailId})?</p>
-                            <p className={`mt-2 text-sm ${appTheme.errorColor}`}>This action cannot be undone and will remove all their associated data (posts, comments, etc.).</p>
-                            {/* This warning is mostly for a disabled button scenario; it shouldn't typically be reachable */}
-                            {modalAction.user.role === 'admin' && ( 
-                                <p className={`mt-2 text-sm ${appTheme.warningColor} font-bold`}>WARNING: This user has 'admin' role. Deleting an admin is typically not allowed directly. Backend may prevent this.</p>
+                            {currentUser.role === 'co-admin' ? (
+                                <p className={`mt-2 text-sm ${appTheme.errorColor} font-bold`}>
+                                    <FaUserShield className="inline mr-1" /> As a Co-administrator, you are not authorized to delete user accounts. Only an Administrator can perform this action.
+                                </p>
+                            ) : (
+                                <>
+                                    <p className={`${appTheme.cardText}`}>Are you sure you want to permanently delete user: <br /> <strong className={`${appTheme.primary.replace('bg-', 'text-')}`}>{modalAction.user.firstName} {modalAction.user.lastName}</strong> ({modalAction.user.emailId})?</p>
+                                    <p className={`mt-2 text-sm ${appTheme.errorColor}`}>This action cannot be undone and will remove all their associated data (posts, comments, etc.).</p>
+                                    {modalAction.user.role === 'admin' && ( 
+                                        <p className={`mt-2 text-sm ${appTheme.warningColor} font-bold`}>WARNING: This user has 'admin' role. Deleting an admin is typically not allowed directly. Backend may prevent this.</p>
+                                    )}
+                                </>
                             )}
                         </>
                     )}
@@ -392,29 +418,84 @@ const AdminUsersPage = () => {
                         <>
                             <p className={`${appTheme.cardText}`}>You are about to change the role of <strong className={`${appTheme.primary.replace('bg-', 'text-')}`}>{modalAction.user.firstName} {modalAction.user.lastName}</strong> from <span className="font-semibold">{modalAction.user.role}</span> to <span className="font-semibold">{modalAction.newRole}</span>.</p>
                             <p className={`mt-2 text-sm ${appTheme.warningColor}`}>Proceed with caution as this affects user permissions.</p>
-                            {/* Message for Admin promoting to Admin */}
-                            {modalAction.newRole === 'admin' && currentUser.role === 'admin' && ( 
-                                <p className={`mt-2 text-sm ${appTheme.infoColor} font-bold`}>
-                                    Note: To ensure only one primary admin, your current admin role might be demoted to a regular user upon this promotion.
-                                </p>
-                            )}
-                            {/* Message for Co-admin attempting to promote to Admin (should be disabled but as fallback) */}
-                            {modalAction.newRole === 'admin' && currentUser.role === 'co-admin' && ( 
-                                <p className={`mt-2 text-sm ${appTheme.errorColor} font-bold`}>
-                                    ERROR: As a Co-administrator, you are not authorized to promote users to 'admin' role.
-                                </p>
-                            )}
-                            {/* Message for Co-admin attempting to demote Admin (should be disabled but as fallback) */}
-                            {modalAction.user.role === 'admin' && modalAction.newRole !== 'admin' && currentUser.role === 'co-admin' && (
-                                <p className={`mt-2 text-sm ${appTheme.errorColor} font-bold`}>
-                                    ERROR: As a Co-administrator, you are not authorized to demote 'admin' role users.
-                                </p>
-                            )}
                         </>
                     )}
                     {modalAction.type === 'togglePremium' && (
                         <>
                             <p className={`${appTheme.cardText}`}>You are about to {modalAction.newPremiumStatus ? 'grant' : 'revoke'} premium access for <strong className={`${appTheme.primary.replace('bg-', 'text-')}`}>{modalAction.user.firstName} {modalAction.user.lastName}</strong>.</p>
+                            
+                            {modalAction.newPremiumStatus && ( // Show duration options only when granting premium
+                                <div className="mt-4">
+                                    <label className={`block mb-2 text-sm font-medium ${appTheme.text}`}>Select Premium Duration:</label>
+                                    <div className="flex flex-wrap gap-3">
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="radio"
+                                                className={`form-radio h-4 w-4 ${appTheme.primary.replace('bg-', 'text-')}`}
+                                                name="premiumDuration"
+                                                value="1month"
+                                                checked={selectedPremiumDuration === '1month'}
+                                                onChange={(e) => { setSelectedPremiumDuration(e.target.value); setCustomMonthsInput(''); }}
+                                            />
+                                            <span className={`ml-2 text-sm ${appTheme.cardText}`}>1 Month</span>
+                                        </label>
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="radio"
+                                                className={`form-radio h-4 w-4 ${appTheme.primary.replace('bg-', 'text-')}`}
+                                                name="premiumDuration"
+                                                value="2month"
+                                                checked={selectedPremiumDuration === '2month'}
+                                                onChange={(e) => { setSelectedPremiumDuration(e.target.value); setCustomMonthsInput(''); }}
+                                            />
+                                            <span className={`ml-2 text-sm ${appTheme.cardText}`}>2 Months</span>
+                                        </label>
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="radio"
+                                                className={`form-radio h-4 w-4 ${appTheme.primary.replace('bg-', 'text-')}`}
+                                                name="premiumDuration"
+                                                value="3month"
+                                                checked={selectedPremiumDuration === '3month'}
+                                                onChange={(e) => { setSelectedPremiumDuration(e.target.value); setCustomMonthsInput(''); }}
+                                            />
+                                            <span className={`ml-2 text-sm ${appTheme.cardText}`}>3 Months</span>
+                                        </label>
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="radio"
+                                                className={`form-radio h-4 w-4 ${appTheme.primary.replace('bg-', 'text-')}`}
+                                                name="premiumDuration"
+                                                value="1year"
+                                                checked={selectedPremiumDuration === '1year'}
+                                                onChange={(e) => { setSelectedPremiumDuration(e.target.value); setCustomMonthsInput(''); }}
+                                            />
+                                            <span className={`ml-2 text-sm ${appTheme.cardText}`}>1 Year</span>
+                                        </label>
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="radio"
+                                                className={`form-radio h-4 w-4 ${appTheme.primary.replace('bg-', 'text-')}`}
+                                                name="premiumDuration"
+                                                value="custom"
+                                                checked={selectedPremiumDuration === 'custom'}
+                                                onChange={(e) => setSelectedPremiumDuration(e.target.value)}
+                                            />
+                                            <span className={`ml-2 text-sm ${appTheme.cardText}`}>Custom (Months)</span>
+                                        </label>
+                                    </div>
+                                    {selectedPremiumDuration === 'custom' && (
+                                        <input
+                                            type="number"
+                                            value={customMonthsInput}
+                                            onChange={(e) => setCustomMonthsInput(e.target.value)}
+                                            placeholder="Enter months (e.g., 6)"
+                                            className={`mt-3 w-full p-2 rounded ${appTheme.cardBg} ${appTheme.border} border ${appTheme.text}`}
+                                            min="1"
+                                        />
+                                    )}
+                                </div>
+                            )}
                             <p className={`mt-2 text-sm ${appTheme.infoColor}`}>This will update their premium status immediately.</p>
                         </>
                     )}
