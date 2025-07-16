@@ -37,7 +37,7 @@ const AdminSiteSettingsPage = () => {
 
     const fetchSiteSettings = async () => {
         try {
-            const response = await axiosClient.get('/admin/site-settings'); // Corrected endpoint name
+            const response = await axiosClient.get('/admin/premium-plan'); // Corrected endpoint name
             setSiteSettings(response.data);
             setFormData({
                 monthlyPlanPrice: response.data.monthlyPlanPrice,
@@ -69,7 +69,7 @@ const AdminSiteSettingsPage = () => {
                 yearlyPlanPrice: parseFloat(formData.yearlyPlanPrice)
             };
 
-            await axiosClient.put('/admin/site-settings', dataToSend); // Corrected endpoint name
+            await axiosClient.put('/admin/premium-plan', dataToSend); // Corrected endpoint name
             toast.success('Site settings updated successfully');
             setShowSuccessIcon(true); // Show success icon
             setTimeout(() => setShowSuccessIcon(false), 3000); // Hide after 3 seconds
