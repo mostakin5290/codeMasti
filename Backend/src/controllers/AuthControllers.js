@@ -12,7 +12,7 @@ const validator = require('validator');
 const nodemailer = require('nodemailer');
 const Subscription = require('../models/subscription')
 const sendEmail = require('../utils/emailSender')
-const { forgotPasswordEmailTemplate,RegisterEmailTemplate } = require('../utils/emailTemplates');
+const { forgotPasswordEmailTemplate, RegisterEmailTemplate, PremiumGiftEmailTemplate } = require('../utils/emailTemplates');
 
 
 const register = async (req, res) => {
@@ -296,7 +296,7 @@ const sendOTP = async (req, res) => {
             otp: hashedOTP
         });
 
-        
+
         const emailSubject = `${process.env.APP_NAME} - Your Verification Code`;
         const emailHtmlContent = RegisterEmailTemplate(otp);
 
@@ -806,12 +806,6 @@ const adminRegister = async (req, res) => {
             user: userResponse
         });
 
-        // req.body.password = await bcrypt.hash(password, 10);
-        // req.body.role = 'admin';
-        // const newAdmin = await User.create(req.body);
-        // const token = jwt.sign({ _id: newAdmin._id, emailId: emailId, role: 'admin' }, process.env.JWT_KEY, { expiresIn: '1h' })
-        // res.cookie('token', token, { maxAge: 3600 * 1000 })
-        // res.status(201).send("Admin registered successfully");
     } catch (err) {
         console.error('Admin Registration error:', err);
         if (err.code === 11000) {
@@ -1448,6 +1442,7 @@ const adminDeleteUser = async (req, res) => {
     }
 };
 
+
 const toggleUserPremiumStatus = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -1539,134 +1534,13 @@ const toggleUserPremiumStatus = async (req, res) => {
             // Send success email for granted premium
             if (user.emailId) {
                 const subject = `🥳 Congratulations! You've Received CodeMasti Premium!`;
-                const htmlContent = `
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>${process.env.APP_NAME} - Premium Granted</title>
-                        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-                    </head>
-                    <body style="margin: 0; padding: 0; background-color: #f5f5ed; font-family: 'Poppins', Arial, sans-serif;">
-                        <div style="min-height: 100vh; padding: 40px 20px; display: flex; align-items: center; justify-content: center;">
-                            <div style="
-                                background: rgba(255, 255, 255, 0.95);
-                                border-radius: 20px;
-                                box-shadow: 
-                                    0 25px 50px rgba(0, 0, 0, 0.15),
-                                    0 0 0 1px rgba(255, 255, 255, 0.2);
-                                max-width: 600px;
-                                width: 100%;
-                                overflow: hidden;
-                            ">
-                                <!-- Header with CodeMasti branding -->
-                                <div style="
-                                    background: linear-gradient(135deg, #FF6F61 0%, #8A2BE2 100%); /* CodeMasti gradient */
-                                    padding: 40px 30px;
-                                    text-align: center;
-                                    position: relative;
-                                    overflow: hidden;
-                                ">
-                                    <img src="${process.env.APP_LOGO_URL}" alt="${process.env.APP_NAME} Logo" style="max-width: 120px; height: auto; display: block; margin: 0 auto 20px;">
-                                    <h1 style="
-                                        color: white;
-                                        margin: 0;
-                                        font-size: 30px;
-                                        font-weight: 700;
-                                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                                        letter-spacing: -0.5px;
-                                    ">CodeMasti Premium Activated!</h1>
-                                    <p style="
-                                        color: rgba(255, 255, 255, 0.85);
-                                        margin: 8px 0 0;
-                                        font-size: 16px;
-                                        font-weight: 300;
-                                    ">Enjoy exclusive features!</p>
-                                </div>
-                                
-                                <!-- Main content -->
-                                <div style="padding: 40px 30px;">
-                                    <p style="
-                                        color: #4a5568;
-                                        font-size: 16px;
-                                        line-height: 1.6;
-                                        margin: 0 0 25px;
-                                    ">
-                                        Dear ${user.firstName || 'Valued User'},
-                                    </p>
-                                    <p style="
-                                        color: #4a5568;
-                                        font-size: 16px;
-                                        line-height: 1.6;
-                                        margin: 0 0 30px;
-                                    ">
-                                        We're thrilled to inform you that your CodeMasti account has been upgraded to Premium! This premium access has been generously granted by our administration.
-                                    </p>
-
-                                    <h3 style="
-                                        color: #2d3748;
-                                        margin: 0 0 15px;
-                                        font-size: 20px;
-                                        font-weight: 600;
-                                        border-bottom: 1px solid #eee;
-                                        padding-bottom: 10px;
-                                    ">Your Premium Details</h3>
-                                    <ul style="list-style-type: none; padding: 0; margin: 0 0 30px;">
-                                        <li style="margin-bottom: 10px; color: #555;"><strong>Plan:</strong> <span style="color: #333;">${planType.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} (Gifted)</span></li>
-                                        <li style="margin-bottom: 10px; color: #555;"><strong>Duration:</strong> <span style="color: #333;">${durationString}</span></li>
-                                        <li style="margin-bottom: 10px; color: #555;"><strong>Start Date:</strong> <span style="color: #333;">${newSubscription.startDate.toLocaleDateString()}</span></li>
-                                        <li style="color: #555;"><strong>End Date:</strong> <span style="color: #333; font-weight: 600; color: #28a745;">${newSubscription.endDate.toLocaleDateString()}</span></li>
-                                    </ul>
-
-                                    <p style="text-align: center; margin-top: 30px;">
-                                        <a href="${process.env.APP_URL}/dashboard/subscriptions" style="
-                                            display: inline-block;
-                                            padding: 12px 25px;
-                                            background: linear-gradient(135deg, #FF6F61, #8A2BE2);
-                                            color: #ffffff;
-                                            text-decoration: none;
-                                            border-radius: 8px;
-                                            font-weight: 600;
-                                            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-                                        ">Explore Premium Features</a>
-                                    </p>
-
-                                    <p style="color: #4a5568; margin-top: 30px;">If you have any questions or feedback, please feel free to reach out to our support team.</p>
-                                </div>
-                                
-                                <!-- Footer -->
-                                <div style="
-                                    background: linear-gradient(135deg, #f7fafc, #edf2f7);
-                                    padding: 25px 30px;
-                                    text-align: center;
-                                    border-top: 1px solid #e2e8f0;
-                                ">
-                                    <p style="
-                                        color: #718096;
-                                        font-size: 13px;
-                                        margin: 0 0 10px;
-                                        line-height: 1.5;
-                                    ">
-                                        Thank you for being a part of CodeMasti!<br>The ${process.env.APP_NAME} Team
-                                    </p>
-                                    <div style="
-                                        background: linear-gradient(135deg, #FF6F61, #8A2BE2);
-                                        -webkit-background-clip: text;
-                                        -webkit-text-fill-color: transparent;
-                                        background-clip: text;
-                                        font-size: 14px;
-                                        font-weight: 700;
-                                        margin: 0;
-                                    ">
-                                        © ${new Date().getFullYear()} ${process.env.APP_NAME}. All rights reserved.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </body>
-                    </html>
-                `;
+                const htmlContent = PremiumGiftEmailTemplate({
+                    status: "Premium Granted",
+                    user,
+                    planType,
+                    newSubscription,
+                    durationString
+                });
                 await sendEmail(user.emailId, subject, htmlContent);
             }
 
@@ -1704,138 +1578,11 @@ const toggleUserPremiumStatus = async (req, res) => {
             // Send revocation email only if they were premium before this action
             if (wasPremium && user.emailId) {
                 const subject = `Changes to Your CodeMasti Premium Status`;
-                const htmlContent = `
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>${process.env.APP_NAME} - Premium Revoked</title>
-                        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-                    </head>
-                    <body style="margin: 0; padding: 0; background-color: #f5f5ed; font-family: 'Poppins', Arial, sans-serif;">
-                        <div style="min-height: 100vh; padding: 40px 20px; display: flex; align-items: center; justify-content: center;">
-                            <div style="
-                                background: rgba(255, 255, 255, 0.95);
-                                border-radius: 20px;
-                                box-shadow: 
-                                    0 25px 50px rgba(0, 0, 0, 0.15),
-                                    0 0 0 1px rgba(255, 255, 255, 0.2);
-                                max-width: 600px;
-                                width: 100%;
-                                overflow: hidden;
-                            ">
-                                <!-- Header with CodeMasti branding (Warning style) -->
-                                <div style="
-                                    background: linear-gradient(135deg, #FF6F61 0%, #8A2BE2 100%); /* CodeMasti gradient */
-                                    padding: 40px 30px;
-                                    text-align: center;
-                                    position: relative;
-                                    overflow: hidden;
-                                ">
-                                    <img src="${process.env.APP_LOGO_URL}" alt="${process.env.APP_NAME} Logo" style="max-width: 120px; height: auto; display: block; margin: 0 auto 20px;">
-                                    <h1 style="
-                                        color: white;
-                                        margin: 0;
-                                        font-size: 30px;
-                                        font-weight: 700;
-                                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                                        letter-spacing: -0.5px;
-                                    ">Premium Status Updated</h1>
-                                    <p style="
-                                        color: rgba(255, 255, 255, 0.85);
-                                        margin: 8px 0 0;
-                                        font-size: 16px;
-                                        font-weight: 300;
-                                    ">Your premium access has been modified.</p>
-                                </div>
-                                
-                                <!-- Main content -->
-                                <div style="padding: 40px 30px;">
-                                    <p style="
-                                        color: #4a5568;
-                                        font-size: 16px;
-                                        line-height: 1.6;
-                                        margin: 0 0 25px;
-                                    ">
-                                        Dear ${user.firstName || 'Valued User'},
-                                    </p>
-                                    <p style="
-                                        color: #4a5568;
-                                        font-size: 16px;
-                                        line-height: 1.6;
-                                        margin: 0 0 30px;
-                                    ">
-                                        This email confirms that your premium subscription status for CodeMasti has been updated.
-                                        Your account is now a standard free user account.
-                                    </p>
-                                    ${revokedSubscriptionDetails ? `
-                                    <h3 style="
-                                        color: #2d3748;
-                                        margin: 0 0 15px;
-                                        font-size: 20px;
-                                        font-weight: 600;
-                                        border-bottom: 1px solid #eee;
-                                        padding-bottom: 10px;
-                                    ">Previous Subscription Details</h3>
-                                    <ul style="list-style-type: none; padding: 0; margin: 0 0 30px;">
-                                        <li style="margin-bottom: 10px; color: #555;"><strong>Plan:</strong> <span style="color: #333;">${revokedSubscriptionDetails.plan.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span></li>
-                                        <li style="margin-bottom: 10px; color: #555;"><strong>Source:</strong> <span style="color: #333;">${revokedSubscriptionDetails.source === 'admin_grant' ? 'Admin Granted' : 'Paid Subscription'}</span></li>
-                                        <li style="margin-bottom: 10px; color: #555;"><strong>Initiated:</strong> <span style="color: #333;">${revokedSubscriptionDetails.startDate.toLocaleDateString()}</span></li>
-                                        <li style="margin-bottom: 10px; color: #555;"><strong>Reason for change:</strong> <span style="color: #dc3545; font-weight: 600;">${revokedSubscriptionDetails.reason}</span></li>
-                                    </ul>
-                                    ` : ''}
-
-                                    <p style="color: #4a5568; margin-top: 30px; text-align: center;">
-                                        You can still use CodeMasti with our free features. If you wish to regain premium access, you can subscribe anytime.
-                                    </p>
-                                    <p style="text-align: center; margin-top: 30px;">
-                                        <a href="${process.env.APP_URL}/pricing" style="
-                                            display: inline-block;
-                                            padding: 12px 25px;
-                                            background: linear-gradient(135deg, #FF6F61, #8A2BE2);
-                                            color: #ffffff;
-                                            text-decoration: none;
-                                            border-radius: 8px;
-                                            font-weight: 600;
-                                            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-                                        ">View Premium Plans</a>
-                                    </p>
-                                    <p style="color: #4a5568; margin-top: 30px;">If you have any questions, please contact our support team.</p>
-                                </div>
-                                
-                                <!-- Footer -->
-                                <div style="
-                                    background: linear-gradient(135deg, #f7fafc, #edf2f7);
-                                    padding: 25px 30px;
-                                    text-align: center;
-                                    border-top: 1px solid #e2e8f0;
-                                ">
-                                    <p style="
-                                        color: #718096;
-                                        font-size: 13px;
-                                        margin: 0 0 10px;
-                                        line-height: 1.5;
-                                    ">
-                                        Thank you,<br>The ${process.env.APP_NAME} Team
-                                    </p>
-                                    <div style="
-                                        background: linear-gradient(135deg, #FF6F61, #8A2BE2);
-                                        -webkit-background-clip: text;
-                                        -webkit-text-fill-color: transparent;
-                                        background-clip: text;
-                                        font-size: 14px;
-                                        font-weight: 700;
-                                        margin: 0;
-                                    ">
-                                        © ${new Date().getFullYear()} ${process.env.APP_NAME}. All rights reserved.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </body>
-                    </html>
-                `;
+                const htmlContent = PremiumGiftEmailTemplate({
+                    status: "Premium Revoked",
+                    user,
+                    revokedSubscriptionDetails
+                });
                 await sendEmail(user.emailId, subject, htmlContent);
             }
         }
@@ -1858,7 +1605,6 @@ const toggleUserPremiumStatus = async (req, res) => {
         });
     }
 };
-
 
 
 module.exports = {
