@@ -1,3 +1,5 @@
+// Backend/routes/AuthRoutes.js
+
 const express = require('express');
 const authRouter = express.Router();
 const {
@@ -17,9 +19,9 @@ const {
     getAllUsersForAdmin,
     updateUserRole,
     adminDeleteUser,
-    toggleUserPremiumStatus
-
-
+    toggleUserPremiumStatus,
+    forgotPassword, // NEW: Import forgotPassword
+    resetPassword   // NEW: Import resetPassword
 } = require('../controllers/AuthControllers');
 const userMiddleware = require('../middleware/userMiddleware');
 const coAdminMiddleware = require('../middleware/coAdminMiddleware');
@@ -31,9 +33,13 @@ authRouter.post('/login', login);
 authRouter.post('/logout', userMiddleware, logout);
 authRouter.put('/password', userMiddleware, changePassword);
 
-// otp routes
+// OTP routes
 authRouter.post('/send-otp', sendOTP);
 authRouter.post('/verify-otp', verifyOTP);
+
+// NEW: Forgot Password / Reset Password Routes
+authRouter.post('/forgot-password', forgotPassword); // Route to send OTP for password reset
+authRouter.post('/reset-password', resetPassword);   // Route to reset password with OTP
 
 // Google OAuth routes
 authRouter.get('/google', googleLogin);
@@ -42,9 +48,9 @@ authRouter.get('/google', googleLogin);
 authRouter.get('/github', initiateGithubLogin);
 authRouter.get('/github/callback', handleGithubCallback);
 
-// LinkedIn OAuth routes
-// authRouter.get('/linkedin', initiateLinkedinLogin); // Initiate LinkedIn login
-// authRouter.get('/linkedin/callback', handleLinkedinCallback); // Handle LinkedIn callback
+// LinkedIn OAuth routes (commented out as per your original code)
+// authRouter.get('/linkedin', initiateLinkedinLogin);
+// authRouter.get('/linkedin/callback', handleLinkedinCallback);
 
 // Profile management routes
 authRouter.get('/profile', userMiddleware, getUserProfile);
@@ -52,12 +58,11 @@ authRouter.put('/profile', userMiddleware, updateUserProfile);
 authRouter.delete('/account', userMiddleware, deleteUserAccount);
 authRouter.get('/allDetails/:userId', getFullUserProfile);
 
-
-authRouter.get('/', coAdminMiddleware, getAllUsersForAdmin); // New: Get all users for admin
-authRouter.put('/:userId/role', coAdminMiddleware, updateUserRole); // New: Update user role
-authRouter.delete('/:userId', adminMiddleware, adminDeleteUser); // New: Admin delete user
-authRouter.put('/:userId/premium', coAdminMiddleware, toggleUserPremiumStatus); 
-
+// Admin routes (require coAdminMiddleware or adminMiddleware)
+authRouter.get('/', coAdminMiddleware, getAllUsersForAdmin);         // Get all users for admin
+authRouter.put('/:userId/role', coAdminMiddleware, updateUserRole);  // Update user role
+authRouter.delete('/:userId', adminMiddleware, adminDeleteUser);     // Admin delete user
+authRouter.put('/:userId/premium', coAdminMiddleware, toggleUserPremiumStatus); // Toggle premium status
 
 // Authentication check route
 authRouter.get('/check', userMiddleware, (req, res) => {

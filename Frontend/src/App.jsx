@@ -56,6 +56,8 @@ import ContestLeaderboardPage from "./components/Contest/ContestLeaderboardPage"
 import ContestParticipationPage from "./components/Contest/ContestParticipationPage";
 import ContestPublicDetailsPage from "./components/Admin/contest/ContestPublicDetailsPage";
 import PlaylistPage from "./Pages/PlaylisPage";
+import ForgotPassword from "./features/auth/ForgotPassword";
+import ResetPasswordPage from "./features/auth/ResetPasswordPage";
 
 
 const AppRoutes = () => {
@@ -89,7 +91,8 @@ const AppRoutes = () => {
                 <Route path="/home" element={isAuthenticated ? <Home /> : <Navigate to="/" />} />
 
                 <Route path="/login" element={<Login />} />
-
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPasswordPage/> } />
 
 
                 <Route

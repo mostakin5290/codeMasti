@@ -1,8 +1,6 @@
 import { createAsyncThunk, createSlice, isAnyOf } from '@reduxjs/toolkit';
 import axiosClient from '../../api/axiosClient';
 
-// --- Thunks (with improved error handling) ---
-
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
@@ -10,7 +8,6 @@ export const registerUser = createAsyncThunk(
       const response = await axiosClient.post('/user/register', userData);
       return response.data.user;
     } catch (error) {
-      // FIX: Pass only the serializable error message
       return rejectWithValue(error.response?.data?.message || 'Registration failed');
     }
   }
@@ -47,7 +44,6 @@ export const loginUser = createAsyncThunk(
       const response = await axiosClient.post('/user/login', credentials);
       return response.data.user;
     } catch (error) {
-      // FIX: Pass only the serializable error message
       return rejectWithValue(error.response?.data?.message || 'Invalid credentials');
     }
   }
@@ -62,7 +58,6 @@ export const checkAuth = createAsyncThunk(
       });
       return data.user;
     } catch (error) {
-      // No need to pass a message here, rejection is enough to signify "not authenticated"
       return rejectWithValue();
     }
   }
@@ -77,7 +72,6 @@ export const fetchUser = createAsyncThunk(
       });
       return data.user;
     } catch (error) {
-      // If fetching fails (e.g., token expired), it means user is not authenticated
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch user data');
     }
   }
@@ -92,7 +86,6 @@ export const logoutUser = createAsyncThunk(
       await axiosClient.post('/user/logout');
       return null;
     } catch (err) {
-      // Pass a generic message
       return rejectWithValue('Logout failed. Please try again.');
     }
   }
@@ -102,7 +95,6 @@ export const googleLoginUser = createAsyncThunk(
   'auth/googleLogin',
   async (code, { rejectWithValue }) => {
     try {
-      // The backend expects the authorization code as a query parameter
       const response = await axiosClient.get(`/user/google?code=${code}`);
       return response.data.user;
     } catch (error) {
@@ -139,7 +131,6 @@ const authSlice = createSlice({
   },
   reducers: {
     setUser: (state, action) => {
-      // This reducer can merge parts of the user object
       state.user = { ...state.user, ...action.payload };
     },
     // NEW: Reducer to specifically update dailyChallenges
@@ -205,7 +196,6 @@ const authSlice = createSlice({
         }
       )
 
-      // These actions indicate loading state for user-initiated actions
       .addMatcher(
         isAnyOf(verifyOTP.pending, registerUser.pending, loginUser.pending, logoutUser.pending, googleLoginUser.pending, githubLoginUser.pending, fetchUser.pending),
         (state) => {
@@ -214,7 +204,6 @@ const authSlice = createSlice({
         }
       )
 
-      // These actions handle all rejection cases
       .addMatcher(
         isAnyOf(verifyOTP.rejected, registerUser.rejected, loginUser.rejected, logoutUser.rejected, checkAuth.rejected, fetchUser.rejected, googleLoginUser.rejected, githubLoginUser.rejected),
         (state, action) => {
@@ -239,7 +228,6 @@ const authSlice = createSlice({
   }
 });
 
-// Export the new action along with existing ones
 export const { setUser, clearError, resetOTPState, updateUserDailyChallenges } = authSlice.actions;
 
 export default authSlice.reducer;
