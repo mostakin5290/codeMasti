@@ -123,17 +123,17 @@ const AdminDashboardPage = () => {
                 <h3 className={`text-lg font-semibold ${appTheme.highlightSecondary} mt-6 mb-3`}>Users by Role:</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="flex items-center gap-3">
-                        <FaUserShield className={`text-2xl ${appTheme.primary}`} />
+                        <FaUserShield className={`text-2xl ${appTheme.text}`} />
                         <span className={`${appTheme.cardText}`}>Admins: </span>
                         <span className={`${appTheme.text} font-semibold`}>{stats?.usersByRole?.admin ?? '0'}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                        <FaUserCog className={`text-2xl ${appTheme.secondary}`} />
+                        <FaUserCog className={`text-2xl ${appTheme.text}`} />
                         <span className={`${appTheme.cardText}`}>Co-Admins: </span>
                         <span className={`${appTheme.text} font-semibold`}>{stats?.usersByRole?.['co-admin'] ?? '0'}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                        <FaUserAlt className={`text-2xl ${appTheme.cardText}`} />
+                        <FaUserAlt className={`text-2xl ${appTheme.text}`} />
                         <span className={`${appTheme.cardText}`}>Regular Users: </span>
                         <span className={`${appTheme.text} font-semibold`}>{stats?.usersByRole?.user ?? '0'}</span>
                     </div>

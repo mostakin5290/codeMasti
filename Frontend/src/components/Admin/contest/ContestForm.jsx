@@ -365,13 +365,13 @@ const ContestForm = ({ isEdit = false }) => {
                         {loading ? (
                             <span className="animate-spin">↻</span>
                         ) : isEdit ? (
-                            <>
+                            <div className={`flex items-center justify-center gap-2 px-4 py-2 w-full md:w-auto ${appTheme.buttonPrimary} ${appTheme.buttonText} rounded-lg font-semibold hover:shadow-lg transition-all duration-300`}>
                                 <FaEdit /> Update Contest
-                            </>
+                            </div>
                         ) : (
-                            <>
+                            <div className={`flex items-center justify-center gap-2 px-4 py-2 w-full md:w-auto ${appTheme.buttonPrimary} ${appTheme.buttonText} rounded-lg font-semibold hover:shadow-lg transition-all duration-300`}>
                                 <FaPlus /> Create Contest
-                            </>
+                            </div>
                         )}
                     </button>
                 </div>

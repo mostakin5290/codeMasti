@@ -33,15 +33,10 @@ const AdminLayout = () => {
     const { theme: appThemeFromContext } = useTheme();
     const appTheme = { ...defaultTheme, ...appThemeFromContext };
 
-    // Helper for primary gradient (used for buttons, highlights)
     const getPrimaryGradient = () => `bg-gradient-to-r ${appTheme.buttonPrimary}`;
-    // const getPrimaryGradientHover = () => `hover:${appTheme.buttonPrimaryHover.replace('bg-', 'from-')} hover:${appTheme.secondaryHover.replace('bg-', 'to-')}`;
 
-    // Helper for main background gradient (using gradientFrom/To)
     const getMainBackgroundGradient = () => `bg-gradient-to-br ${appTheme.gradientFrom} ${appTheme.gradientTo}`;
 
-
-    // Handle scroll effect for dynamic blur (keeping original effect structure, but colors are themed)
     useEffect(() => {
         const handleScroll = () => setScrollY(window.scrollY);
         window.addEventListener('scroll', handleScroll);
@@ -124,7 +119,7 @@ const AdminLayout = () => {
                 {sidebarOpen ? <FaTimes /> : <FaBars />}
             </button>
 
-            <div className="max-w-7xl mx-auto px-4 py-8 gap-8 flex relative z-10">
+            <div className=" mx-auto px-4 py-8 gap-8 flex relative z-10">
                 {/* Sidebar (themed) */}
                 <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 w-72 lg:w-80 flex-shrink-0 transition-transform duration-300 ease-in-out lg:block`}>
                     <div className={`p-8 ${appTheme.cardBg}/10 backdrop-blur-2xl rounded-2xl border ${appTheme.border}/20 h-full sticky top-24 shadow-2xl`}>

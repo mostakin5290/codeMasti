@@ -255,7 +255,7 @@ const ProblemList = () => {
         `bg-gradient-to-r ${appTheme.primary.replace('bg-', 'from-')} ${appTheme.secondary.replace('bg-', 'to-')} hover:${appTheme.primaryHover.replace('bg-', 'from-')} hover:${appTheme.secondaryHover.replace('bg-', 'to-')} ${appTheme.buttonText}`;
 
     const getIconButtonClasses = (colorClass) =>
-        `group/btn p-3 bg-gradient-to-r ${colorClass.replace('text-', 'from-')} ${colorClass.replace('text-', 'to-')}/80 hover:${colorClass.replace('text-', 'from-')}/90 hover:${colorClass.replace('text-', 'to-')}/90 rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-lg`;
+        `group/btn p-3 bg-gradient-to-r ${colorClass.replace('text-', 'from-')} ${colorClass.replace('text-', 'to-')} hover:${colorClass.replace('text-', 'from-')} hover:${colorClass.replace('text-', 'to-')} rounded-xl transition-all duration-300 hover:scale-110 hover:shadow-lg`;
 
 
     return (
@@ -276,7 +276,7 @@ const ProblemList = () => {
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     <div className="flex items-center">
                         <div className={`p-3 bg-gradient-to-r ${appTheme.primary.replace('bg-', 'from-')} ${appTheme.secondary.replace('bg-', 'to-')} rounded-xl mr-4 shadow-lg`}>
-                            <FaCode className={`text-2xl ${appTheme.buttonText}`} />
+                            <FaCode className={`text-2xl ${appTheme.text}`} />
                         </div>
                         <div>
                             <h1 className={`text-3xl font-bold bg-gradient-to-r ${appTheme.text.replace('text-', 'from-')} ${appTheme.cardText.replace('text-', 'to-')} bg-clip-text `}>
@@ -369,7 +369,7 @@ const ProblemList = () => {
                                             </div>
                                         </td>
                                         <td className="p-6">
-                                            <div className={`inline-flex items-center px-3 py-1 rounded-xl bg-gradient-to-r ${getDifficultyColor(problem.difficulty)} ${appTheme.buttonText} font-semibold text-sm shadow-lg`}>
+                                            <div className={`inline-flex items-center px-3 py-1 rounded-xl bg-gradient-to-r ${getDifficultyColor(problem.difficulty)} ${appTheme.text} font-semibold text-sm shadow-lg`}>
                                                 <span className="mr-2">{getDifficultyIcon(problem.difficulty)}</span>
                                                 {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
                                             </div>
@@ -400,7 +400,7 @@ const ProblemList = () => {
                                                     className={getIconButtonClasses(appTheme.highlightSecondary)}
                                                     aria-label="Edit Problem"
                                                 >
-                                                    <FaEdit className={`${appTheme.buttonText} group-hover/btn:animate-pulse`} />
+                                                    <FaEdit className={`${appTheme.text} group-hover/btn:animate-pulse`} />
                                                 </Link>
 
                                                 {/* Video Upload/Delete Button */}
@@ -410,7 +410,7 @@ const ProblemList = () => {
                                                         className={getIconButtonClasses(appTheme.errorColor)}
                                                         aria-label="Delete Solution Video"
                                                     >
-                                                        <FaVideoSlash className={`${appTheme.buttonText} group-hover/btn:animate-pulse`} />
+                                                        <FaVideoSlash className={`${appTheme.text} group-hover/btn:animate-pulse`} />
                                                     </button>
                                                 ) : (
                                                     <button
@@ -418,7 +418,7 @@ const ProblemList = () => {
                                                         className={getIconButtonClasses(appTheme.infoColor)}
                                                         aria-label="Upload Solution Video"
                                                     >
-                                                        <FaUpload className={`${appTheme.buttonText} group-hover/btn:animate-pulse`} />
+                                                        <FaUpload className={`${appTheme.text} group-hover/btn:animate-pulse`} />
                                                     </button>
                                                 )}
 
@@ -428,7 +428,7 @@ const ProblemList = () => {
                                                     className={getIconButtonClasses(appTheme.errorColor)}
                                                     aria-label="Delete Problem"
                                                 >
-                                                    <FaTrash className={`${appTheme.buttonText} group-hover/btn:animate-pulse`} />
+                                                    <FaTrash className={`${appTheme.text} group-hover/btn:animate-pulse`} />
                                                 </button>
                                             </div>
                                         </td>

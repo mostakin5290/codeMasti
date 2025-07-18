@@ -131,7 +131,7 @@ const AdminSiteSettingsPage = () => {
                                     min="0"
                                     step="0.01"
                                     required
-                                    disabled={isFormDisabled} // Disabled based on role or submitting state
+                                    disabled={isFormDisabled}
                                 />
                             </div>
 
@@ -147,7 +147,7 @@ const AdminSiteSettingsPage = () => {
                                     min="0"
                                     step="0.01"
                                     required
-                                    disabled={isFormDisabled} // Disabled based on role or submitting state
+                                    disabled={isFormDisabled}
                                 />
                             </div>
                         </div>
@@ -157,8 +157,8 @@ const AdminSiteSettingsPage = () => {
                             <div className="flex items-center gap-4">
                                 <button
                                     type="submit"
-                                    className={`px-6 py-3 rounded ${getPrimaryButtonClasses()} font-medium flex items-center justify-center gap-2`}
-                                    disabled={isFormDisabled} // Still disabled during submission
+                                    className={`flex items-center justify-center gap-2 px-4 py-2 w-full md:w-auto ${appTheme.buttonPrimary} ${appTheme.buttonText} rounded-lg font-semibold hover:shadow-lg transition-all duration-300`}
+                                    disabled={isFormDisabled}
                                 >
                                     {isSubmitting ? (
                                         <>

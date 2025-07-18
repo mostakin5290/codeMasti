@@ -453,7 +453,7 @@ const Home = () => {
                         {user?.isPremium ? (
                             <Link
                                 to="/explore-premium"
-                                className="px-8 py-4 rounded-lg bg-white/5 border border-white/20 text-white font-medium hover:bg-white/10 transition-all transform hover:scale-[1.02] flex items-center justify-center"
+                                className={`inline-flex items-center justify-center px-8 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${theme.buttonText} transform hover:scale-105`}
                             >
                                 Explore Premium <FiStar className="ml-2 text-yellow-400" />
                             </Link>

@@ -421,7 +421,7 @@ const ExplorePremium = () => {
                                         <FiCheckCircle className="ml-3 text-2xl" />
                                     </Link>
                                 ) : (
-                                    <div className="px-8 py-4 rounded-lg bg-white/5 border border-white/20 text-white font-medium flex items-center justify-center cursor-default">
+                                    <div className={`inline-flex items-center justify-center px-8 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${theme.buttonText} transform hover:scale-105`}>
                                         Your Premium is Active!
                                         <FiStar className="ml-2 text-yellow-400" />
                                     </div>

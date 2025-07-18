@@ -200,7 +200,7 @@ const DailyChallengeAdmin = () => {
         option.children.toLowerCase().includes(input.toLowerCase());
 
     return (
-        <div className={`daily-challenge-admin p-6 ${theme.background} ${theme.text}`}> {/* Applied theme */}
+        <div className={`daily-challenge-admin p-6 ${theme.background} ${theme.text}`}>
             {/* Header Section */}
             <div className="flex justify-between items-center mb-6">
                 <h2 className={`text-3xl font-bold flex items-center ${theme.text}`}> {/* Applied theme */}

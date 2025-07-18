@@ -14,13 +14,11 @@ const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
     primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
     cardBg: 'bg-gray-800', cardText: 'text-gray-300', border: 'border-gray-700',
-    // New button primary default colors
-    buttonPrimary: 'bg-indigo-600', // Default solid primary button color
-    buttonPrimaryHover: 'bg-indigo-700', // Default solid primary button hover color
+    buttonPrimary: 'bg-indigo-600',
+    buttonPrimaryHover: 'bg-indigo-700',
     buttonText: 'text-white', highlight: 'text-cyan-400', highlightSecondary: 'text-blue-400',
     highlightTertiary: 'text-purple-400', iconBg: 'bg-cyan-500/10',
     gradientFrom: 'from-gray-900', gradientTo: 'to-gray-800',
-    // Add status colors to default theme for consistency, though not directly used here
     successColor: 'text-emerald-400',
     warningColor: 'text-amber-400',
     errorColor: 'text-red-400',
@@ -142,7 +140,7 @@ const ContestManagement = () => {
                 <h2 className={`text-xl sm:text-2xl font-bold ${appTheme.text}`}>Manage Contests</h2>
                 <Link
                     to="/admin/contests/create"
-                    className={`flex items-center justify-center gap-2 px-4 py-2 w-full md:w-auto ${appTheme.primary.replace('bg-', 'bg-gradient-to-r from-')} ${appTheme.highlight.replace('text-', 'to-')} ${appTheme.buttonText} rounded-lg font-semibold hover:shadow-lg transition-all duration-300`}
+                    className={`flex items-center justify-center gap-2 px-4 py-2 w-full md:w-auto ${appTheme.buttonPrimary} ${appTheme.buttonText} rounded-lg font-semibold hover:shadow-lg transition-all duration-300`}
                 >
                     <FaPlus /> Create New Contest
                 </Link>
@@ -248,14 +246,14 @@ const ContestManagement = () => {
                                         <div className="flex justify-end gap-1 sm:gap-2">
                                             <Link
                                                 to={`/admin/contests/${contest._id}/edit`}
-                                                className={`p-1.5 sm:p-2 ${appTheme.cardBg.replace('bg-', 'bg-')} rounded-lg ${appTheme.cardText} hover:${appTheme.primary.replace('bg-', 'bg-')} hover:${appTheme.buttonText} transition-colors text-base`}
+                                                className={`p-1.5 sm:p-2 ${appTheme.cardBg.replace('bg-', 'bg-')} rounded-lg ${appTheme.cardText} hover:${appTheme.primary.replace('bg-', 'bg-')} hover:${appTheme.text} transition-colors text-base`}
                                             >
                                                 <FaEdit />
                                             </Link>
                                             <button
-                                                onClick={() => handleDeleteClick(contest._id)} // Changed to open modal
-                                                className={`p-1.5 sm:p-2 ${appTheme.cardBg.replace('bg-', 'bg-')} rounded-lg ${appTheme.cardText} hover:${appTheme.errorColor.replace('text-', 'bg-')} hover:text-white transition-colors text-base`}
-                                                disabled={modalIsLoading} // Disable button when modal is loading
+                                                onClick={() => handleDeleteClick(contest._id)}
+                                                className={`p-1.5 sm:p-2 ${appTheme.cardBg.replace('bg-', 'bg-')} rounded-lg ${appTheme.cardText} hover:${appTheme.errorColor.replace('text-', 'bg-')} hover:${appTheme.text} transition-colors text-base`}
+                                                disabled={modalIsLoading}
                                             >
                                                 <FaTrash />
                                             </button>

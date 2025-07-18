@@ -11,6 +11,7 @@ const otpGenerator = require('otp-generator')
 const validator = require('validator');
 const nodemailer = require('nodemailer');
 const Subscription = require('../models/subscription')
+const sendEmail = require('../utils/emailSender')
 
 
 const register = async (req, res) => {
@@ -296,6 +297,7 @@ const sendOTP = async (req, res) => {
         });
 
         // Configure nodemailer transporter
+        // Consider moving this to utils/emailSender.js for consistency
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             host: 'smtp.gmail.com',
@@ -309,47 +311,48 @@ const sendOTP = async (req, res) => {
 
         // Email options
         const mailOptions = {
-            from: `"CodeCrack" <${process.env.SENDER_EMAIL}>`,
+            from: `"${process.env.APP_NAME}" <${process.env.SENDER_EMAIL}>`, // Use APP_NAME here
             to: emailId,
-            subject: 'CodeCrack - Your Verification Code',
+            subject: `${process.env.APP_NAME} - Your Verification Code`, // Use APP_NAME here
             html: `
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>CodeCrack Verification</title>
+            <title>${process.env.APP_NAME} Verification</title>
+            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
         </head>
-        <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        <body style="margin: 0; padding: 0; background-color: #f5f5ed; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
             <div style="min-height: 100vh; padding: 40px 20px; display: flex; align-items: center; justify-content: center;">
                 <div style="
                     background: rgba(255, 255, 255, 0.95);
                     backdrop-filter: blur(20px);
                     border-radius: 20px;
                     box-shadow: 
-                        0 25px 50px rgba(0, 0, 0, 0.25),
+                        0 25px 50px rgba(0, 0, 0, 0.15),
                         0 0 0 1px rgba(255, 255, 255, 0.2);
                     max-width: 500px;
                     width: 100%;
                     overflow: hidden;
                     position: relative;
                 ">
-                    <!-- Header with 3D effect -->
+                    <!-- Header with CodeMasti branding -->
                     <div style="
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        background: linear-gradient(135deg, #FF6F61 0%, #8A2BE2 100%); /* Vibrant gradient from CodeMasti logo */
                         padding: 40px 30px;
                         text-align: center;
                         position: relative;
                         overflow: hidden;
                     ">
-                        <!-- Background geometric shapes -->
+                        <!-- Background geometric shapes (adjusted opacity) -->
                         <div style="
                             position: absolute;
                             top: -50px;
                             right: -50px;
                             width: 100px;
                             height: 100px;
-                            background: rgba(255, 255, 255, 0.1);
+                            background: rgba(255, 255, 255, 0.08); /* Softer white */
                             border-radius: 50%;
                             transform: rotate(45deg);
                         "></div>
@@ -359,31 +362,13 @@ const sendOTP = async (req, res) => {
                             left: -30px;
                             width: 60px;
                             height: 60px;
-                            background: rgba(255, 255, 255, 0.1);
+                            background: rgba(255, 255, 255, 0.08); /* Softer white */
                             transform: rotate(45deg);
                         "></div>
                         
-                        <!-- Logo/Brand -->
-                        <div style="
-                            background: rgba(255, 255, 255, 0.2);
-                            width: 80px;
-                            height: 80px;
-                            border-radius: 20px;
-                            margin: 0 auto 20px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            box-shadow: 
-                                0 10px 30px rgba(0, 0, 0, 0.2),
-                                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-                            position: relative;
-                        ">
-                            <span style="
-                                color: white;
-                                font-size: 24px;
-                                font-weight: bold;
-                                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-                            ">&lt;/&gt;</span>
+                        <!-- CodeMasti Logo -->
+                        <div style="margin: 0 auto 20px;">
+                            <img src="${process.env.APP_LOGO_URL}" alt="${process.env.APP_NAME} Logo" style="max-width: 120px; height: auto; display: block; margin: 0 auto;">
                         </div>
                         
                         <h1 style="
@@ -391,11 +376,11 @@ const sendOTP = async (req, res) => {
                             margin: 0;
                             font-size: 32px;
                             font-weight: 700;
-                            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
                             letter-spacing: -0.5px;
-                        ">CodeCrack</h1>
+                        ">${process.env.APP_NAME}</h1>
                         <p style="
-                            color: rgba(255, 255, 255, 0.9);
+                            color: rgba(255, 255, 255, 0.85); /* Slightly darker white for contrast */
                             margin: 8px 0 0;
                             font-size: 16px;
                             font-weight: 300;
@@ -419,55 +404,55 @@ const sendOTP = async (req, res) => {
                             margin: 0 0 30px;
                             text-align: center;
                         ">
-                            Welcome to CodeCrack! Please use the verification code below to complete your registration:
+                            Welcome to ${process.env.APP_NAME}! Please use the verification code below to complete your registration:
                         </p>
                         
-                        <!-- 3D OTP Container -->
+                        <!-- OTP Container with updated gradient -->
                         <div style="text-align: center; margin: 30px 0;">
                             <div style="
-                                background: linear-gradient(145deg, #f7fafc, #edf2f7);
-                                border: 2px solid #e2e8f0;
+                                background: linear-gradient(145deg, #fefefe, #f1f1f1); /* Softer white background */
+                                border: 2px solid #e0e0e0; /* Softer border */
                                 border-radius: 16px;
                                 padding: 25px 20px;
                                 display: inline-block;
                                 position: relative;
                                 box-shadow: 
-                                    0 10px 25px rgba(0, 0, 0, 0.1),
-                                    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-                                    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-                                transform: perspective(1000px) rotateX(5deg);
+                                    0 10px 20px rgba(0, 0, 0, 0.08), /* Lighter shadow */
+                                    inset 0 1px 0 rgba(255, 255, 255, 0.7), /* Softer inner highlight */
+                                    inset 0 -1px 0 rgba(0, 0, 0, 0.05); /* Softer inner shadow */
+                                transform: perspective(1000px) rotateX(3deg); /* Less aggressive 3D */
                             ">
                                 <div style="
-                                    background: linear-gradient(135deg, #667eea, #764ba2);
+                                    background: linear-gradient(135deg, #FF6F61, #8A2BE2); /* Matching CodeMasti logo gradient */
                                     -webkit-background-clip: text;
                                     -webkit-text-fill-color: transparent;
                                     background-clip: text;
                                     font-size: 36px;
                                     font-weight: 800;
                                     letter-spacing: 8px;
-                                    font-family: 'Courier New', monospace;
-                                    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+                                    font-family: 'Poppins', sans-serif; /* Using Poppins for OTP */
+                                    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.08); /* Softer text shadow */
                                     margin: 0;
                                     line-height: 1;
                                 ">${otp}</div>
                             </div>
                         </div>
                         
-                        <!-- Warning message -->
+                        <!-- Warning message (colors adjusted to complement CodeMasti palette) -->
                         <div style="
-                            background: linear-gradient(135deg, #fed7d7, #feb2b2);
-                            border: 1px solid #fc8181;
+                            background: linear-gradient(135deg, #FFF0E6, #FFECDB); /* Soft orange-red gradient */
+                            border: 1px solid #FFBE9E; /* Muted orange-red border */
                             border-radius: 12px;
                             padding: 16px;
                             margin: 25px 0;
                             position: relative;
-                            box-shadow: 0 4px 12px rgba(252, 129, 129, 0.2);
+                            box-shadow: 0 4px 10px rgba(255, 190, 158, 0.2); /* Lighter shadow */
                         ">
                             <div style="
                                 position: absolute;
                                 top: -6px;
                                 left: 20px;
-                                background: #fc8181;
+                                background: #FF8C6B; /* Direct orange-red for the tag */
                                 color: white;
                                 padding: 4px 12px;
                                 border-radius: 12px;
@@ -477,7 +462,7 @@ const sendOTP = async (req, res) => {
                                 letter-spacing: 0.5px;
                             ">Important</div>
                             <p style="
-                                color: #742a2a;
+                                color: #A0522D; /* Darker orange-brown text */
                                 font-size: 14px;
                                 margin: 8px 0 0;
                                 font-weight: 500;
@@ -486,29 +471,29 @@ const sendOTP = async (req, res) => {
                             </p>
                         </div>
                         
-                        <!-- Instructions -->
+                        <!-- Instructions (colors adjusted to complement CodeMasti palette) -->
                         <div style="
-                            background: linear-gradient(135deg, #e6fffa, #b2f5ea);
-                            border: 1px solid #4fd1c7;
+                            background: linear-gradient(135deg, #EBE6FF, #E0D8ED); /* Soft lavender-purple gradient */
+                            border: 1px solid #9966CC; /* Muted purple border */
                             border-radius: 12px;
                             padding: 20px;
                             margin: 20px 0;
-                            box-shadow: 0 4px 12px rgba(79, 209, 199, 0.2);
+                            box-shadow: 0 4px 10px rgba(153, 102, 204, 0.2); /* Lighter shadow */
                         ">
                             <h3 style="
-                                color: #234e52;
+                                color: #5F3C8C; /* Darker purple text */
                                 font-size: 16px;
                                 margin: 0 0 12px;
                                 font-weight: 600;
                             ">📋 Next Steps:</h3>
                             <ol style="
-                                color: #2d5a60;
+                                color: #6D4C9E; /* Muted purple list text */
                                 font-size: 14px;
                                 margin: 0;
                                 padding-left: 20px;
                                 line-height: 1.6;
                             ">
-                                <li>Return to the CodeCrack verification page</li>
+                                <li>Return to the ${process.env.APP_NAME} verification page</li>
                                 <li>Enter the 6-digit code above</li>
                                 <li>Complete your account setup</li>
                             </ol>
@@ -531,7 +516,7 @@ const sendOTP = async (req, res) => {
                             Didn't request this code? Please ignore this email or contact our support team.
                         </p>
                         <div style="
-                            background: linear-gradient(135deg, #667eea, #764ba2);
+                            background: linear-gradient(135deg, #FF6F61, #8A2BE2); /* Matching CodeMasti logo gradient */
                             -webkit-background-clip: text;
                             -webkit-text-fill-color: transparent;
                             background-clip: text;
@@ -539,7 +524,7 @@ const sendOTP = async (req, res) => {
                             font-weight: 700;
                             margin: 0;
                         ">
-                            © 2025 CodeCrack. All rights reserved.
+                            © ${new Date().getFullYear()} ${process.env.APP_NAME}. All rights reserved.
                         </div>
                     </div>
                 </div>
@@ -1370,16 +1355,10 @@ const updateUserRole = async (req, res) => {
         if (newRole === 'admin' && performingUser.role === 'admin') {
             const existingAdmin = await User.findOne({ role: 'admin' });
 
-            // If there's an existing admin AND it's not the user we are trying to promote
             if (existingAdmin && existingAdmin._id.toString() !== userToUpdate._id.toString()) {
-                // This means the current admin is trying to promote a DIFFERENT user to 'admin'.
-                // To maintain "only one admin", the existing admin is demoted.
                 existingAdmin.role = 'user'; // Demote current admin to regular 'user'
                 await existingAdmin.save();
-                console.log(`Admin role transferred: Old admin ${existingAdmin.emailId} demoted to user.`);
             }
-            // If existingAdmin is null, it means no admin exists, so the promotion is valid.
-            // If existingAdmin is the same as userToUpdate, it means the target is already admin, no change needed.
         }
 
         userToUpdate.role = newRole;
@@ -1401,6 +1380,7 @@ const updateUserRole = async (req, res) => {
         });
     }
 };
+
 const adminDeleteUser = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -1467,7 +1447,7 @@ const adminDeleteUser = async (req, res) => {
 const toggleUserPremiumStatus = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { isPremium, duration, customMonths } = req.body; 
+        const { isPremium, duration, customMonths } = req.body;
 
         if (typeof isPremium !== 'boolean') {
             return res.status(400).json({
@@ -1489,7 +1469,6 @@ const toggleUserPremiumStatus = async (req, res) => {
         }
 
         if (isPremium) { // Granting premium status
-            // ... (your existing logic for granting premium remains the same)
             if (!duration) {
                 return res.status(400).json({
                     success: false,
@@ -1499,20 +1478,25 @@ const toggleUserPremiumStatus = async (req, res) => {
 
             let endDate = new Date();
             let planType;
-            const startDate = new Date(); 
-            
+            let durationString = ''; // To be used in email
+            const startDate = new Date();
+
             if (duration === '1month') {
                 endDate.setMonth(endDate.getMonth() + 1);
                 planType = 'monthly';
+                durationString = '1 Month';
             } else if (duration === '2month') {
                 endDate.setMonth(endDate.getMonth() + 2);
                 planType = 'custom_duration';
+                durationString = '2 Months';
             } else if (duration === '3month') {
                 endDate.setMonth(endDate.getMonth() + 3);
                 planType = 'custom_duration';
+                durationString = '3 Months';
             } else if (duration === '1year') {
                 endDate.setFullYear(endDate.getFullYear() + 1);
                 planType = 'yearly';
+                durationString = '1 Year';
             } else if (duration === 'custom') {
                 const monthsToAdd = parseInt(customMonths, 10);
                 if (isNaN(monthsToAdd) || monthsToAdd <= 0) {
@@ -1523,6 +1507,7 @@ const toggleUserPremiumStatus = async (req, res) => {
                 }
                 endDate.setMonth(endDate.getMonth() + monthsToAdd);
                 planType = 'custom_duration';
+                durationString = `${monthsToAdd} Months`;
             } else {
                 return res.status(400).json({
                     success: false,
@@ -1545,30 +1530,312 @@ const toggleUserPremiumStatus = async (req, res) => {
 
             user.isPremium = true;
             user.activeSubscription = newSubscription._id;
-            
+            await user.save(); // Save user after updating subscription reference
+
+            // Send success email for granted premium
+            if (user.emailId) {
+                const subject = `🥳 Congratulations! You've Received CodeMasti Premium!`;
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>${process.env.APP_NAME} - Premium Granted</title>
+                        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+                    </head>
+                    <body style="margin: 0; padding: 0; background-color: #f5f5ed; font-family: 'Poppins', Arial, sans-serif;">
+                        <div style="min-height: 100vh; padding: 40px 20px; display: flex; align-items: center; justify-content: center;">
+                            <div style="
+                                background: rgba(255, 255, 255, 0.95);
+                                border-radius: 20px;
+                                box-shadow: 
+                                    0 25px 50px rgba(0, 0, 0, 0.15),
+                                    0 0 0 1px rgba(255, 255, 255, 0.2);
+                                max-width: 600px;
+                                width: 100%;
+                                overflow: hidden;
+                            ">
+                                <!-- Header with CodeMasti branding -->
+                                <div style="
+                                    background: linear-gradient(135deg, #FF6F61 0%, #8A2BE2 100%); /* CodeMasti gradient */
+                                    padding: 40px 30px;
+                                    text-align: center;
+                                    position: relative;
+                                    overflow: hidden;
+                                ">
+                                    <img src="${process.env.APP_LOGO_URL}" alt="${process.env.APP_NAME} Logo" style="max-width: 120px; height: auto; display: block; margin: 0 auto 20px;">
+                                    <h1 style="
+                                        color: white;
+                                        margin: 0;
+                                        font-size: 30px;
+                                        font-weight: 700;
+                                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                                        letter-spacing: -0.5px;
+                                    ">CodeMasti Premium Activated!</h1>
+                                    <p style="
+                                        color: rgba(255, 255, 255, 0.85);
+                                        margin: 8px 0 0;
+                                        font-size: 16px;
+                                        font-weight: 300;
+                                    ">Enjoy exclusive features!</p>
+                                </div>
+                                
+                                <!-- Main content -->
+                                <div style="padding: 40px 30px;">
+                                    <p style="
+                                        color: #4a5568;
+                                        font-size: 16px;
+                                        line-height: 1.6;
+                                        margin: 0 0 25px;
+                                    ">
+                                        Dear ${user.firstName || 'Valued User'},
+                                    </p>
+                                    <p style="
+                                        color: #4a5568;
+                                        font-size: 16px;
+                                        line-height: 1.6;
+                                        margin: 0 0 30px;
+                                    ">
+                                        We're thrilled to inform you that your CodeMasti account has been upgraded to Premium! This premium access has been generously granted by our administration.
+                                    </p>
+
+                                    <h3 style="
+                                        color: #2d3748;
+                                        margin: 0 0 15px;
+                                        font-size: 20px;
+                                        font-weight: 600;
+                                        border-bottom: 1px solid #eee;
+                                        padding-bottom: 10px;
+                                    ">Your Premium Details</h3>
+                                    <ul style="list-style-type: none; padding: 0; margin: 0 0 30px;">
+                                        <li style="margin-bottom: 10px; color: #555;"><strong>Plan:</strong> <span style="color: #333;">${planType.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} (Gifted)</span></li>
+                                        <li style="margin-bottom: 10px; color: #555;"><strong>Duration:</strong> <span style="color: #333;">${durationString}</span></li>
+                                        <li style="margin-bottom: 10px; color: #555;"><strong>Start Date:</strong> <span style="color: #333;">${newSubscription.startDate.toLocaleDateString()}</span></li>
+                                        <li style="color: #555;"><strong>End Date:</strong> <span style="color: #333; font-weight: 600; color: #28a745;">${newSubscription.endDate.toLocaleDateString()}</span></li>
+                                    </ul>
+
+                                    <p style="text-align: center; margin-top: 30px;">
+                                        <a href="${process.env.APP_URL}/dashboard/subscriptions" style="
+                                            display: inline-block;
+                                            padding: 12px 25px;
+                                            background: linear-gradient(135deg, #FF6F61, #8A2BE2);
+                                            color: #ffffff;
+                                            text-decoration: none;
+                                            border-radius: 8px;
+                                            font-weight: 600;
+                                            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                                        ">Explore Premium Features</a>
+                                    </p>
+
+                                    <p style="color: #4a5568; margin-top: 30px;">If you have any questions or feedback, please feel free to reach out to our support team.</p>
+                                </div>
+                                
+                                <!-- Footer -->
+                                <div style="
+                                    background: linear-gradient(135deg, #f7fafc, #edf2f7);
+                                    padding: 25px 30px;
+                                    text-align: center;
+                                    border-top: 1px solid #e2e8f0;
+                                ">
+                                    <p style="
+                                        color: #718096;
+                                        font-size: 13px;
+                                        margin: 0 0 10px;
+                                        line-height: 1.5;
+                                    ">
+                                        Thank you for being a part of CodeMasti!<br>The ${process.env.APP_NAME} Team
+                                    </p>
+                                    <div style="
+                                        background: linear-gradient(135deg, #FF6F61, #8A2BE2);
+                                        -webkit-background-clip: text;
+                                        -webkit-text-fill-color: transparent;
+                                        background-clip: text;
+                                        font-size: 14px;
+                                        font-weight: 700;
+                                        margin: 0;
+                                    ">
+                                        © ${new Date().getFullYear()} ${process.env.APP_NAME}. All rights reserved.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `;
+                await sendEmail(user.emailId, subject, htmlContent);
+            }
+
         } else { // Revoking premium status
+            const wasPremium = user.isPremium; // Check if they were actually premium before revoking
+
             user.isPremium = false;
-            // If there's an active subscription, handle it based on its source
+            let revokedSubscriptionDetails = null; // To store details for the email
+
             if (user.activeSubscription) {
                 const activeSub = await Subscription.findById(user.activeSubscription);
                 if (activeSub) {
+                    revokedSubscriptionDetails = {
+                        plan: activeSub.plan,
+                        source: activeSub.source,
+                        startDate: activeSub.startDate,
+                        endDate: activeSub.endDate,
+                        reason: (activeSub.source === 'admin_grant' ? 'Administratively revoked' : 'Cancelled by administrator')
+                    };
+
                     if (activeSub.source === 'admin_grant') {
                         // If it was an admin grant, delete it completely
                         await Subscription.findByIdAndDelete(activeSub._id);
-                        console.log(`Admin-granted subscription ${activeSub._id} for user ${user._id} deleted.`);
                     } else {
                         // If it was a paid subscription (e.g., Razorpay), just mark it cancelled
                         activeSub.status = 'cancelled';
                         activeSub.endDate = new Date(); // Set end date to now for immediate revocation
                         await activeSub.save();
-                        console.log(`Paid subscription ${activeSub._id} for user ${user._id} cancelled.`);
                     }
                 }
             }
             user.activeSubscription = null; // Always clear the reference
+            await user.save(); // Save user after updating subscription reference
+
+            // Send revocation email only if they were premium before this action
+            if (wasPremium && user.emailId) {
+                const subject = `Changes to Your CodeMasti Premium Status`;
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>${process.env.APP_NAME} - Premium Revoked</title>
+                        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+                    </head>
+                    <body style="margin: 0; padding: 0; background-color: #f5f5ed; font-family: 'Poppins', Arial, sans-serif;">
+                        <div style="min-height: 100vh; padding: 40px 20px; display: flex; align-items: center; justify-content: center;">
+                            <div style="
+                                background: rgba(255, 255, 255, 0.95);
+                                border-radius: 20px;
+                                box-shadow: 
+                                    0 25px 50px rgba(0, 0, 0, 0.15),
+                                    0 0 0 1px rgba(255, 255, 255, 0.2);
+                                max-width: 600px;
+                                width: 100%;
+                                overflow: hidden;
+                            ">
+                                <!-- Header with CodeMasti branding (Warning style) -->
+                                <div style="
+                                    background: linear-gradient(135deg, #FF6F61 0%, #8A2BE2 100%); /* CodeMasti gradient */
+                                    padding: 40px 30px;
+                                    text-align: center;
+                                    position: relative;
+                                    overflow: hidden;
+                                ">
+                                    <img src="${process.env.APP_LOGO_URL}" alt="${process.env.APP_NAME} Logo" style="max-width: 120px; height: auto; display: block; margin: 0 auto 20px;">
+                                    <h1 style="
+                                        color: white;
+                                        margin: 0;
+                                        font-size: 30px;
+                                        font-weight: 700;
+                                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                                        letter-spacing: -0.5px;
+                                    ">Premium Status Updated</h1>
+                                    <p style="
+                                        color: rgba(255, 255, 255, 0.85);
+                                        margin: 8px 0 0;
+                                        font-size: 16px;
+                                        font-weight: 300;
+                                    ">Your premium access has been modified.</p>
+                                </div>
+                                
+                                <!-- Main content -->
+                                <div style="padding: 40px 30px;">
+                                    <p style="
+                                        color: #4a5568;
+                                        font-size: 16px;
+                                        line-height: 1.6;
+                                        margin: 0 0 25px;
+                                    ">
+                                        Dear ${user.firstName || 'Valued User'},
+                                    </p>
+                                    <p style="
+                                        color: #4a5568;
+                                        font-size: 16px;
+                                        line-height: 1.6;
+                                        margin: 0 0 30px;
+                                    ">
+                                        This email confirms that your premium subscription status for CodeMasti has been updated.
+                                        Your account is now a standard free user account.
+                                    </p>
+                                    ${revokedSubscriptionDetails ? `
+                                    <h3 style="
+                                        color: #2d3748;
+                                        margin: 0 0 15px;
+                                        font-size: 20px;
+                                        font-weight: 600;
+                                        border-bottom: 1px solid #eee;
+                                        padding-bottom: 10px;
+                                    ">Previous Subscription Details</h3>
+                                    <ul style="list-style-type: none; padding: 0; margin: 0 0 30px;">
+                                        <li style="margin-bottom: 10px; color: #555;"><strong>Plan:</strong> <span style="color: #333;">${revokedSubscriptionDetails.plan.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span></li>
+                                        <li style="margin-bottom: 10px; color: #555;"><strong>Source:</strong> <span style="color: #333;">${revokedSubscriptionDetails.source === 'admin_grant' ? 'Admin Granted' : 'Paid Subscription'}</span></li>
+                                        <li style="margin-bottom: 10px; color: #555;"><strong>Initiated:</strong> <span style="color: #333;">${revokedSubscriptionDetails.startDate.toLocaleDateString()}</span></li>
+                                        <li style="margin-bottom: 10px; color: #555;"><strong>Reason for change:</strong> <span style="color: #dc3545; font-weight: 600;">${revokedSubscriptionDetails.reason}</span></li>
+                                    </ul>
+                                    ` : ''}
+
+                                    <p style="color: #4a5568; margin-top: 30px; text-align: center;">
+                                        You can still use CodeMasti with our free features. If you wish to regain premium access, you can subscribe anytime.
+                                    </p>
+                                    <p style="text-align: center; margin-top: 30px;">
+                                        <a href="${process.env.APP_URL}/pricing" style="
+                                            display: inline-block;
+                                            padding: 12px 25px;
+                                            background: linear-gradient(135deg, #FF6F61, #8A2BE2);
+                                            color: #ffffff;
+                                            text-decoration: none;
+                                            border-radius: 8px;
+                                            font-weight: 600;
+                                            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                                        ">View Premium Plans</a>
+                                    </p>
+                                    <p style="color: #4a5568; margin-top: 30px;">If you have any questions, please contact our support team.</p>
+                                </div>
+                                
+                                <!-- Footer -->
+                                <div style="
+                                    background: linear-gradient(135deg, #f7fafc, #edf2f7);
+                                    padding: 25px 30px;
+                                    text-align: center;
+                                    border-top: 1px solid #e2e8f0;
+                                ">
+                                    <p style="
+                                        color: #718096;
+                                        font-size: 13px;
+                                        margin: 0 0 10px;
+                                        line-height: 1.5;
+                                    ">
+                                        Thank you,<br>The ${process.env.APP_NAME} Team
+                                    </p>
+                                    <div style="
+                                        background: linear-gradient(135deg, #FF6F61, #8A2BE2);
+                                        -webkit-background-clip: text;
+                                        -webkit-text-fill-color: transparent;
+                                        background-clip: text;
+                                        font-size: 14px;
+                                        font-weight: 700;
+                                        margin: 0;
+                                    ">
+                                        © ${new Date().getFullYear()} ${process.env.APP_NAME}. All rights reserved.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `;
+                await sendEmail(user.emailId, subject, htmlContent);
+            }
         }
 
-        await user.save();
         const updatedUserResponse = user.toObject();
         delete updatedUserResponse.password;
 
@@ -1578,7 +1845,7 @@ const toggleUserPremiumStatus = async (req, res) => {
             user: updatedUserResponse
         });
 
-    } 
+    }
     catch (error) {
         console.error('Error toggling user premium status:', error);
         res.status(500).json({

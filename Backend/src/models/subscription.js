@@ -8,16 +8,16 @@ const subscriptionSchema = new Schema({
         ref: 'User',
         required: true,
     },
-    plan: { // This refers to the specific plan like 'monthly', 'yearly', or 'custom' for admin grants
+    plan: {
         type: String,
-        enum: ['monthly', 'yearly', 'custom_duration'], // Added 'custom_duration'
+        enum: ['monthly', 'yearly', 'custom_duration'],
         required: true
     },
-    amount: { // For admin grants, can be 0 or a dummy value
+    amount: {
         type: Number,
         required: true
     },
-    currency: { // For admin grants, can be 'N/A' or 'INR'
+    currency: {
         type: String,
         default: 'INR',
         required: true
@@ -32,33 +32,33 @@ const subscriptionSchema = new Schema({
     },
     razorpayOrderId: {
         type: String,
-        required: false, // Made optional
-        // unique: true,
-        // sparse: true 
+        required: false,
+        unique: true,  // <--- UNCOMMENT AND ADD THIS
+        sparse: true   // <--- UNCOMMENT AND ADD THIS (Crucial for allowing multiple nulls)
     },
     razorpayPaymentId: {
         type: String,
         required: false,
-        // unique: true,
-        // sparse: true
+        unique: true,  // <--- UNCOMMENT AND ADD THIS (Same logic as razorpayOrderId)
+        sparse: true   // <--- UNCOMMENT AND ADD THIS
     },
     razorpaySignature: {
         type: String,
-        required: false, // Made optional
-        // sparse: true
+        required: false,
+        // sparse: true // Generally no need for unique here, so no unique or sparse
     },
     status: {
         type: String,
         enum: ['pending', 'active', 'expired', 'cancelled', 'failed'],
         default: 'pending'
     },
-    source: { // NEW FIELD: To differentiate between Razorpay and Admin grants
+    source: {
         type: String,
         enum: ['razorpay', 'admin_grant'],
         default: 'razorpay'
     }
 }, {
-    timestamps: true // Adds createdAt and updatedAt
+    timestamps: true
 });
 
 const Subscription = mongoose.model('Subscription', subscriptionSchema);
