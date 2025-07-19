@@ -180,7 +180,7 @@ const Login = () => {
                 <header className="flex justify-between items-center mb-8">
                     <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
-                            <FiCode className="text-white text-xl" />
+                            <img src="https://res.cloudinary.com/dcmzfn5oq/image/upload/v1752819939/1000021846-removebg-preview_1_1_fn0ql9.png" alt="logo" />
                         </div>
                         <h1 className="text-3xl font-bold text-white">
                             Code<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Masti</span>

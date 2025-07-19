@@ -48,6 +48,7 @@ const submitRoute = require('./src/routes/submitRoutes');
 const discussRoute = require('./src/routes/discussRoutes');
 const aiRouter = require('./src/routes/aiRoutes');
 const videoRouter = require('./src/routes/videoRoute');
+const imageRoutes = require('./src/routes/imageRoutes');
 const payRouter = require('./src/routes/razorpayRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const contestRoute = require('./src/routes/contestRoutes')
@@ -62,6 +63,7 @@ app.use('/discuss', discussRoute);
 app.use('/contests', contestRoute);
 app.use('/ai', aiRouter);
 app.use('/video', videoRouter);
+app.use('/images', imageRoutes);
 app.use('/payment', payRouter);
 app.use('/playlist',playlistRouter);
 app.use('/premium', premiumRouter);

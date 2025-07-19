@@ -10,6 +10,19 @@ import Footer from '../components/layout/Footer'; // Assuming this path
 import LoadingSpinner from '../components/common/LoadingSpinner'; // Assuming this path, though not used directly in final provided code
 import { logoutUser } from '../features/auth/authSlice'; // Import your logout action
 
+const defaultAppTheme = {
+    background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
+    primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
+    cardBg: 'bg-gray-800', cardText: 'text-gray-300', border: 'border-gray-700',
+    buttonText: 'text-white', highlight: 'text-cyan-400', highlightSecondary: 'text-blue-400',
+    highlightTertiary: 'text-purple-400', iconBg: 'bg-cyan-500/10',
+    gradientFrom: 'from-gray-900', gradientTo: 'to-gray-800',
+    successColor: 'text-emerald-400',
+    warningColor: 'text-amber-400',
+    errorColor: 'text-red-400',
+    infoColor: 'text-blue-400',
+};
+
 // Icons (re-included for completeness)
 const CheckIcon = ({ className }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -37,7 +50,8 @@ const PaletteIcon = ({ className }) => (
 
 const SettingPage = () => {
     const { theme, setTheme } = useTheme();
-    
+    const appTheme = { ...defaultAppTheme, ...(theme) }; // Merge with default
+
     const dispatch = useDispatch();
     const navigate = useNavigate();
     // Use a default user object if Redux user is null, for development/display purposes
@@ -93,34 +107,29 @@ const SettingPage = () => {
     const handlePasswordSubmit = async (e) => {
         e.preventDefault();
         if (passwordData.newPassword !== passwordData.confirmNewPassword) {
-            toast.error("New password and confirm password do not match!");
-            return;
-        }
-        if (passwordData.newPassword.length < 6) { // Example: minimum length
-            toast.error("New password must be at least 6 characters long.");
+            toast.error("New passwords do not match!"); // More specific error message
             return;
         }
 
         setIsChangingPassword(true);
         try {
-            // Simulate API call
-            // await axiosClient.put('/user/password', {
-            //     currentPassword: passwordData.currentPassword,
-            //     newPassword: passwordData.newPassword
-            // });
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-            if (passwordData.currentPassword === "correctpassword123") { // Dummy check
-                 toast.success('Password changed successfully!');
-                 setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
-            } else {
-                throw new Error("Incorrect current password.");
-            }
-
+            await axiosClient.put('/user/password', {
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword,
+                confirmPassword: passwordData.confirmNewPassword // <-- ADD THIS LINE
+            });
+            toast.success('Password changed successfully!');
+            setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
         } catch (error) {
-            toast.error(error.message || error.response?.data?.message || 'Failed to change password.');
+            toast.error(error.response?.data?.message || 'Failed to change password.');
         } finally {
             setIsChangingPassword(false);
         }
+    };
+
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordData(prev => ({ ...prev, [name]: value }));
     };
 
     const openDeleteModal = () => {
@@ -136,27 +145,19 @@ const SettingPage = () => {
     };
 
     const handleDeleteAccount = async () => {
-        if (deleteConfirmation.toLowerCase() !== 'delete my account') {
-            toast.error("Please type 'delete my account' to confirm.");
+        if (deleteConfirmation !== 'delete my account') {
+            toast.error("Please type 'delete my account' to confirm");
             return;
         }
 
         setIsDeleting(true);
         try {
-            // Simulate API call
-            // await axiosClient.delete('/user/account', { data: { password: deletePassword } });
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
-
-            if (deletePassword === "correctpassword123") { // Dummy check
-                toast.success('Account deleted successfully!');
-                dispatch(logoutUser()); // Dispatch the actual logout action
-                navigate('/login');
-            } else {
-                throw new Error("Incorrect password or confirmation.");
-            }
-
+            await axiosClient.delete('/user/account', { data: { password: deletePassword } });
+            toast.success('Account deleted successfully');
+            dispatch(logoutUser());
+            navigate('/login');
         } catch (error) {
-            toast.error(error.message || error.response?.data?.message || 'Failed to delete account.');
+            toast.error(error.response?.data?.message || 'Failed to delete account.');
         } finally {
             setIsDeleting(false);
             closeDeleteModal();
@@ -437,68 +438,130 @@ const SettingPage = () => {
                             </div>
 
                             {/* Change Password Section */}
-                            <form onSubmit={handlePasswordSubmit} className="space-y-4 mb-8 pb-6 border-b border-neutral-700/50">
-                                <h3 className="text-lg font-medium">Change Password</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <form onSubmit={handlePasswordSubmit} className={`${appTheme.cardBg} p-6 sm:p-8 rounded-xl border ${appTheme.border} mb-8 shadow-lg`}>
+                                <h2 className={`text-2xl font-semibold ${appTheme.text} mb-6`}>Change Password</h2>
+
+                                <div className="space-y-6">
                                     <div>
-                                        <label htmlFor="current-password" className={`block text-sm font-medium ${theme.cardText} mb-2`}>Current Password</label>
+                                        <label className={`block text-sm font-medium ${appTheme.cardText} mb-1`}>Current Password</label>
                                         <input
-                                            id="current-password"
                                             type="password"
+                                            name="currentPassword"
                                             value={passwordData.currentPassword}
-                                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                                            className={`w-full ${theme.cardBg}/80 border ${theme.border} rounded-lg px-4 py-3 ${theme.text} focus:outline-none focus:ring-2 ${theme.focusRing} transition-colors`}
-                                            placeholder="Enter current password"
-                                            required
+                                            onChange={handlePasswordChange}
+                                            className={`mt-1 block w-full ${appTheme.cardBg} border ${appTheme.border} ${appTheme.text} rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-${appTheme.primary.split('-')[1]}-500 focus:border-transparent sm:text-sm`}
+                                            placeholder="Enter your current password"
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="new-password" className={`block text-sm font-medium ${theme.cardText} mb-2`}>New Password</label>
+                                        <label className={`block text-sm font-medium ${appTheme.cardText} mb-1`}>New Password</label>
                                         <input
-                                            id="new-password"
                                             type="password"
+                                            name="newPassword"
                                             value={passwordData.newPassword}
-                                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                            className={`w-full ${theme.cardBg}/80 border ${theme.border} rounded-lg px-4 py-3 ${theme.text} focus:outline-none focus:ring-2 ${theme.focusRing} transition-colors`}
-                                            placeholder="Enter new password"
-                                            required
+                                            onChange={handlePasswordChange}
+                                            className={`mt-1 block w-full ${appTheme.cardBg} border ${appTheme.border} ${appTheme.text} rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-${appTheme.primary.split('-')[1]}-500 focus:border-transparent sm:text-sm`}
+                                            placeholder="Enter your new password"
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="confirm-new-password" className={`block text-sm font-medium ${theme.cardText} mb-2`}>Confirm New Password</label>
+                                        <label className={`block text-sm font-medium ${appTheme.cardText} mb-1`}>Confirm New Password</label>
                                         <input
-                                            id="confirm-new-password"
                                             type="password"
+                                            name="confirmNewPassword"
                                             value={passwordData.confirmNewPassword}
-                                            onChange={(e) => setPasswordData({ ...passwordData, confirmNewPassword: e.target.value })}
-                                            className={`w-full ${theme.cardBg}/80 border ${theme.border} rounded-lg px-4 py-3 ${theme.text} focus:outline-none focus:ring-2 ${theme.focusRing} transition-colors`}
-                                            placeholder="Confirm new password"
-                                            required
+                                            onChange={handlePasswordChange}
+                                            className={`mt-1 block w-full ${appTheme.cardBg} border ${appTheme.border} ${appTheme.text} rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-${appTheme.primary.split('-')[1]}-500 focus:border-transparent sm:text-sm`}
+                                            placeholder="Confirm your new password"
                                         />
+                                    </div>
+                                    <div>
+                                        <button
+                                            type="submit"
+                                            disabled={isChangingPassword}
+                                            className={`${appTheme.background} hover:${appTheme.background}/80 border ${appTheme.border} ${appTheme.text} font-medium py-2.5 px-6 rounded-lg transition-colors duration-300`}
+                                        >
+                                            {isChangingPassword ? 'Updating...' : 'Change Password'}
+                                        </button>
                                     </div>
                                 </div>
-                                <button
-                                    type="submit"
-                                    disabled={isChangingPassword}
-                                    className={`${theme.primary} ${theme.buttonText} px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-all duration-300 disabled:opacity-50 focus:outline-none focus:ring-2 ${theme.focusRing}`}
-                                >
-                                    {isChangingPassword ? 'Changing Password...' : 'Change Password'}
-                                </button>
                             </form>
 
                             {/* Delete Account Section */}
-                            <section className={`bg-red-50 dark:bg-red-900/20 p-6 rounded-xl border border-red-200 dark:border-red-800 shadow-lg`}>
-                                <h3 className="text-lg font-medium mb-4 text-red-600 dark:text-red-400">Delete Account</h3>
-                                <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-6">
+                            <div className={`${appTheme.errorColor.replace('text-', 'bg-')}/10 p-6 sm:p-8 rounded-xl border ${appTheme.errorColor.replace('text-', 'border-')}/30 shadow-lg`}>
+                                <h2 className={`text-2xl font-semibold ${appTheme.errorColor} mb-4`}>Delete Account</h2>
+                                <p className={`text-sm ${appTheme.errorColor}/80 mb-6`}>
                                     Once you delete your account, this action cannot be undone. All your data will be permanently removed. Please be certain.
                                 </p>
                                 <button
                                     onClick={openDeleteModal}
-                                    className="bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 px-6 rounded-lg transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    className={`${appTheme.errorColor.replace('text-', 'bg-')} hover:${appTheme.errorColor.replace('text-', 'bg-')}/80 ${appTheme.buttonText} font-medium py-2.5 px-6 rounded-lg transition-colors duration-300`}
                                 >
                                     Delete My Account
                                 </button>
-                            </section>
+                            </div>
+
+                            {showDeleteModal && (
+                                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                                    <div className={`${appTheme.cardBg} rounded-xl border ${appTheme.errorColor.replace('text-', 'border-')}/30 w-full max-w-md`}>
+                                        <div className="p-6">
+                                            <h2 className={`text-2xl font-bold ${appTheme.errorColor} mb-2`}>Delete Account</h2>
+                                            <p className={`${appTheme.cardText} mb-4`}>
+                                                This action is irreversible. All your data will be permanently deleted. To confirm, please enter your password and type "delete my account" below.
+                                            </p>
+
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className={`block text-sm font-medium ${appTheme.cardText} mb-1`}>Password</label>
+                                                    <input
+                                                        type="password"
+                                                        value={deletePassword}
+                                                        onChange={(e) => setDeletePassword(e.target.value)}
+                                                        className={`w-full ${appTheme.cardBg}/80 border ${appTheme.border} rounded-lg px-3 py-2 ${appTheme.text} focus:outline-none focus:ring-2 focus:ring-${appTheme.errorColor.split('-')[1]}-500`}
+                                                        placeholder="Enter your password"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className={`block text-sm font-medium ${appTheme.cardText} mb-1`}>
+                                                        Type <span className={`font-mono ${appTheme.errorColor}`}>delete my account</span> to confirm
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={deleteConfirmation}
+                                                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                                        className={`w-full ${appTheme.cardBg}/80 border ${appTheme.border} rounded-lg px-3 py-2 ${appTheme.text} focus:outline-none focus:ring-2 focus:ring-${appTheme.errorColor.split('-')[1]}-500`}
+                                                        placeholder="delete my account"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-end space-x-3 mt-6">
+                                                <button
+                                                    onClick={closeDeleteModal}
+                                                    className={`px-4 py-2 rounded-lg border ${appTheme.border} ${appTheme.cardText} hover:${appTheme.cardBg}/80 transition-colors`}
+                                                    disabled={isDeleting}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={handleDeleteAccount}
+                                                    className={`px-4 py-2 rounded-lg ${appTheme.errorColor.replace('text-', 'bg-')} ${appTheme.buttonText} hover:${appTheme.errorColor.replace('text-', 'bg-')}/80 transition-colors flex items-center`}
+                                                    disabled={isDeleting}
+                                                >
+                                                    {isDeleting && (
+                                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                    )}
+                                                    {isDeleting ? 'Deleting...' : 'Delete Account Permanently'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </section>
                     )}
                 </main>

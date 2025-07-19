@@ -859,7 +859,8 @@ const updateUserProfile = async (req, res) => {
             headline,
             bio,
             location,
-            avatar,
+            avatar, // This will be the new URL from Cloudinary
+            avatarPublicId, // NEW: Expect this from frontend if avatar is new
             socialLinks,
             preferences,
             newPassword,
@@ -872,18 +873,35 @@ const updateUserProfile = async (req, res) => {
         }
 
         const updateFields = {};
-        if (firstName) updateFields.firstName = firstName;
-        if (lastName) updateFields.lastName = lastName;
-        if (age) updateFields.age = age;
-        if (headline) updateFields.headline = headline;
-        if (bio) updateFields.bio = bio;
-        if (location) updateFields.location = location;
-        if (avatar) updateFields.avatar = avatar;
+        if (firstName !== undefined) updateFields.firstName = firstName;
+        if (lastName !== undefined) updateFields.lastName = lastName;
+        if (age !== undefined) updateFields.age = age;
+        if (headline !== undefined) updateFields.headline = headline;
+        if (bio !== undefined) updateFields.bio = bio;
+        if (location !== undefined) updateFields.location = location;
 
-        if (socialLinks) {
+        // Handle avatar and avatarPublicId updates
+        if (avatar !== undefined) {
+            updateFields.avatar = avatar;
+            // If avatar is explicitly set to empty string, clear publicId
+            if (avatar === '') {
+                updateFields.avatarPublicId = null; // Clear the public ID when avatar is empty
+            } else if (avatarPublicId !== undefined) {
+                // If a new avatar URL is provided, update its publicId as well
+                updateFields.avatarPublicId = avatarPublicId;
+            }
+            // Note: If avatar is provided but avatarPublicId is NOT, it means the avatar is
+            // likely an external URL (e.g., social media default) or wasn't uploaded via Cloudinary.
+            // In this case, we leave avatarPublicId as it is (or null if it was previously set and not updated).
+            // This is handled by not including avatarPublicId in updateFields unless it's explicitly provided.
+        }
+
+        if (socialLinks !== undefined) {
+            // Merge existing social links with new ones
             updateFields.socialLinks = { ...user.socialLinks, ...socialLinks };
         }
-        if (preferences) {
+        if (preferences !== undefined) {
+            // Merge existing preferences with new ones
             updateFields.preferences = { ...user.preferences, ...preferences };
         }
 
@@ -895,14 +913,23 @@ const updateUserProfile = async (req, res) => {
             if (!isPasswordValid) {
                 return res.status(401).json({ success: false, message: "Invalid current password." });
             }
-            updateFields.password = await bcrypt.hash(newPassword, 10);
+            if (currentPassword === newPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: "New password must be different from current password."
+                });
+            }
+            user.password = await bcrypt.hash(newPassword, 10);
+            await user.save(); // Save user object to persist password change
+            // Password is handled separately; no need to put it in updateFields for findByIdAndUpdate
         }
 
+        // Use findByIdAndUpdate for other profile fields
         const updatedUser = await User.findByIdAndUpdate(
             userId,
             { $set: updateFields },
-            { new: true, runValidators: true } // runValidators ensures min/max length etc. are checked
-        ).select('-password');
+            { new: true, runValidators: true }
+        ).select('-password'); // Exclude password from the response
 
         res.status(200).json({
             success: true,

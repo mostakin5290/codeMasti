@@ -19,7 +19,7 @@ const userSchema = new Schema({
         trim: true,
         unique: true,
         lowercase: true,
-        immutable: true 
+        immutable: true
     },
     age: {
         type: Number,
@@ -28,15 +28,15 @@ const userSchema = new Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin','co-admin'],
+        enum: ['user', 'admin', 'co-admin'],
         default: 'user'
     },
     password: {
         type: String,
-        required: true 
+        required: true
     },
 
-    headline: { 
+    headline: {
         type: String,
         trim: true,
         maxLength: 100,
@@ -44,31 +44,37 @@ const userSchema = new Schema({
     },
     bio: {
         type: String,
-        maxLength: 500 
+        maxLength: 500
     },
     location: {
         type: String,
         trim: true,
         maxLength: 100
     },
-    avatar: { 
+    avatar: { // Stores the full secure URL
         type: String,
+        default: 'https://res.cloudinary.com/dcmzfn5oq/image/upload/v1752850490/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4841_gbmgeo.avif'
     },
-    socialLinks: { 
+    avatarPublicId: { // NEW: Stores the Cloudinary public_id for easy deletion/management
+        type: String,
+        sparse: true, // Allows nulls, but ensures unique non-null values
+        unique: true, // Ensure no two users have the same avatarPublicId
+    },
+    socialLinks: {
         github: String,
         linkedin: String,
         twitter: String,
         website: String
     },
 
-    problemsSolved: { 
+    problemsSolved: {
         type: [{
             type: Schema.Types.ObjectId,
-            ref: 'Problem' 
+            ref: 'Problem'
         }],
         default: []
     },
-    stats: { 
+    stats: {
         problemsSolvedCount: {
             easy: { type: Number, default: 0 },
             medium: { type: Number, default: 0 },
@@ -76,7 +82,7 @@ const userSchema = new Schema({
         },
         totalSubmissions: { type: Number, default: 0 },
     },
-    preferences: { 
+    preferences: {
         language: {
             type: String,
             enum: ['javascript', 'python', 'java', 'c++'],
