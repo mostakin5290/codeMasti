@@ -69,6 +69,7 @@ const ContestsPage = () => {
         try {
             const { data } = await axiosClient.get(`/contests?filter=${filter}`);
             setContests(data);
+            console.log(data)
         } catch (err) {
             console.error("Failed to fetch contests:", err);
             setError(err.response?.data?.error || "Failed to load contests.");

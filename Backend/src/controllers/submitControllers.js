@@ -299,9 +299,7 @@ const submitCode = async (req, res) => {
                             (new Date() - new Date(participation.startTime)) / (1000 * 60)
                         );
                         await participation.save();
-                        console.log(`Contest participation updated for user ${userId} in contest ${contestId}. Points: ${contestProblem.points}`);
                     } else {
-                        console.log(`User ${userId} already has an accepted submission for problem ${problemId} in contest ${contestId}. No new points added.`);
                     }
                 } else {
                     console.warn(`ContestParticipation not found for user ${userId} in contest ${contestId} during submission. This should have been caught earlier.`);

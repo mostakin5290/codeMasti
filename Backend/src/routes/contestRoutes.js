@@ -17,8 +17,8 @@ const userMiddleware = require('../middleware/userMiddleware');
 
 // Admin
 contestRoute.post('/',coAdminMiddleware,Createnewcontest)
-contestRoute.get('/',coAdminMiddleware,ListAllContests);
-contestRoute.get('/:id',coAdminMiddleware,GetContestDetails);
+contestRoute.get('/',userMiddleware,ListAllContests);
+contestRoute.get('/:id',userMiddleware,GetContestDetails);
 contestRoute.put('/:id',coAdminMiddleware,UpdateContest);
 contestRoute.post('/:id/problems',coAdminMiddleware,AddProblemToContest);
 contestRoute.delete('/:id', coAdminMiddleware,DeleteContest);

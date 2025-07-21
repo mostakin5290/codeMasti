@@ -105,7 +105,6 @@ const getPostBySlug = async (req, res) => {
             .populate('author', 'firstName lastName avatar')
             .populate('problem', 'title _id');
 
-        console.log(post)
         if (!post) {
             return res.status(404).json({ message: 'Post not found.' });
         }
@@ -188,7 +187,6 @@ const updatePost = async (req, res) => {
     const { title, description, code, language } = req.body;
     const postId = req.params._id;
     const userId = req.user._id;
-    console.log(`post id: ${postId} user id: ${userId}`)
 
     if (!title || !description) {
         return res.status(400).json({ message: 'Title and description are required.' });
@@ -201,7 +199,6 @@ const updatePost = async (req, res) => {
             return res.status(404).json({ message: 'Post not found.' });
         }
 
-        console.log(post.author._id.toString() == userId)
 
         // Check if the current user is the author of the post
         if (post.author._id.toString() != userId) {
