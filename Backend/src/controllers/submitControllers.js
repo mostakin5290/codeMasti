@@ -305,12 +305,10 @@ const submitCode = async (req, res) => {
                     console.warn(`ContestParticipation not found for user ${userId} in contest ${contestId} during submission. This should have been caught earlier.`);
                 }
             }
-            // --- END NEW ContestParticipation update ---
 
             updatedUser = await User.findById(userId).select('dailyChallenges problemsSolved').lean();
         }
 
-        // 9. Send Response to Frontend (unchanged)
         const responseData = {
             status: finalStatus,
             runtime: `${maxRuntime.toFixed(3)}s`,
@@ -345,13 +343,10 @@ const runCode = async (req, res) => {
         const problemId = req.params.id;
         let { code, language, customInput } = req.body; // Destructure customInput
 
-        // 1. Basic Validation
         if (!userId || !code || !problemId || !language) {
             return res.status(400).json({ message: "All fields are required." });
         }
-        // language = normalizeLanguage(language);
 
-        // 2. Fetch Problem
         const problem = await Problem.findById(problemId);
         if (!problem) {
             return res.status(404).json({ message: "Problem not found." });
@@ -368,21 +363,16 @@ const runCode = async (req, res) => {
             return res.status(400).json({ message: `Language '${language}' is not configured for this specific problem.` });
         }
 
-        // 3. Prepare Submissions for Judge0
         let testCasesToRun = [];
         if (customInput && customInput.trim() !== '') {
-            // If customInput is provided, use it as a single test case
             let parsedCustomInput;
             try {
-                // Try to parse customInput as JSON, otherwise treat as plain string
                 parsedCustomInput = JSON.parse(customInput);
             } catch (e) {
-                parsedCustomInput = customInput; // If not valid JSON, send as is
+                parsedCustomInput = customInput;
             }
-            // For custom input, we don't have an expected output from DB
             testCasesToRun.push({ input: parsedCustomInput, output: null });
         } else {
-            // If no customInput, use visibleTestCases from problem
             if (!problem.visibleTestCases || problem.visibleTestCases.length === 0) {
                 return res.status(400).json({ message: "No visible test cases or custom input provided to run against." });
             }
@@ -397,11 +387,10 @@ const runCode = async (req, res) => {
             return {
                 source_code: executableCode,
                 language_id: languageId,
-                expected_output: formattedExpectedOutput // Can be null for custom input
+                expected_output: formattedExpectedOutput 
             };
         });
 
-        // 4. Submit to Judge0
         const submitResult = await submitBatch(submissionsForJudge0);
         if (!submitResult || !Array.isArray(submitResult) || submitResult.length === 0) {
             console.error('Judge0 batch submission failed or returned empty:', submitResult);
@@ -410,7 +399,6 @@ const runCode = async (req, res) => {
         const resultTokens = submitResult.map(value => value.token);
         const testResultsFromJudge0 = await submitToken(resultTokens);
 
-        // 5. Process Judge0 Results
         let testCasesPassed = 0;
         const testCaseDetails = [];
         let maxRuntime = 0;
