@@ -1,14 +1,14 @@
-# 🚀 CodeCrack
+# 🚀 CodeMasti
 ### *The Ultimate Coding Platform for Developers*
 
 <div align="center">
 
-![CodeCrack Banner](https://via.placeholder.com/800x200/4F46E5/FFFFFF?text=CodeCrack+-+Code+Your+Way+to+Success)
+![CodeMasti Banner](https://via.placeholder.com/800x200/4F46E5/FFFFFF?text=CodeMasti+-+Code+Your+Way+to+Success)
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/codecrack/codecrack)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/codeMasti/codeMasti)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.0-orange.svg)](https://github.com/codecrack/codecrack/releases)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Community-7289da.svg)](https://discord.gg/codecrack)
+[![Version](https://img.shields.io/badge/version-2.0.0-orange.svg)](https://github.com/codeMasti/codeMasti/releases)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-7289da.svg)](https://discord.gg/codeMasti)
 
 *Empowering developers worldwide to master coding skills, ace technical interviews, and build exceptional careers*
 
@@ -16,9 +16,9 @@
 
 ---
 
-## 🌟 **What Makes CodeCrack Special?**
+## 🌟 **What Makes CodeMasti Special?**
 
-CodeCrack isn't just another coding platform – it's your complete companion for programming excellence. Whether you're a beginner taking your first steps or a seasoned developer preparing for FAANG interviews, CodeCrack provides everything you need to succeed.
+CodeMasti isn't just another coding platform – it's your complete companion for programming excellence. Whether you're a beginner taking your first steps or a seasoned developer preparing for FAANG interviews, CodeMasti provides everything you need to succeed.
 
 <table>
 <tr>
@@ -268,17 +268,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Love CodeCrack? Help us grow!**
+**Love CodeMasti? Help us grow!**
 
-[![GitHub Stars](https://img.shields.io/github/stars/codecrack/codecrack?style=social)](https://github.com/codecrack/codecrack)
-[![Twitter Follow](https://img.shields.io/twitter/follow/codecrack?style=social)](https://twitter.com/codecrack)
+[![GitHub Stars](https://img.shields.io/github/stars/codeMasti/codeMasti?style=social)](https://github.com/codemasti9/codeMasti)
 
-**[⭐ Star this repository](https://github.com/codecrack/codecrack)** • **[🐦 Follow us on Twitter](https://twitter.com/codecrack)** • **[💬 Join our Discord](https://discord.gg/codecrack)**
+**[⭐ Star this repository](https://github.com/codeMasti/codeMasti)** • **[🐦 Follow us on Twitter](https://twitter.com/codeMasti)** • **[💬 Join our Discord](https://discord.gg/codeMasti)**
 
 ---
 
-*Made with ❤️ by the CodeCrack Team*
+*Made with ❤️ by the CodeMasti Team*
 
-**Ready to crack the code? [Get Started Now!](https://codecrack.dev)**
+**Ready to Masti with code? [Get Started Now!](https://codemasti.versel.app)**
 
 </div>

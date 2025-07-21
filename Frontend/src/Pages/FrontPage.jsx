@@ -48,6 +48,23 @@ const FrontPage = () => {
         }
     ];
 
+    const social = [
+        {
+            "name": 'YouTube',
+            "link":'https://www.youtube.com/@CodeMasti-9'
+        },
+        {
+            "name": 'GitHub',
+            "link":"https://github.com/codemasti9/codeMasti"
+        },
+        {
+            "name": 'LinkedIn',
+            "link":"https://www.linkedin.com/company/107868597/admin/dashboard"
+        },
+
+
+    ]
+
     return (
         <div className="min-h-screen bg-gray-900 bg-[url('https://images.unsplash.com/photo-1639762681057-408e52192e55?q=80&w=2232&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')] bg-cover bg-center bg-blend-overlay bg-gray-900/90">
             {/* Animated gradient background */}
@@ -256,7 +273,7 @@ const FrontPage = () => {
                             <div className="md:col-span-2">
                                 <div className="flex items-center space-x-3 mb-4">
                                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
-                                        <FiCode className="text-white text-xl" />
+                                        <img src="https://res.cloudinary.com/dcmzfn5oq/image/upload/v1752819939/1000021846-removebg-preview_1_1_fn0ql9.png" alt="logo" />
                                     </div>
                                     <h3 className="text-2xl font-bold text-white">CodeMasti</h3>
                                 </div>
@@ -264,9 +281,9 @@ const FrontPage = () => {
                                     The ultimate platform for technical interview preparation.
                                 </p>
                                 <div className="flex space-x-4">
-                                    {['Twitter', 'GitHub', 'LinkedIn', 'YouTube'].map((social, index) => (
-                                        <a key={index} href="#" className="text-white/70 hover:text-white transition-colors">
-                                            {social}
+                                    {social.map((social, index) => (
+                                        <a key={index} href={social.link} className="text-white/70 hover:text-white transition-colors">
+                                            {social.name}
                                         </a>
                                     ))}
                                 </div>
