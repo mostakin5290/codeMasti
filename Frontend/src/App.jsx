@@ -144,6 +144,7 @@ const AppRoutes = () => {
                 <Route path="/contests/:id/leaderboard" element={<ContestLeaderboardPage />} />
                 <Route path="/contests/:id" element={<ContestPublicDetailsPage />} />
                 <Route path="/explore-premium" element={<ExplorePremium />} />
+                
                 {/* --- Admin Routes --- */}
                 <Route element={<AdminRoute />}>
                     <Route path="/admin" element={<AdminLayout />}>

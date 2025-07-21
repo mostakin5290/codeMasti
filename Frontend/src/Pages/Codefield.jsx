@@ -528,20 +528,15 @@ const Codefield = () => {
             setTestResults(data);
             setSubmissionHistory(prev => [data, ...prev]); 
             if (data.status === 'Accepted') {
-                if (problem?.isDailyChallenge && data.isFirstAcceptedDailyChallengeToday && data.userDailyChallenges) {
+                if (problem?.isDailyChallenge  && data.userDailyChallenges) {
                     dispatch(updateUserDailyChallenges(data.userDailyChallenges));
                     setDailyChallengeStreakToShow(data.userDailyChallenges.currentStreak);
                     setShowDailyChallengeSuccessModal(true);
-                    console.log("🎉 Accepted! Daily Challenge streak updated!")
-                    toast.success('🎉 Accepted! Daily Challenge streak updated!');
                 } else if (contestId) {
                     toast.success('🎉 Accepted! Your solution has been recorded for the contest!');
-                    console.log('🎉 Accepted! Your solution has been recorded for the contest!');
-
                 }
                 else { 
                     toast.success('🎉 Accepted! Great job!');
-                    console.log('🎉 Accepted! Great job!')
                 }
             } else {
                 toast.error(`❌ ${data.status}`);
