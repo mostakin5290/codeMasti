@@ -8,7 +8,7 @@ export const ThemeProvider = ({ children }) => {
     const [theme, setTheme] = useState(() => {
         try {
             const savedTheme = localStorage.getItem('app-theme');
-            return savedTheme ? JSON.parse(savedTheme) : THEMES[0]; // Default theme
+            return savedTheme ? JSON.parse(savedTheme) : THEMES[0];
         } catch (error) {
             return THEMES[0];
         }

@@ -10,6 +10,7 @@ import { FiMail, FiZap, FiLock, FiEye, FiCode, FiEyeOff, FiArrowRight, FiUser, F
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'react-toastify';
 import SplashCursor from '../../components/animation/SplashCursor';
+import { useAnimation } from '../../context/AnimationContext';
 
 const signUpSchema = z.object({
   firstName: z.string()
@@ -39,6 +40,8 @@ const SignUp = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated, loading, error, otpSent, emailForOTP, otpLoading } = useSelector((state) => state.auth);
+  const { animationEnabled, toggleAnimation } = useAnimation();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -47,10 +50,6 @@ const SignUp = () => {
   const [timer, setTimer] = useState(300); // 5 minutes
   const [canResend, setCanResend] = useState(false);
   const inputRefs = useRef([]);
-  const [disAnimation, setDisAnimation] = useState(true);
-  const toggleAnimation = () => {
-    setDisAnimation(!disAnimation);
-  };
 
   const {
     register,
@@ -331,7 +330,7 @@ const SignUp = () => {
       </div>
 
       <div className=' relative z-10'>
-        {disAnimation && (<SplashCursor
+        {animationEnabled && (<SplashCursor
           SIM_RESOLUTION={48}             // Slightly higher for smoother fluid detail
           DYE_RESOLUTION={384}            // Better color blending
           CAPTURE_RESOLUTION={384}        // Better rendering while still fast
@@ -358,8 +357,8 @@ const SignUp = () => {
                 transform hover:scale-105 flex items-center gap-2
                 backdrop-blur-sm border border-white/20"
       >
-        <FiZap className={`transition-transform duration-300 ${disAnimation ? 'rotate-0' : 'rotate-180'}`} />
-        {disAnimation ? 'Animation Off' : 'Animation On'}
+        <FiZap className={`transition-transform duration-300 ${animationEnabled ? 'rotate-0' : 'rotate-180'}`} />
+        {animationEnabled ? 'Animation Off' : 'Animation On'}
       </button>
 
       {/* Floating particles */}

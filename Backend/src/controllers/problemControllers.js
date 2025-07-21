@@ -219,22 +219,15 @@ const getProblemById = async (req, res) => {
         if (!id) {
             return res.status(400).json({ message: "Invalid ID provided." });
         }
-        const problem = await Problem.findById(id).select(
-            '_id title description difficulty tags visibleTestCases starterCode executionConfig referenceSolution'
-        ).lean(); // Add .lean() for performance, as you're modifying it in memory
+        const problem = await Problem.findById(id);
 
         if (!problem) {
             return res.status(404).json({ message: "Problem not found." });
         }
 
-        // --- FIX HERE ---
-        // Change 'Video' to 'Video' (your actual model name)
-        const video = await Video.findOne({ problemId: id }).lean(); // Also .lean()
-        // --- END FIX ---
+        const video = await Video.findOne({ problemId: id }).lean(); 
 
         if (video) {
-            // Attach video properties directly to the problem object
-            // Note: Since you're using .lean() on problem, you can directly add properties.
             problem.secureUrl = video.secureUrl;
             problem.cloudinaryPublicId = video.cloudinaryPublicId;
             problem.thumbnailUrl = video.thumbnailUrl;
@@ -242,7 +235,8 @@ const getProblemById = async (req, res) => {
             problem.videoSolutionId = video._id;
         }
         res.status(200).json(problem);
-    } catch (err) {
+    } 
+    catch (err) {
         res.status(500).json({ message: 'Error fetching problem', error: err.message });
     }
 };

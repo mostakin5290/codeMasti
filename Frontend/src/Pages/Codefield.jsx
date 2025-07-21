@@ -33,7 +33,6 @@ const capitalizeFirstLetter = (string) => {
     return string.charAt(0).toUpperCase() + string.slice(1);
 };
 
-// Language display names mapping (unchanged)
 const languageDisplayNames = {
     'c++': 'C++',
     'javascript': 'JavaScript',
@@ -55,7 +54,6 @@ const getLanguageDisplayName = (lang) => {
     return languageDisplayNames[lang] || capitalizeFirstLetter(lang);
 };
 
-// Default theme (unchanged)
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
     primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
@@ -71,7 +69,6 @@ const defaultTheme = {
     infoColor: 'text-blue-400',
 };
 
-// Loader component (unchanged)
 const Loader = ({ message = "Loading...", size = "md", appTheme }) => {
     const theme = { ...defaultTheme, ...appTheme };
     return (
@@ -99,7 +96,6 @@ const Loader = ({ message = "Loading...", size = "md", appTheme }) => {
     );
 };
 
-// ProblemPanel (unchanged - it receives data, doesn't handle execution)
 const ProblemPanel = ({ problem, activeTab, setActiveTab, submissionHistory, testResults, setTestResults, panelWidth, appTheme }) => {
     const theme = { ...defaultTheme, ...appTheme };
 
@@ -212,7 +208,7 @@ const safeDisplayValue = (value) => {
         try {
             return JSON.stringify(value);
         } catch (e) {
-            return String(value); // Fallback for circular references or other JSON errors
+            return String(value);
         }
     }
     return String(value);
@@ -224,9 +220,9 @@ const Codefield = () => {
     const editorContainerRef = useRef(null);
     const panelRef = useRef(null);
 
-    const { problemId } = useParams(); // Get problemId from URL path
-    const [searchParams] = useSearchParams(); // NEW: Get query parameters
-    const contestId = searchParams.get('contestId'); // NEW: Extract contestId from query params
+    const { problemId } = useParams(); 
+    const [searchParams] = useSearchParams(); 
+    const contestId = searchParams.get('contestId'); 
 
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
@@ -242,52 +238,43 @@ const Codefield = () => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [showSidebar, setShowSidebar] = useState(true);
 
-    // Editor Settings (unchanged)
     const [fontSize, setFontSize] = useState(15);
     const [monacoEditorTheme, setMonacoEditorTheme] = useState('vs-dark');
 
-    // Problem State (unchanged logic, fetches problem and starter code)
     const [problem, setProblem] = useState(null);
     const [loadingProblem, setLoadingProblem] = useState(true);
     const [problemError, setProblemError] = useState(null);
     const [submissionHistory, setSubmissionHistory] = useState([]);
 
-    // Code State (unchanged)
     const [code, setCode] = useState('');
     const [language, setLanguage] = useState('javascript');
     const [customInput, setCustomInput] = useState('');
 
-    // Execution State (unchanged)
     const [consoleOutput, setConsoleOutput] = useState([]);
     const [isRunning, setIsRunning] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [testResults, setTestResults] = useState(null);
 
-    // Tab State (unchanged)
     const [activeTab, setActiveTab] = useState('description');
     const [activeConsoleTab, setActiveConsoleTab] = useState('input');
 
-    // NEW: Daily Challenge Success Modal State (unchanged)
     const [showDailyChallengeSuccessModal, setShowDailyChallengeSuccessModal] = useState(false);
     const [dailyChallengeStreakToShow, setDailyChallengeStreakToShow] = useState(0);
 
 
     const handleEditorDidMount = (editor, monaco) => {
         editorRef.current = editor;
-        // Define custom themes (unchanged)
         monaco.editor.defineTheme('monokai', monacoThemes.monokaiTheme);
         monaco.editor.defineTheme('dracula', monacoThemes.draculaTheme);
         monaco.editor.defineTheme('one-dark-pro', monacoThemes.oneDarkProTheme);
         monaco.editor.defineTheme('nord', monacoThemes.nordTheme);
 
-        // Auto-set Monaco theme based on app theme's background (unchanged)
         if (appTheme.background.includes('dark') || appTheme.background.includes('black') || appTheme.background.includes('zinc-9')) {
             setMonacoEditorTheme('vs-dark');
         } else {
             setMonacoEditorTheme('vs-light');
         }
 
-        // Language configurations (unchanged)
         const commonLanguageConfig = {
             comments: { lineComment: '//', blockComment: ['/*', '*/'] },
             brackets: [['{', '}'], ['[', ']'], ['(', ')']],
@@ -301,8 +288,6 @@ const Codefield = () => {
             ]
         };
 
-        // Register languages and their configurations
-        // IMPORTANT: Changed 'c++' to 'cpp' for consistency with backend enum.
         ['cpp', 'javascript', 'python', 'java', 'c', 'typescript', 'go', 'rust', 'php', 'swift', 'kotlin', 'scala', 'ruby', 'csharp'].forEach(lang => {
             monaco.languages.register({ id: lang });
             monaco.languages.setLanguageConfiguration(lang, commonLanguageConfig);
@@ -311,7 +296,6 @@ const Codefield = () => {
         editor.focus();
     };
 
-    // Auto-set Monaco theme based on app theme preference (if not explicitly set by user) (unchanged)
     useEffect(() => {
         if (!localStorage.getItem('monacoThemePref')) {
             if (appTheme.background.includes('dark') || appTheme.background.includes('black') || appTheme.background.includes('zinc-9')) {
@@ -323,7 +307,6 @@ const Codefield = () => {
     }, [appTheme.background]);
 
 
-    // Fetch Problem (unchanged from your last provided codefield.jsx)
     useEffect(() => {
         const fetchProblem = async () => {
             if (!problemId) {
@@ -333,17 +316,13 @@ const Codefield = () => {
             }
             setLoadingProblem(true);
             try {
-                // Fetch the problem details including starter code and execution config
                 const { data } = await axiosClient.get(`/problem/problemById/${problemId}`);
                 setProblem(data);
 
-                // Determine default language from available starter codes
-                // Use 'cpp' instead of 'c++' for internal logic if needed
                 const availableLanguages = data.starterCode?.map(sc => sc.language) || [];
                 const defaultLang = availableLanguages.includes('cpp') ? 'cpp' : availableLanguages[0] || 'javascript'; // Fallback to 'javascript'
                 setLanguage(defaultLang);
 
-                // Load saved code from localStorage or use starter code
                 const savedCode = localStorage.getItem(`code_${problemId}_${defaultLang}`);
                 if (savedCode) {
                     setCode(savedCode);
@@ -360,7 +339,6 @@ const Codefield = () => {
         fetchProblem();
     }, [problemId]);
 
-    // Fetch Submission History (unchanged)
     useEffect(() => {
         const fetchHistory = async () => {
             if (!problemId) return;
@@ -375,7 +353,6 @@ const Codefield = () => {
         fetchHistory();
     }, [problemId]);
 
-    // Update code when language or problem changes (unchanged)
     useEffect(() => {
         if (problem?.starterCode) {
             const starter = problem.starterCode.find(sc => sc.language === language);
@@ -384,14 +361,12 @@ const Codefield = () => {
         }
     }, [language, problem, problemId]);
 
-    // Persist code in localStorage (unchanged)
     useEffect(() => {
         if (problemId && language && code) {
             localStorage.setItem(`code_${problemId}_${language}`, code);
         }
     }, [code, language, problemId]);
 
-    // Monaco editor theme persistence (unchanged)
     useEffect(() => {
         const savedMonacoTheme = localStorage.getItem('monacoThemePref');
         if (savedMonacoTheme) {
@@ -404,7 +379,6 @@ const Codefield = () => {
         localStorage.setItem('monacoThemePref', selectedTheme);
     };
 
-    // Dragging handlers (unchanged)
     const handlePanelMouseDown = useCallback((e) => {
         e.preventDefault();
         setIsDraggingPanel(true);
@@ -442,7 +416,6 @@ const Codefield = () => {
     }, [handleMouseMove, handleMouseUp]);
 
 
-    // Handle Run Code (unchanged from your last provided codefield.jsx)
     const handleRunCode = async () => {
         if (isRunning) return;
         setIsRunning(true);
@@ -501,23 +474,20 @@ const Codefield = () => {
     };
 
 
-    // Handle Submit Code (UPDATED for contestId)
     const handleSubmitCode = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
-        setConsoleOutput([]); // Clear console
-        setTestResults(null); // Clear previous test results
-        setActiveTab('submissions'); // Switch to submissions tab
-        setActiveConsoleTab('result'); // Show results in console tab
-        toast.info('🚀 Submitting your solution...');
+        setConsoleOutput([]); 
+        setTestResults(null); 
+        setActiveTab('submissions');
+        setActiveConsoleTab('result'); 
 
         try {
-            // Dynamically construct the URL based on whether contestId exists
             const submitUrl = contestId
                 ? `/submission/submit/${problemId}?contestId=${contestId}`
                 : `/submission/submit/${problemId}`;
 
-            const { data } = await axiosClient.post(submitUrl, { code, language }); // Use submitUrl
+            const { data } = await axiosClient.post(submitUrl, { code, language });
 
             const output = [
                 { type: 'info', message: `✨ Submission: ${data.status}` },
@@ -535,7 +505,7 @@ const Codefield = () => {
                         type: testCase.passed ? 'success' : 'error',
                         message: `Test ${index + 1} (${testCase.passed ? 'Hidden' : 'Hidden'}): ${testCase.passed ? '✅ Passed' : '❌ Failed'}`
                     });
-                    if (!testCase.passed) { // Only show details for failed tests on submit
+                    if (!testCase.passed) { 
                         output.push({
                             type: 'info',
                             message: `📥 Input: ${safeDisplayValue(testCase.input)}`
@@ -555,24 +525,27 @@ const Codefield = () => {
             }
 
             setConsoleOutput(output);
-            setTestResults(data);// Store the full submission result for SubmissionsTab
-            setSubmissionHistory(prev => [data, ...prev]); // Add new submission to history
-
-            // --- NEW: Handle Daily Challenge Success Popup (unchanged from your last provided codefield.jsx) ---
+            setTestResults(data);
+            setSubmissionHistory(prev => [data, ...prev]); 
             if (data.status === 'Accepted') {
                 if (problem?.isDailyChallenge && data.isFirstAcceptedDailyChallengeToday && data.userDailyChallenges) {
                     dispatch(updateUserDailyChallenges(data.userDailyChallenges));
                     setDailyChallengeStreakToShow(data.userDailyChallenges.currentStreak);
                     setShowDailyChallengeSuccessModal(true);
+                    console.log("🎉 Accepted! Daily Challenge streak updated!")
                     toast.success('🎉 Accepted! Daily Challenge streak updated!');
-                } else if (contestId) { // NEW: Specific toast for contest success
+                } else if (contestId) {
                     toast.success('🎉 Accepted! Your solution has been recorded for the contest!');
+                    console.log('🎉 Accepted! Your solution has been recorded for the contest!');
+
                 }
-                else { // General accepted message for non-daily challenges or subsequent daily challenge submissions
+                else { 
                     toast.success('🎉 Accepted! Great job!');
+                    console.log('🎉 Accepted! Great job!')
                 }
             } else {
                 toast.error(`❌ ${data.status}`);
+                
             }
 
         } catch (err) {

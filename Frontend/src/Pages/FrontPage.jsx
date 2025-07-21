@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FiSearch, FiTrendingUp, FiCode, FiAward, FiUsers, FiStar, FiZap, FiChevronRight } from 'react-icons/fi';
 import SplashCursor from '../components/animation/SplashCursor'
+import { useAnimation } from '../context/AnimationContext';
 
 
 const FrontPage = () => {
-    const [disAnimation, setDisAnimation] = useState(true)
-    const toggleAnimation = () => {
-        setDisAnimation(!disAnimation);
-    };
+    const { animationEnabled, toggleAnimation } = useAnimation();
+
     const stats = [
         { value: '1500+', label: 'Problems', icon: <FiCode className="text-2xl" /> },
         { value: '5M+', label: 'Users', icon: <FiUsers className="text-2xl" /> },
@@ -51,15 +50,15 @@ const FrontPage = () => {
     const social = [
         {
             "name": 'YouTube',
-            "link":'https://www.youtube.com/@CodeMasti-9'
+            "link": 'https://www.youtube.com/@CodeMasti-9'
         },
         {
             "name": 'GitHub',
-            "link":"https://github.com/codemasti9/codeMasti"
+            "link": "https://github.com/codemasti9/codeMasti"
         },
         {
             "name": 'LinkedIn',
-            "link":"https://www.linkedin.com/company/107868597/admin/dashboard"
+            "link": "https://www.linkedin.com/company/107868597/admin/dashboard"
         },
 
 
@@ -73,7 +72,7 @@ const FrontPage = () => {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_60%,_var(--tw-gradient-stops))] from-secondary/20 via-transparent to-transparent animate-pulse" style={{ animationDuration: '20s', animationDelay: '5s' }}></div>
             </div>
             <div className=' relative z-10'>
-                {disAnimation && (<SplashCursor
+                {animationEnabled && (<SplashCursor
                     SIM_RESOLUTION={48}             // Slightly higher for smoother fluid detail
                     DYE_RESOLUTION={384}            // Better color blending
                     CAPTURE_RESOLUTION={384}        // Better rendering while still fast
@@ -100,8 +99,8 @@ const FrontPage = () => {
                 transform hover:scale-105 flex items-center gap-2
                 backdrop-blur-sm border border-white/20"
             >
-                <FiZap className={`transition-transform duration-300 ${disAnimation ? 'rotate-0' : 'rotate-180'}`} />
-                {disAnimation ? 'Animation Off' : 'Animation On'}
+                <FiZap className={`transition-transform duration-300 ${animationEnabled ? 'rotate-0' : 'rotate-180'}`} />
+                {animationEnabled ? 'Animation Off' : 'Animation On'}
             </button>
             {/* Floating particles */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">

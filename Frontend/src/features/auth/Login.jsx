@@ -10,6 +10,8 @@ import { FiMail, FiLock, FiEye, FiCode, FiEyeOff, FiZap, FiArrowRight, FiGithub,
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'react-toastify';
 import SplashCursor from '../../components/animation/SplashCursor';
+import { useAnimation } from '../../context/AnimationContext';
+
 
 const loginSchema = z.object({
     email: z.string()
@@ -27,13 +29,9 @@ const Login = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
+    const { animationEnabled, toggleAnimation } = useAnimation();
     const [showPassword, setShowPassword] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
-    const [searchParams] = useSearchParams();
-    const [disAnimation, setDisAnimation] = useState(true)
-    const toggleAnimation = () => {
-        setDisAnimation(!disAnimation);
-    };
 
 
     const {
@@ -124,7 +122,7 @@ const Login = () => {
             </div>
 
             <div className=' relative z-10'>
-                {disAnimation && (<SplashCursor
+                {animationEnabled && (<SplashCursor
                     SIM_RESOLUTION={48}             // Slightly higher for smoother fluid detail
                     DYE_RESOLUTION={384}            // Better color blending
                     CAPTURE_RESOLUTION={384}        // Better rendering while still fast
@@ -140,7 +138,6 @@ const Login = () => {
                     BACK_COLOR={{ r: 0, g: 0, b: 0 }} // Black background (or customize)
                     TRANSPARENT={false}             // Solid background for better render performance
                 />
-
                 )}
             </div>
             <button
@@ -152,8 +149,8 @@ const Login = () => {
                 transform hover:scale-105 flex items-center gap-2
                 backdrop-blur-sm border border-white/20"
             >
-                <FiZap className={`transition-transform duration-300 ${disAnimation ? 'rotate-0' : 'rotate-180'}`} />
-                {disAnimation ? 'Animation Off' : 'Animation On'}
+                <FiZap className={`transition-transform duration-300 ${animationEnabled ? 'rotate-0' : 'rotate-180'}`} />
+                {animationEnabled ? 'Animation Off' : 'Animation On'}
             </button>
 
             {/* Floating particles */}

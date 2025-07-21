@@ -58,6 +58,7 @@ import ContestPublicDetailsPage from "./components/Admin/contest/ContestPublicDe
 import PlaylistPage from "./Pages/PlaylisPage";
 import ForgotPassword from "./features/auth/ForgotPassword";
 import ResetPasswordPage from "./features/auth/ResetPasswordPage";
+import { AnimationProvider } from "./context/AnimationContext";
 
 
 const AppRoutes = () => {
@@ -168,7 +169,9 @@ const AppRoutes = () => {
 const App = () => {
     return (
         <ThemeProvider>
+            <AnimationProvider>
             <AppRoutes />
+            </AnimationProvider>
         </ThemeProvider>
     );
 };
