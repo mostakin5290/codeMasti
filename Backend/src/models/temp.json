@@ -1,0 +1,97 @@
+{
+  "title": "add two number",
+  "description": "add this is a demo question for work",
+  "difficulty": "easy",
+  "tags": ["math"],
+  "visibleTestCases": [
+    {
+      "input": [2, 4],
+      "output": 6,
+      "explanation": "2+4=6",
+      "_id": {
+        "$oid": "686d3f4c9e9b18ff7a3177ea"
+      }
+    }
+  ],
+  "hiddenTestCases": [
+    {
+      "input": [5, 7],
+      "output": 12,
+      "_id": {
+        "$oid": "686d3f4c9e9b18ff7a3177eb"
+      }
+    }
+  ],
+  "starterCode": [
+    {
+      "language": "javascript",
+      "code": "function addTwoNumbers(a,b){\n}",
+      "functionSignature": "addTwoNumbers(a,b)",
+      "_id": {
+        "$oid": "686d3f4c9e9b18ff7a3177ec"
+      }
+    },
+    {
+      "language": "cpp",
+      "code": "int addTwoNumbers(int a, int b) {\n    int sum = a + b;\n    return sum; \n}",
+      "functionSignature": "addTwoNumbers(a,b)",
+      "_id": {
+        "$oid": "687e61959d719b9fb4a55dbb"
+      }
+    },
+    {
+      "language": "c",
+      "code": "int addTwoNumbers(int a, int b) {\n    \n}",
+      "functionSignature": "addTwoNumbers",
+      "_id": {
+        "$oid": "687e6be614f6633ed34c3e13"
+      }
+    },
+    {
+      "language": "python",
+      "code": "def addTwoNumbers(a, b):\n    pass",
+      "functionSignature": "addTwoNumbers",
+      "_id": {
+        "$oid": "687e6be614f6633ed34c3e14"
+      }
+    },
+    {
+      "language": "java",
+      "code": "public class Solution {\n    public int addTwoNumbers(int a, int b) {\n        \n    }\n}",
+      "functionSignature": "addTwoNumbers",
+      "_id": {
+        "$oid": "687e6be614f6633ed34c3e15"
+      }
+    }
+  ],
+  "referenceSolution": [
+    // need all language solutions
+  ],
+  "executionConfig": {
+    "inputOutputConfig": {
+      "inputFormat": "array",
+      "functionName": "addTwoNumbers",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "int",
+          "description": "",
+          "_id": {
+            "$oid": "686d3f4c9e9b18ff7a3177ed"
+          }
+        },
+        {
+          "name": "b",
+          "type": "int",
+          "description": "",
+          "_id": {
+            "$oid": "686d3f4c9e9b18ff7a3177ee"
+          }
+        }
+      ],
+      "returnType": "int"
+    },
+    "timeout": 2000,
+    "memoryLimit": 128000
+  }
+}

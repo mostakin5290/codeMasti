@@ -9,11 +9,11 @@ const createProblem = async (req, res) => {
         const {
             title, description, difficulty, tags,
             visibleTestCases, hiddenTestCases, starterCode, referenceSolution,
-            executionConfig // This will now *not* contain wrapperTemplates
+            executionConfig
         } = req.body;
 
         // --- 1. Basic Validation & Pre-computation ---
-        if (!executionConfig || !executionConfig.inputOutputConfig) {
+        if (!executionConfig.inputOutputConfig) {
             return res.status(400).json({ message: "Problem must include complete execution configuration (inputOutputConfig, wrapperTemplates)." });
         }
 
@@ -26,7 +26,7 @@ const createProblem = async (req, res) => {
         const tempProblem = new Problem({
             title, description, difficulty, tags,
             visibleTestCases, hiddenTestCases, starterCode, referenceSolution,
-            executionConfig, // This object no longer expects wrapperTemplates
+            executionConfig,
             problemCreator: req.user._id
         });
 
