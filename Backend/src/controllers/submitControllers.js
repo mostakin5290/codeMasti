@@ -10,7 +10,6 @@ const normalizeLanguage = (lang) => {
     if (lowerLang === 'c++') return 'cpp';
     if (lowerLang === 'js') return 'javascript';
     if (lowerLang === 'py') return 'python';
-    // Add more aliases if needed
     return lowerLang;
 };
 
@@ -95,9 +94,9 @@ const submitCode = async (req, res) => {
 
         const normalizedLang = normalizeLanguage(language);
 
-        if (!problem.executionConfig || !problem.executionConfig.judge0LanguageIds) {
-            return res.status(500).json({ message: "Problem is missing its execution configuration." });
-        }
+        // if (!problem.executionConfig || !problem.executionConfig.judge0LanguageIds) {
+        //     return res.status(500).json({ message: "Problem is missing its execution configuration." });
+        // }
 
         const languageId = problem.executionConfig.judge0LanguageIds[normalizedLang];
         if (!languageId) {
@@ -341,7 +340,7 @@ const runCode = async (req, res) => {
     try {
         const userId = req.user._id;
         const problemId = req.params.id;
-        let { code, language, customInput } = req.body; // Destructure customInput
+        let { code, language, customInput } = req.body; 
 
         if (!userId || !code || !problemId || !language) {
             return res.status(400).json({ message: "All fields are required." });
@@ -354,11 +353,11 @@ const runCode = async (req, res) => {
 
         const normalizedLang = normalizeLanguage(language);
 
-        if (!problem.executionConfig || !problem.executionConfig.judge0LanguageIds) {
-            return res.status(500).json({ message: "Problem is missing its execution configuration." });
-        }
+        // if (!problem.executionConfig || !problem.executionConfig.judge0LanguageIds) {
+        //     return res.status(500).json({ message: "Problem is missing its execution configuration." });
+        // }
 
-        const languageId = problem.executionConfig.judge0LanguageIds[normalizedLang];
+        const languageId = getLanguageById(normalizedLang);
         if (!languageId) {
             return res.status(400).json({ message: `Language '${language}' is not configured for this specific problem.` });
         }

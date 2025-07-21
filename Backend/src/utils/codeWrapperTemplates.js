@@ -67,15 +67,23 @@ except Exception as e:
     print(f"RUNTIME_ERROR: {str(e)}", file=sys.stderr)
     import traceback
     traceback.print_exc(file=sys.stderr)`,
+    
+    // **THIS IS THE CRITICAL CHANGE FOR JAVA**
     java: `import java.util.*;
 
-{{USER_CODE}}
-
 public class Main {
+    // This is the static nested class where the user's methods will be placed.
+    // **IMPORTANT**: The user's submitted 'code' for Java should now ONLY contain
+    // the method(s), NOT the 'public class Solution { ... }' wrapper.
+    public static class Solution {
+        {{USER_CODE}}
+    }
+
     public static void main(String[] args) {
         try {
             String inputJson = "{{TEST_INPUT}}";
-            Solution solution = new Solution();
+            // Instantiate the static nested Solution class
+            Solution solution = new Solution(); 
             
             {{DYNAMIC_INPUT_PARSING_AND_METHOD_CALL}}
             
@@ -91,7 +99,7 @@ public class Main {
         if (value.equals("null")) return null;
         if (value.equals("true")) return true;
         if (value.equals("false")) return false;
-        if (value.startsWith("\"") && value.endsWith("\"")) {
+        if (value.startsWith("\\\"") && value.endsWith("\\\"")) { 
             return value.substring(1, value.length() - 1);
         }
         if (value.startsWith("[") && value.endsWith("]")) {
@@ -113,7 +121,7 @@ public class Main {
         String content = arrayStr.substring(1, arrayStr.length() - 1).trim();
         if (content.isEmpty()) return result;
         
-        String[] elements = content.split(",");
+        String[] elements = content.split(",(?=(?:[^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)");
         for (String element : elements) {
             result.add(parseValue(element.trim()));
         }
@@ -124,14 +132,20 @@ public class Main {
         List<Object> list = parseArray(arrayStr);
         int[] result = new int[list.size()];
         for (int i = 0; i < list.size(); i++) {
-            result[i] = (Integer) list.get(i);
+            if (list.get(i) instanceof Integer) {
+                result[i] = (Integer) list.get(i);
+            } else if (list.get(i) instanceof Double) {
+                result[i] = ((Double) list.get(i)).intValue();
+            } else {
+                throw new IllegalArgumentException("Expected integer but got: " + list.get(i));
+            }
         }
         return result;
     }
     
     private static String formatOutput(Object obj) {
         if (obj == null) return "null";
-        if (obj instanceof String) return "\"" + obj + "\"";
+        if (obj instanceof String) return "\\\"" + obj + "\\\""; 
         if (obj instanceof Boolean || obj instanceof Number) return obj.toString();
         if (obj instanceof List) {
             List<?> list = (List<?>) obj;
@@ -156,72 +170,75 @@ public class Main {
         return obj.toString();
     }
 }`,
+
     cpp: `#include <iostream>
 #include <vector>
 #include <string>
 #include <sstream>
-#include <algorithm>
-#include <stdexcept>
+#include <algorithm> // For std::transform
+#include <stdexcept> // For std::invalid_argument, std::exception
 
 // DO NOT INCLUDE <nlohmann/json.hpp> or any other external JSON library.
 // Judge0 does not have them pre-installed.
 
-using namespace std;
-
 // User's code will be injected here by the backend
+// It is wrapped inside a Solution class for consistent calling.
+class Solution {
+public:
 {{USER_CODE}}
+};
 
 // A simple, self-contained parser to handle the basic input formats.
 // This parser does not require any external libraries.
 class SimpleParser {
 public:
-    static vector<int> parseIntArray(const string& str) {
-        vector<int> result;
+    static std::vector<int> parseIntArray(const std::string& str) {
+        std::vector<int> result;
         if (str.length() < 2 || str.front() != '[' || str.back() != ']') {
             // Handle cases where the input is not a valid array string, e.g., "123"
             try {
-                result.push_back(stoi(str));
-            } catch (const invalid_argument& ia) {
+                result.push_back(std::stoi(str));
+            } catch (const std::invalid_argument& ia) {
                 // Not a number, return empty vector or throw error
             }
             return result;
         }
 
-        string content = str.substr(1, str.length() - 2);
+        std::string content = str.substr(1, str.length() - 2);
         if (content.empty()) {
             return result;
         }
 
-        stringstream ss(content);
-        string item;
-        while (getline(ss, item, ',')) {
+        std::stringstream ss(content);
+        std::string item;
+        while (std::getline(ss, item, ',')) {
             try {
-                result.push_back(stoi(item));
-            } catch (const invalid_argument& ia) {
+                result.push_back(std::stoi(item));
+            } catch (const std::invalid_argument& ia) {
                 // Could not convert item to int, skip or handle error
             }
         }
         return result;
     }
     
-    static string parseString(const string& str) {
+    static std::string parseString(const std::string& str) {
         if (str.length() >= 2 && str.front() == '"' && str.back() == '"') {
             return str.substr(1, str.length() - 2);
         }
         return str;
     }
     
-    static int parseInt(const string& str) {
-        return stoi(str);
+    static int parseInt(const std::string& str) {
+        return std::stoi(str);
     }
     
-    static double parseDouble(const string& str) {
-        return stod(str);
+    static double parseDouble(const std::string& str) {
+        return std::stod(str);
     }
     
-    static bool parseBool(const string& str) {
-        string lowerStr = str;
-        transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
+    static bool parseBool(const std::string& str) {
+        std::string lowerStr = str;
+        std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
         return lowerStr == "true";
     }
 };
@@ -229,47 +246,48 @@ public:
 // --- Helper functions to print various result types in a consistent JSON format ---
 template<typename T>
 void printResult(const T& result) {
-    cout << result;
+    std::cout << result;
 }
 
 template<>
-void printResult<vector<int>>(const vector<int>& result) {
-    cout << "[";
+void printResult<std::vector<int>>(const std::vector<int>& result) {
+    std::cout << "[";
     for (size_t i = 0; i < result.size(); ++i) {
-        cout << result[i];
+        std::cout << result[i];
         if (i < result.size() - 1) {
-            cout << ",";
+            std::cout << ",";
         }
     }
-    cout << "]";
+    std::cout << "]";
 }
 
 template<>
-void printResult<string>(const string& result) {
-    cout << "\"" << result << "\"";
+void printResult<std::string>(const std::string& result) {
+    std::cout << "\"" << result << "\"";
 }
 
 template<>
 void printResult<bool>(const bool& result) {
-    cout << (result ? "true" : "false");
+    std::cout << (result ? "true" : "false");
 }
 
 int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(NULL);
 
-    string input_str = R"({{TEST_INPUT}})";
+    std::string input_str = R"({{TEST_INPUT}})";
     
     try {
         // The backend will generate the specific parsing and function call code here
         {{DYNAMIC_INPUT_PARSING_AND_METHOD_CALL}}
-    } catch (const exception& e) {
-        cerr << "RUNTIME_ERROR: " << e.what() << endl;
+    } catch (const std::exception& e) {
+        std::cerr << "RUNTIME_ERROR: " << e.what() << std::endl;
         return 1;
     }
 
     return 0;
-}`,
+}`
+    ,
     c: `#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

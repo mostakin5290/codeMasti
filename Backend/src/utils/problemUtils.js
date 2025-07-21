@@ -1,12 +1,11 @@
 const axios = require('axios');
 
-// Judge0 Language IDs (updated to be more comprehensive and recent if possible)
 const judge0LanguageMap = {
     "c": 103,         // C (GCC 14.1.0) 
-    "c++": 105,       // C++ 20 (GCC 14.1.0) 
+    "cpp": 105,       // C++ 20 (GCC 14.1.0) 
     "java": 91,      // Java (JDK 17.0.6) 
     "python": 109,    // Python 3.13.2 
-    "javaScript": 102,// Node.js 22.08.0
+    "javascript": 102,// Node.js 22.08.0
 };
 
 const getLanguageById = (lang) => {
@@ -36,7 +35,6 @@ const submitBatch = async (submissions) => {
     }
 };
 
-// This is a helper to pause execution for a given number of milliseconds
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const submitToken = async (resultTokens) => {
@@ -46,7 +44,7 @@ const submitToken = async (resultTokens) => {
         params: {
             tokens: resultTokens.join(","),
             base64_encoded: 'false',
-            fields: '*' // Request all fields for detailed results
+            fields: '*' 
         },
         headers: {
             'x-rapidapi-key': process.env.JUDGE0_KEY,
@@ -54,20 +52,17 @@ const submitToken = async (resultTokens) => {
         }
     };
 
-    // Poll Judge0 until all submissions are processed
     while (true) {
         try {
             const response = await axios.request(options);
             const results = response.data.submissions;
 
-            // Status IDs: 1 = In Queue, 2 = Processing. Any other ID means finished.
             const allSubmissionsProcessed = results.every(r => r.status_id > 2);
 
             if (allSubmissionsProcessed) {
                 return results;
             }
             
-            // Wait for 1 second before polling again
             await delay(1000); 
 
         } catch (error) {

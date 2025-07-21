@@ -26,7 +26,6 @@ const problemSchema = new Schema({
         type: [String],
         enum: {
             values: [
-                // ... your existing tags ...
                 'array', 'string', 'linkedList', 'stack', 'queue', 'deque', 'hashTable', 'set', 'map', 'tree', 'binaryTree', 'binarySearchTree', 'heap', 'priorityQueue', 'graph', 'trie', 'segmentTree', 'fenwickTree', 'unionFind', 'recursion', 'backtracking', 'divideAndConquer', 'greedy', 'dp', 'memoization', 'tabulation', 'bitManipulation', 'slidingWindow', 'twoPointers', 'binarySearch', 'prefixSum', 'matrix', 'topologicalSort', 'bfs', 'dfs', 'dijkstra', 'floydWarshall', 'bellmanFord', 'kruskal', 'prim', 'unionByRank', 'pathCompression', 'cycleDetection', 'math', 'combinatorics', 'probability', 'geometry', 'numberTheory', 'modularArithmetic', 'gcd', 'lcm', 'sieve', 'palindrome', 'anagram', 'sorting', 'mergeSort', 'quickSort', 'countingSort', 'bucketSort', 'radixSort', 'simulation', 'implementation', 'design', 'gameTheory', 'recurrenceRelation', 'randomized', 'rotation'
             ],
             message: 'Invalid tag provided'
@@ -72,14 +71,7 @@ const problemSchema = new Schema({
         completeCode: { type: String, required: [true, 'Solution code is required'] }
     }],
     executionConfig: {
-        judge0LanguageIds: { // KEEP THIS - these are problem-specific Judge0 IDs or defaults
-            javascript: { type: Number, default: 102 },
-            python: { type: Number, default: 109 },
-            java: { type: Number, default: 91 },
-            c: { type: Number, default: 103 },
-            cpp: { type: Number, default: 105 }
-        },
-        inputOutputConfig: { // KEEP THIS - this is highly problem-specific
+        inputOutputConfig: { 
             inputFormat: {
                 type: String,
                 enum: ['array', 'single', 'object', 'string'],
@@ -98,7 +90,6 @@ const problemSchema = new Schema({
                 required: true
             }
         },
-        // REMOVE wrapperTemplates from the schema
         timeout: { type: Number, default: 2000, min: [500, 'Timeout must be at least 500ms'], max: [5000, 'Timeout cannot exceed 5000ms'] },
         memoryLimit: { type: Number, default: 128000, min: [64000, 'Memory limit must be at least 64MB'], max: [256000, 'Memory limit cannot exceed 256MB'] }
     },
@@ -232,7 +223,6 @@ function getJavaType(paramType) {
     }
 }
 
-// Generate Java method call with simplified parsing
 function generateJavaMethodCall(ioConfig) {
     const params = ioConfig.parameters;
     const functionName = ioConfig.functionName;
@@ -243,7 +233,6 @@ function generateJavaMethodCall(ioConfig) {
     let resultDeclaration = '';
     let outputCode = '';
 
-    // Handle result declaration and output based on return type
     if (ioConfig.returnType === 'void') {
         resultDeclaration = '';
         outputCode = '';
@@ -303,8 +292,6 @@ function generateJavaMethodCall(ioConfig) {
     return `${parsingCode}${methodCallLine}`;
 }
 
-// In models/problem.js
-
 function generateCppMethodCall(ioConfig) {
     const params = ioConfig.parameters;
     const functionName = ioConfig.functionName;
@@ -315,26 +302,25 @@ function generateCppMethodCall(ioConfig) {
     let resultDeclaration = '';
     let outputCode = '';
 
-    // Determine result type and print statement
     switch (ioConfig.returnType) {
         case 'void':
             resultDeclaration = '';
-            outputCode = '        // No output for void return type';
+            outputCode = '';
             break;
         case 'int':
             resultDeclaration = 'int result = ';
             outputCode = '        printResult(result);';
             break;
         case 'string':
-            resultDeclaration = 'string result = ';
+            resultDeclaration = 'std::string result = '; // Added std::
             outputCode = '        printResult(result);';
             break;
         case 'boolean':
             resultDeclaration = 'bool result = ';
             outputCode = '        printResult(result);';
             break;
-        case 'array': // Assuming array of int for now
-            resultDeclaration = 'vector<int> result = ';
+        case 'array':
+            resultDeclaration = 'std::vector<int> result = '; // Added std::
             outputCode = '        printResult(result);';
             break;
         default:
@@ -345,29 +331,39 @@ function generateCppMethodCall(ioConfig) {
 
     if (inputFormat === 'single' || inputFormat === 'string') {
         const param = params[0];
-        // The SimpleParser in the wrapper will handle basic types from a string
         if (param.type === 'array') {
-            parsingCode += `        vector<int> ${param.name} = SimpleParser::parseIntArray(input_str);\n`;
+            parsingCode += `        std::vector<int> ${param.name} = SimpleParser::parseIntArray(input_str);\n`; // Added std::
         } else if (param.type === 'string') {
-            parsingCode += `        string ${param.name} = SimpleParser::parseString(input_str);\n`;
+            parsingCode += `        std::string ${param.name} = SimpleParser::parseString(input_str);\n`; // Added std::
         } else if (param.type === 'int') {
             parsingCode += `        int ${param.name} = SimpleParser::parseInt(input_str);\n`;
-        } // ... add other types like double, bool as needed
+        } else if (param.type === 'double') { // Ensure double parsing is covered
+            parsingCode += `        double ${param.name} = SimpleParser::parseDouble(input_str);\n`;
+        } else if (param.type === 'boolean') { // Ensure boolean parsing is covered
+            parsingCode += `        bool ${param.name} = SimpleParser::parseBool(input_str);\n`;
+        }
         functionCallArgs.push(param.name);
 
     } else if (inputFormat === 'array') {
-        // This format is for when the input is a JSON array containing multiple arguments
-        // e.g., input_str is like "[ [1,2,3], 5 ]" for (vector<int>, int)
-        // This requires a more complex parser than your current SimpleParser.
-        // Let's stick to a simple case for your existing parser:
-        // Assume input_str is like "[5,10]" and you need to extract 5 and 10.
-        parsingCode += `        vector<int> parsed_params = SimpleParser::parseIntArray(input_str);\n`;
+        // This handles cases where input_str is a JSON-like array (e.g., "[2,4]")
+        // and params correspond to elements of that array.
+        // SimpleParser::parseIntArray is used, implying the array elements are integers.
+        parsingCode += `        std::vector<int> parsed_array_input_params = SimpleParser::parseIntArray(input_str);\n`; // Added std:: and renamed for clarity
         params.forEach((param, index) => {
+            const paramName = `${param.name}_arg_${index}`; // Use unique name for arguments
             if (param.type === 'int') {
-                parsingCode += `        int ${param.name} = parsed_params[${index}];\n`;
-                functionCallArgs.push(param.name);
+                parsingCode += `        int ${paramName} = parsed_array_input_params[${index}];\n`;
+            } else if (param.type === 'string') {
+                // Note: This relies on std::to_string and SimpleParser::parseString,
+                // which might not be robust for complex string parsing from an integer array.
+                // For a robust solution for mixed array inputs, a full JSON parser would be needed.
+                parsingCode += `        std::string ${paramName} = SimpleParser::parseString(std::to_string(parsed_array_input_params[${index}]));\n`; // Added std::
+            } else if (param.type === 'boolean') {
+                parsingCode += `        bool ${paramName} = SimpleParser::parseBool(std::to_string(parsed_array_input_params[${index}]));\n`; // Added std::
+            } else if (param.type === 'double') {
+                parsingCode += `        double ${paramName} = SimpleParser::parseDouble(std::to_string(parsed_array_input_params[${index}]));\n`; // Added std::
             }
-            // You would need to extend SimpleParser to handle mixed types (e.g., arrays of strings)
+            functionCallArgs.push(paramName);
         });
     }
 
@@ -379,7 +375,6 @@ function generateCppMethodCall(ioConfig) {
     return `${parsingCode}${methodCallLine}`;
 }
 
-// Generate C method call with simplified parsing
 function generateCMethodCall(ioConfig) {
     const params = ioConfig.parameters;
     const functionName = ioConfig.functionName;
@@ -390,7 +385,6 @@ function generateCMethodCall(ioConfig) {
     let resultDeclaration = '';
     let outputCode = '';
 
-    // Handle result declaration and output based on return type
     if (ioConfig.returnType === 'void') {
         resultDeclaration = '';
         outputCode = '';
@@ -443,30 +437,25 @@ function generateCMethodCall(ioConfig) {
 
 problemSchema.methods.generateExecutableCode = function (userCode, language, testInput) {
     const config = this.executionConfig;
-    // Normalize language to match keys in wrapperTemplates
     const normalizedLanguage = language.toLowerCase();
 
     let template = config.wrapperTemplates[normalizedLanguage];
     const ioConfig = this.executionConfig.inputOutputConfig;
 
-    // Convert testInput to a JSON string that can be embedded
     let embeddedTestInput;
     try {
         embeddedTestInput = JSON.stringify(testInput);
     } catch (e) {
-        // Fallback if testInput is not directly JSON serializable
         embeddedTestInput = String(testInput);
         console.warn(`Test input for problem ${this.id} (${language}) not JSON serializable, using string representation. Input:`, testInput);
     }
 
 
     let executableCode = template
-        .replace(/\{\{USER_CODE\}\}/g, userCode); // User code is inserted first
+        .replace(/\{\{USER_CODE\}\}/g, userCode); 
 
-    // Initialize dynamic code placeholder
     let dynamicInputParsingAndMethodCall = '';
 
-    // Generate dynamic input parsing and method call based on language and config
     if (normalizedLanguage === 'javascript') {
         dynamicInputParsingAndMethodCall = generateJavascriptMethodCall(ioConfig);
     } else if (normalizedLanguage === 'python') {
@@ -479,7 +468,6 @@ problemSchema.methods.generateExecutableCode = function (userCode, language, tes
         dynamicInputParsingAndMethodCall = generateCMethodCall(ioConfig); // Your existing C helper
     }
 
-    // Now, replace placeholders in the _main_ wrapper template
     executableCode = executableCode
         .replace(/\{\{TEST_INPUT\}\}/g, embeddedTestInput)
         .replace(/\{\{INPUT_FORMAT\}\}/g, ioConfig.inputFormat || '') // Add default for safety
@@ -495,7 +483,6 @@ problemSchema.methods.generateExecutableCode = function (userCode, language, tes
     const config = this.executionConfig;
     const normalizedLanguage = language.toLowerCase();
 
-    // GET THE TEMPLATE FROM THE CENTRALIZED FILE, NOT FROM THE PROBLEM DOCUMENT
     const template = codeWrapperTemplates[normalizedLanguage];
 
     if (!template) {

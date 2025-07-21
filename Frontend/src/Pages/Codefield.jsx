@@ -528,7 +528,7 @@ const Codefield = () => {
             setTestResults(data);
             setSubmissionHistory(prev => [data, ...prev]); 
             if (data.status === 'Accepted') {
-                if (problem?.isDailyChallenge  && data.userDailyChallenges) {
+                if (problem?.isDailyChallenge && data.isFirstAcceptedDailyChallengeToday && data.userDailyChallenges) {
                     dispatch(updateUserDailyChallenges(data.userDailyChallenges));
                     setDailyChallengeStreakToShow(data.userDailyChallenges.currentStreak);
                     setShowDailyChallengeSuccessModal(true);
