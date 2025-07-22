@@ -66,7 +66,6 @@ const FrontPage = () => {
 
     return (
         <div className="min-h-screen bg-gray-900 bg-[url('https://images.unsplash.com/photo-1639762681057-408e52192e55?q=80&w=2232&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')] bg-cover bg-center bg-blend-overlay bg-gray-900/90">
-            {/* Animated gradient background */}
             <div className="fixed inset-0 overflow-hidden opacity-20">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '15s' }}></div>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_60%,_var(--tw-gradient-stops))] from-secondary/20 via-transparent to-transparent animate-pulse" style={{ animationDuration: '20s', animationDelay: '5s' }}></div>
@@ -327,7 +326,6 @@ const FrontPage = () => {
                     </footer>
                 </div>
 
-                {/* Global styles for animations */}
                 <style jsx global>{`
                 @keyframes float {
                     0% {
@@ -341,7 +339,6 @@ const FrontPage = () => {
                 }
             `}</style>
             </div>
-            {/* <ToothedToggle isOn={isOn} toggle={toggle} /> */}
         </div>
     );
 };

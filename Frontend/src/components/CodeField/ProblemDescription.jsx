@@ -80,11 +80,16 @@ const ProblemDescription = ({ problem }) => {
         sc => sc.language === selectedLangForSignature
     )?.functionSignature || `// Function signature not available for ${getLanguageDisplayName(selectedLangForSignature)}`;
 
-    // Helper to safely display JSON or string (copied from Codefield.jsx)
+    // Helper to safely display JSON or string (modified for array formatting)
     const safeDisplayValue = (value) => {
         if (typeof value === 'object' && value !== null) {
             try {
-                return JSON.stringify(value, null, 2); // Pretty print JSON
+                // If it's an array, stringify it without pretty printing for a single line
+                if (Array.isArray(value)) {
+                    return JSON.stringify(value);
+                }
+                // For other objects, pretty print with 2 spaces indentation
+                return JSON.stringify(value, null, 2);
             } catch (e) {
                 return String(value);
             }
@@ -182,36 +187,9 @@ const ProblemDescription = ({ problem }) => {
                                     </div>
                                 </div>
                             )}
-
-                            {/* Function Signature */}
-                            {problem.starterCode?.length > 0 && (
-                                <div className="mt-5 space-y-3">
-                                    <h4 className={`text-md font-semibold ${appTheme.highlightSecondary} mb-2`}>Function Signature:</h4>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <label htmlFor="langSignature" className={`text-sm font-medium ${appTheme.cardText}`}>Select Language:</label>
-                                        <select
-                                            id="langSignature"
-                                            value={selectedLangForSignature}
-                                            onChange={(e) => setSelectedLangForSignature(e.target.value)}
-                                            className={`appearance-none ${appTheme.background} border ${appTheme.border} ${appTheme.text} px-3 py-1.5 rounded-lg text-sm font-medium focus:outline-none focus:ring-1 focus:ring-${appTheme.primary.split('-')[1]}-500/50 cursor-pointer`}
-                                        >
-                                            {problem.starterCode.map(sc => (
-                                                <option key={sc.language} value={sc.language}>
-                                                    {getLanguageDisplayName(sc.language)}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <pre className={`${appTheme.background} rounded-lg p-4 text-sm font-mono overflow-x-auto border ${appTheme.border}/40 ${appTheme.highlight}`}>
-                                        <code>{currentFunctionSignature}</code>
-                                    </pre>
-                                </div>
-                            )}
                         </div>
                     </div>
                 )}
-
-
                 {/* Enhanced Examples Section */}
                 {problem.visibleTestCases?.length > 0 && (
                     <div className="space-y-6 mt-8">

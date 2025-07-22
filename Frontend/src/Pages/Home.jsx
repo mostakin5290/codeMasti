@@ -112,10 +112,9 @@ const Home = () => {
                         >
                             Start Coding Now
                         </Link>
-                        {/* Conditionally render "Manage Premium" or "Join a Contest" */}
                         {isUserPremium ? (
                             <Link
-                                to="/profile" // Or a dedicated premium management page
+                                to="/profile" 
                                 className={`px-8 py-3 rounded-lg border-2 ${theme.border} hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-all duration-300 font-semibold bg-transparent transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${theme.highlight.replace('text-', 'focus:ring-')}`}
                             >
                                 Manage Premium
@@ -257,7 +256,6 @@ const Home = () => {
                                         <div className="leading-6 ml-4"><span className="text-purple-400">const</span> achievements = <span className="text-purple-400">await</span> <span className="text-blue-300">getUserAchievements</span>(user.id);</div>
                                         <div className="leading-6 ml-4"></div>
                                         <div className="leading-6 ml-4"><span className="text-blue-300">console</span>.<span className="text-yellow-300">log</span>(<span className="text-green-400">`Welcome back, </span><span className="text-orange-400">${user ? user.firstName : 'Guest'} {user ? user.lastName : ''}</span><span className="text-green-400">!`</span>);</div>
-                                        <div className="leading-6 ml-4"><span className="text-blue-300">console</span>.<span className="text-yellow-300">log</span>(<span className="text-green-400">`You've solved </span><span className="text-orange-400">${1}</span><span className="text-green-400"> problems!`</span>);</div>
                                         <div className="leading-6 ml-4"></div>
                                         <div className="leading-6 ml-4"><span className="text-purple-400">return</span> {'{'}</div>
                                         <div className="leading-6 ml-8">message: <span className="text-green-400">"Ready to tackle new challenges?"</span>,</div>
