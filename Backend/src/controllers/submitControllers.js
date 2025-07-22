@@ -98,7 +98,7 @@ const submitCode = async (req, res) => {
         //     return res.status(500).json({ message: "Problem is missing its execution configuration." });
         // }
 
-        const languageId = problem.executionConfig.judge0LanguageIds[normalizedLang];
+        const languageId = getLanguageById(normalizedLang);
         if (!languageId) {
             return res.status(400).json({ message: `Language '${language}' is not configured for this specific problem.` });
         }

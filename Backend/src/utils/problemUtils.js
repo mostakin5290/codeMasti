@@ -62,7 +62,7 @@ const submitToken = async (resultTokens) => {
             if (allSubmissionsProcessed) {
                 return results;
             }
-            
+
             await delay(1000); 
 
         } catch (error) {
