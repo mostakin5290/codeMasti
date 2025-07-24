@@ -1,8 +1,10 @@
 const { getLanguageById, submitBatch, submitToken } = require('../utils/problemUtils');
 const Problem = require('../models/problem');
-const Submission = require('../models/submission'); // Ensure Submission model is imported
+const Submission = require('../models/submission'); 
 const mongoose = require('mongoose');
 const Video = require('../models/video')
+const DailyChallengeHistory = require('../models/DailyChallengeHistory');
+const User = require('../models/user');
 
 const createProblem = async (req, res) => {
     try {
@@ -12,7 +14,6 @@ const createProblem = async (req, res) => {
             executionConfig
         } = req.body;
 
-        // --- 1. Basic Validation & Pre-computation ---
         if (!executionConfig.inputOutputConfig) {
             return res.status(400).json({ message: "Problem must include complete execution configuration (inputOutputConfig, wrapperTemplates)." });
         }
@@ -22,7 +23,6 @@ const createProblem = async (req, res) => {
             return res.status(400).json({ message: "Problem must have at least one test case (visible or hidden)." });
         }
 
-        // --- 2. Pre-validate Reference Solutions (using a temporary Problem instance) ---
         const tempProblem = new Problem({
             title, description, difficulty, tags,
             visibleTestCases, hiddenTestCases, starterCode, referenceSolution,
@@ -30,55 +30,11 @@ const createProblem = async (req, res) => {
             problemCreator: req.user._id
         });
 
-
-        // if (referenceSolution && referenceSolution.length > 0) {
-        //     for (const { language, completeCode } of referenceSolution) {
-        //         if (!language || !completeCode) {
-        //             return res.status(400).send("Each reference solution must have a language and complete code.");
-        //         }
-        //         // Use tempProblem.executionConfig to get judge0LanguageIds from the current problem config
-        //         const languageId = tempProblem.executionConfig.judge0LanguageIds[language.toLowerCase()]; // Ensure language is normalized
-
-        //         if (languageId === undefined) { // Check for unsupported language by Judge0 ID
-        //             return res.status(400).json({ message: `Unsupported language for reference solution: ${language}. No Judge0 ID found.` });
-        //         }
-
-        //         const submissionsForJudge0 = allTestCases.map(testCase => {
-        //             const executableCode = tempProblem.generateExecutableCode(completeCode, language, testCase.input);
-
-        //             const formattedExpectedOutput = typeof testCase.output === 'object' ? JSON.stringify(testCase.output) : String(testCase.output);
-
-        //             return {
-        //                 source_code: executableCode,
-        //                 language_id: languageId,
-        //                 expected_output: formattedExpectedOutput
-        //             };
-        //         });
-
-        //         const submitResult = await submitBatch(submissionsForJudge0);
-        //         if (!submitResult || !submitResult.length) {
-        //             console.error('Judge0 batch submission failed or returned empty:', submitResult);
-        //             return res.status(500).json({ message: 'Failed to submit reference solution to Judge0.' });
-        //         }
-
-        //         const resultTokens = submitResult.map(value => value.token);
-        //         const testResults = await submitToken(resultTokens);
-
-        //         for (const test of testResults) {
-        //             if (test.status.id !== 3) { // Check if not Accepted (Status ID 3)
-        //                 const failReason = `Reference solution for '${language}' failed on test case. Status: ${test.status.description || 'Unknown'}. Output: ${test.stdout || test.stderr || 'No output'}`;
-        //                 return res.status(400).json({ message: failReason });
-        //             }
-        //         }
-        //     }
-        // }
-
-        // --- 3. Save the Problem to DB if all validations pass ---
         const problem = await Problem.create({
             title, description, difficulty, tags,
             visibleTestCases, hiddenTestCases, starterCode, referenceSolution,
             executionConfig,
-            problemCreator: req.user._id // <--- And also here, for the actual problem creation
+            problemCreator: req.user._id 
         });
 
         res.status(201).json({ message: 'Problem created successfully', problem });
@@ -88,7 +44,6 @@ const createProblem = async (req, res) => {
         if (err.name === 'ValidationError') {
             return res.status(400).json({ message: "Validation failed", error: err.message });
         }
-        // Handle MongoDB duplicate key error specifically if a slug is generated but not unique
         if (err.code === 11000) {
             return res.status(409).json({ message: "A problem with a similar title already exists (duplicate slug). Please use a unique title.", error: err.message });
         }
@@ -101,7 +56,7 @@ const updateProblem = async (req, res) => {
     const {
         title, description, difficulty, tags,
         visibleTestCases, hiddenTestCases, starterCode, referenceSolution,
-        executionConfig // Allow updating executionConfig
+        executionConfig 
     } = req.body;
 
     try {
@@ -114,13 +69,10 @@ const updateProblem = async (req, res) => {
             return res.status(404).json({ message: "Problem not found." });
         }
 
-        // --- Re-validate Reference Solutions if they are being updated or the problem config is updated ---
-        // Create a temporary Problem instance by merging existing data with new data from the request.
-        // This ensures the `generateExecutableCode` method uses the *proposed* updated config.
         const updatedProblemCandidate = new Problem({
-            ...existingProblem.toObject(), // Start with existing problem data
-            ...req.body,                  // Overlay with data from the request body
-            _id: existingProblem._id      // Ensure the _id is preserved for consistency (though not strictly necessary for temporary instance)
+            ...existingProblem.toObject(), 
+            ...req.body,                  
+            _id: existingProblem._id      
         });
 
         const allTestCases = [...(updatedProblemCandidate.visibleTestCases || []), ...(updatedProblemCandidate.hiddenTestCases || [])];
@@ -128,47 +80,7 @@ const updateProblem = async (req, res) => {
             return res.status(400).json({ message: "Problem must have at least one test case (visible or hidden)." });
         }
 
-        // If reference solutions are provided in the update, or if executionConfig is being modified, re-validate them.
-        // if ((referenceSolution && referenceSolution.length > 0) || executionConfig) {
-        //     for (const { language, completeCode } of referenceSolution) {
-        //         if (!language || !completeCode) {
-        //             return res.status(400).send("Each reference solution must have a language and complete code.");
-        //         }
-        //         const languageId = getLanguageById(language);
-        //         if (languageId === null) {
-        //             return res.status(400).json({ message: `Unsupported language for reference solution: ${language}` });
-        //         }
 
-        //         const submissionsForJudge0 = allTestCases.map(testCase => {
-        //             const executableCode = updatedProblemCandidate.generateExecutableCode(completeCode, language, testCase.input);
-        //             const formattedExpectedOutput = typeof testCase.output === 'object' ? JSON.stringify(testCase.output) : String(testCase.output);
-
-        //             return {
-        //                 source_code: executableCode,
-        //                 language_id: languageId,
-        //                 expected_output: formattedExpectedOutput
-        //             };
-        //         });
-
-        //         const submitResult = await submitBatch(submissionsForJudge0);
-        //         if (!submitResult || !submitResult.length) {
-        //             console.error('Judge0 batch submission failed or returned empty:', submitResult);
-        //             return res.status(500).json({ message: 'Failed to submit reference solution to Judge0 during update.' });
-        //         }
-
-        //         const resultTokens = submitResult.map(value => value.token);
-        //         const testResults = await submitToken(resultTokens);
-
-        //         for (const test of testResults) {
-        //             if (test.status_id !== 3) { // Check if not Accepted
-        //                 const failReason = `Updated reference solution for '${language}' failed. Status: ${test.status.description || 'Unknown'}. Output: ${test.stdout || test.stderr || 'No output'}`;
-        //                 return res.status(400).json({ message: failReason });
-        //             }
-        //         }
-        //     }
-        // }
-
-        // Construct the final update object based on what's provided in the request body
         const finalUpdateData = {};
         if (title !== undefined) finalUpdateData.title = title;
         if (description !== undefined) finalUpdateData.description = description;
@@ -249,22 +161,20 @@ const getAllProblem = async (req, res) => {
         const problems = await Problem.aggregate([
             {
                 $lookup: {
-                    from: 'submissions', // The actual collection name for Submissions
+                    from: 'submissions', 
                     localField: '_id',
                     foreignField: 'problemId',
                     as: 'submissions'
                 }
             },
-            // NEW Stage 2: Lookup (join) with the Videos collection
             {
                 $lookup: {
-                    from: 'Videos', // <<-- IMPORTANT: Verify this is your actual MongoDB collection name for Video
+                    from: 'Videos', 
                     localField: '_id',
                     foreignField: 'problemId',
                     as: 'Videos'
                 }
             },
-            // Stage 3: Add new fields (status, acceptance, and first video details)
             {
                 $addFields: {
                     status: {
@@ -327,11 +237,9 @@ const getAllProblem = async (req, res) => {
                             }
                         }
                     },
-                    // NEW: Add video details from the first found video for this problem
                     Video: { $arrayElemAt: ['$Videos', 0] } // Gets the first video if multiple exist
                 }
             },
-            // Stage 4: Project (select) the final fields to send to the frontend
             {
                 $project: {
                     _id: 1,
@@ -340,8 +248,7 @@ const getAllProblem = async (req, res) => {
                     tags: 1,
                     status: 1,
                     acceptance: 1,
-                    // Include necessary video fields from the selected Video
-                    'Video._id': 1, // The video document's ID, crucial for deletion
+                    'Video._id': 1, 
                     'Video.cloudinaryPublicId': 1,
                     'Video.secureUrl': 1,
                     'Video.thumbnailUrl': 1,
@@ -357,7 +264,6 @@ const getAllProblem = async (req, res) => {
         res.status(500).json({ message: "Error fetching problems", error: err.message });
     }
 };
-// ... (rest of problem controllers)
 
 const getProblemByIdForAdmin = async (req, res) => {
     const { id } = req.params;
@@ -367,7 +273,6 @@ const getProblemByIdForAdmin = async (req, res) => {
             return res.status(400).json({ message: "Invalid ID provided." });
         }
 
-        // For admin, fetch ALL fields including hidden test cases and reference solutions
         const problem = await Problem.findById(id);
 
         if (!problem) {
@@ -397,39 +302,161 @@ const searchProblems = async (req, res) => {
     }
 };
 
+const getAllScheduledAndHistoricalDailyChallenges = async (req, res) => {
+    try {
+        // Fetch all historical challenges from the new collection
+        const historicalChallenges = await DailyChallengeHistory.find()
+            .populate('problemId', 'title difficulty tags') // Populate problem details for display
+            .sort({ challengeDate: -1 }); // Latest dates first
 
-// Add these new methods to your existing exports
+        // Get the currently active daily challenge (from the Problem model)
+        const currentActiveChallenge = await Problem.findOne({ isDailyChallenge: true })
+            .select('title difficulty dailyChallengeDate _id');
+
+        const combinedChallenges = [];
+        const seenDates = new Set(); // To prevent duplicates in case the active challenge also has a history record
+
+        // Add historical challenges to the list
+        historicalChallenges.forEach(hist => {
+            if (hist.problemId) { // Ensure problemId is populated
+                const normalizedDate = new Date(hist.challengeDate);
+                normalizedDate.setUTCHours(0, 0, 0, 0); // Normalize history date
+                const dateKey = normalizedDate.toISOString();
+
+                if (!seenDates.has(dateKey)) {
+                    combinedChallenges.push({
+                        _id: hist._id, // This is the ID of the DailyChallengeHistory record (for deletion/editing)
+                        problemId: hist.problemId._id, // The ID of the actual problem
+                        title: hist.problemId.title,
+                        difficulty: hist.problemId.difficulty,
+                        dailyChallengeDate: hist.challengeDate,
+                        isCurrentActive: false // History records are not 'active'
+                    });
+                    seenDates.add(dateKey);
+                }
+            }
+        });
+
+        // Add the current active challenge if it exists and is not already in the combined list (e.g., just set it)
+        if (currentActiveChallenge && currentActiveChallenge.dailyChallengeDate) {
+            const currentChallengeDate = new Date(currentActiveChallenge.dailyChallengeDate);
+            currentChallengeDate.setUTCHours(0, 0, 0, 0); // Normalize active challenge date
+            const dateKey = currentChallengeDate.toISOString();
+
+            if (!seenDates.has(dateKey)) {
+                combinedChallenges.push({
+                    _id: currentActiveChallenge._id, // For current active, _id is the problem's ID
+                    problemId: currentActiveChallenge._id,
+                    title: currentActiveChallenge.title,
+                    difficulty: currentActiveChallenge.difficulty,
+                    dailyChallengeDate: currentActiveChallenge.dailyChallengeDate,
+                    isCurrentActive: true // This one is the current active
+                });
+            } else {
+                // If a history record already exists for this date, ensure its 'isCurrentActive' status is true
+                const existingIndex = combinedChallenges.findIndex(c =>
+                    new Date(c.dailyChallengeDate).setUTCHours(0,0,0,0) === currentChallengeDate.getTime()
+                );
+                if (existingIndex !== -1) {
+                    combinedChallenges[existingIndex].isCurrentActive = true;
+                    // Also ensure its _id is the history id if it was a history record
+                    // And problemId is consistent.
+                    // If combinedChallenges[existingIndex]._id was problem ID, keep it.
+                    // If it was history ID, keep it. This relies on frontend using problemId for selection.
+                }
+            }
+        }
+
+        // Final sort by date, latest first for admin display
+        combinedChallenges.sort((a, b) => new Date(b.dailyChallengeDate).getTime() - new Date(a.dailyChallengeDate).getTime());
+
+        res.status(200).json(combinedChallenges);
+    } catch (err) {
+        console.error("Error fetching all daily challenge history:", err);
+        res.status(500).json({ message: "Error fetching daily challenge history", error: err.message });
+    }
+};
+
+// Backend/controllers/problemControllers.js
+
+// ... (other imports and functions) ...
 
 const getTodayChallenge = async (req, res) => {
     try {
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        today.setUTCHours(0, 0, 0, 0); // Normalize to start of today UTC
 
-        const challenge = await Problem.findOne({
-            isDailyChallenge: true,
-            dailyChallengeDate: { $gte: today }
-        }).select('-hiddenTestCases -referenceSolution');
+        let challengeProblem = null;
+        let challengeHistoryEntry = null;
 
-        if (!challenge) {
+        // 1. Try to find today's challenge from DailyChallengeHistory
+        challengeHistoryEntry = await DailyChallengeHistory.findOne({ challengeDate: today });
+
+        if (challengeHistoryEntry) {
+            // 2. If an entry exists in history, fetch the actual problem details
+            challengeProblem = await Problem.findById(challengeHistoryEntry.problemId)
+                .select('-hiddenTestCases -referenceSolution'); // Exclude sensitive data for users
+
+            if (!challengeProblem) {
+                // Scenario: A problem was scheduled, but then deleted.
+                console.warn(`Problem ${challengeHistoryEntry.problemId} not found for daily challenge on ${today.toISOString().split('T')[0]}. Removing history entry.`);
+                await DailyChallengeHistory.deleteOne({ _id: challengeHistoryEntry._id });
+                // Fall through to return 404
+            } else {
+                // 3. This is the activation step: Ensure this problem is marked as the *active*
+                // daily challenge on the Problem model, and all others are unset.
+                // This handles daily rollover and manual unsetting/re-setting.
+                if (!challengeProblem.isDailyChallenge ||
+                    !challengeProblem.dailyChallengeDate ||
+                    new Date(challengeProblem.dailyChallengeDate).getTime() !== today.getTime()) {
+
+                    // First, unset the 'isDailyChallenge' flag for any other problem
+                    // that might still have it set (e.g., from a previous day or a manual override).
+                    await Problem.updateMany(
+                        { isDailyChallenge: true, _id: { $ne: challengeProblem._id } }, // Exclude the current problem
+                        { $set: { isDailyChallenge: false, dailyChallengeDate: null } }
+                    );
+
+                    // Then, set the 'isDailyChallenge' flag and date for today's challenge.
+                    await Problem.findByIdAndUpdate(challengeProblem._id, {
+                        $set: { isDailyChallenge: true, dailyChallengeDate: today }
+                    });
+
+                    // Update the in-memory object for the current request's response
+                    challengeProblem.isDailyChallenge = true;
+                    challengeProblem.dailyChallengeDate = today;
+                }
+            }
+        } else {
+            // If no history entry for today, ensure NO problem is marked as the current daily challenge.
+            // This cleans up old active challenges if the admin hasn't scheduled one for today.
+            await Problem.updateMany(
+                { isDailyChallenge: true },
+                { $set: { isDailyChallenge: false, dailyChallengeDate: null } }
+            );
+        }
+
+        if (!challengeProblem) {
             return res.status(404).json({
                 message: "No daily challenge found for today",
                 suggestion: "Check back tomorrow or contact admin"
             });
         }
 
-        // Check if user already solved it
-        const submission = await Submission.findOne({
+        // Fetch user's submission status and streak (unchanged logic)
+        const submission = req.user ? await Submission.findOne({
             userId: req.user._id,
-            problemId: challenge._id,
+            problemId: challengeProblem._id,
             status: 'Accepted'
-        });
+        }) : null;
 
         res.status(200).json({
-            challenge,
+            challenge: challengeProblem,
             alreadySolved: !!submission,
-            streak: req.user.dailyChallenges?.currentStreak || 0
+            streak: req.user?.dailyChallenges?.currentStreak || 0
         });
     } catch (err) {
+        console.error("Error fetching today's challenge:", err);
         res.status(500).json({
             message: "Error fetching today's challenge",
             error: err.message
@@ -462,13 +489,13 @@ const getPreviousChallenges = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0); // Normalize to the start of today
+        todayStart.setHours(0, 0, 0, 0); 
 
         const challenges = await Problem.find({
             isDailyChallenge: true,
-            dailyChallengeDate: { $gte: todayStart } // This gets challenges from today onwards
+            dailyChallengeDate: { $gte: todayStart } 
         })
-            .sort({ dailyChallengeDate: -1 }) // Still sort by date descending for most recent first
+            .sort({ dailyChallengeDate: -1 }) 
             .skip(skip)
             .limit(limit)
             .select('title difficulty dailyChallengeDate tags');
@@ -481,48 +508,55 @@ const getPreviousChallenges = async (req, res) => {
         });
     }
 };
+
 const setDailyChallenge = async (req, res) => {
     try {
-        const { problemId, date } = req.body; // Expect 'date' in the request body
+        const { problemId, date } = req.body;
 
         if (!problemId || !date) {
             return res.status(400).json({ message: "Problem ID and date are required" });
         }
 
         const targetDate = new Date(date);
-        // Ensure the date is at the start of the day (midnight) for accurate comparison
-        targetDate.setHours(0, 0, 0, 0);
-
-        // 1. Find and unset any existing daily challenge for the TARGET DATE.
-        // This prevents having multiple daily challenges on the same future date.
-        await Problem.updateMany(
-            { dailyChallengeDate: { $gte: targetDate, $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000) } },
-            { $set: { isDailyChallenge: false, dailyChallengeDate: null } }
-        );
-
-        // 2. Set the new daily challenge for the specified date
-        const updatedProblem = await Problem.findByIdAndUpdate(
-            problemId,
-            {
-                isDailyChallenge: true,
-                dailyChallengeDate: targetDate // Store the normalized date
-            },
-            { new: true } // Return the updated document
-        );
-
-        if (!updatedProblem) {
-            return res.status(404).json({ message: "Problem not found" });
+        targetDate.setUTCHours(0, 0, 0, 0); 
+        console.log(targetDate);
+        
+        // 1. Validate if the problem exists
+        const problemToSet = await Problem.findById(problemId);
+        if (!problemToSet) {
+            return res.status(404).json({ message: "Problem not found." });
         }
 
+        // 2. Create or update the DailyChallengeHistory entry for the target date.
+        // This is the source of truth for scheduled daily challenges.
+        // This part handles both "add" and "modify" functionality for a given date.
+        const historyEntry = await DailyChallengeHistory.findOneAndUpdate(
+            { challengeDate: targetDate },
+            {
+                problemId: problemId,
+                title: problemToSet.title,
+                difficulty: problemToSet.difficulty
+            },
+            { upsert: true, new: true, runValidators: true } // upsert: create if not exists, new: return updated doc
+        );
+
+        // IMPORTANT CHANGE: We are intentionally NOT setting isDailyChallenge:true on the Problem model here.
+        // That flag will now be managed by the getTodayChallenge function when the date becomes current.
+        // This solves the problem of a newly scheduled challenge for a future date removing the current/previous one.
+
         res.status(200).json({
-            message: "Daily challenge set successfully",
-            challenge: updatedProblem.title,
-            date: targetDate // Return the date for confirmation
+            message: `Daily challenge scheduled successfully for ${targetDate.toISOString().split('T')[0]}`,
+            challengeTitle: problemToSet.title,
+            date: targetDate,
+            historyEntryId: historyEntry._id
         });
     } catch (err) {
         console.error("Error setting daily challenge:", err);
         if (err.name === 'ValidationError') {
             return res.status(400).json({ message: "Validation failed", error: err.message });
+        }
+        if (err.code === 11000) {
+             return res.status(409).json({ message: "A daily challenge is already set for this date. Use edit or choose another date.", error: err.message });
         }
         res.status(500).json({
             message: "Error setting daily challenge",
@@ -532,37 +566,47 @@ const setDailyChallenge = async (req, res) => {
 };
 
 const deleteDailyChallenge = async (req, res) => {
-    const { id: problemId } = req.params; // Assuming the ID passed is the Problem ID
+    const { id: historyRecordId } = req.params; // Expecting history record ID
 
     try {
-        if (!problemId) {
-            return res.status(400).json({ message: "Problem ID is required to remove the daily challenge." });
+        if (!historyRecordId) {
+            return res.status(400).json({ message: "Daily challenge history record ID is required." });
         }
 
-        // Find the problem and unset the daily challenge flags
-        const updatedProblem = await Problem.findByIdAndUpdate(
-            problemId,
-            {
-                $unset: {
-                    isDailyChallenge: "", // Unset the boolean flag
-                    dailyChallengeDate: "" // Unset the date
-                }
-            },
-            { new: true } // Return the updated document
-        );
+        // 1. Delete the record from DailyChallengeHistory
+        const deletedHistoryEntry = await DailyChallengeHistory.findByIdAndDelete(historyRecordId);
 
-        if (!updatedProblem) {
-            return res.status(404).json({ message: "Problem not found or was not set as a daily challenge." });
+        if (!deletedHistoryEntry) {
+            return res.status(404).json({ message: "Daily challenge history record not found." });
+        }
+
+        // 2. If the deleted history entry was for *today's date*,
+        // and its associated problem was currently marked as active for today, unset that problem.
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+        const deletedChallengeDate = new Date(deletedHistoryEntry.challengeDate);
+        deletedChallengeDate.setUTCHours(0, 0, 0, 0);
+
+        if (deletedChallengeDate.getTime() === today.getTime()) {
+            const associatedProblem = await Problem.findById(deletedHistoryEntry.problemId);
+            // Only unset if the problem currently holds the 'isDailyChallenge' flag for TODAY
+            if (associatedProblem && associatedProblem.isDailyChallenge &&
+                new Date(associatedProblem.dailyChallengeDate).getTime() === today.getTime()) {
+                await Problem.findByIdAndUpdate(
+                    associatedProblem._id,
+                    { $set: { isDailyChallenge: false, dailyChallengeDate: null } }
+                );
+            }
         }
 
         res.status(200).json({
-            message: "Daily challenge status removed successfully.",
-            problem: updatedProblem // Optionally return the problem
+            message: "Daily challenge record removed successfully.",
+            deletedRecord: deletedHistoryEntry
         });
     } catch (err) {
-        console.error("Error removing daily challenge:", err);
+        console.error("Error removing daily challenge record:", err);
         res.status(500).json({
-            message: "Error removing daily challenge.",
+            message: "Error removing daily challenge record.",
             error: err.message
         });
     }
@@ -579,6 +623,7 @@ module.exports = {
     getTodayChallenge,
     getUserStreak,
     setDailyChallenge,
-    getPreviousChallenges,
-    deleteDailyChallenge
+    // getPreviousChallenges,
+    deleteDailyChallenge,
+    getAllScheduledAndHistoricalDailyChallenges
 };

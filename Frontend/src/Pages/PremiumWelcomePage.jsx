@@ -4,7 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { useTheme } from '../context/ThemeContext';
 import { FiCheckCircle, FiStar, FiZap, FiAward, FiBookOpen, FiClock, FiUsers, FiCode, FiMessageSquare } from 'react-icons/fi';
-import { FaCrown, FaDollarSign, FaRocket, FaHandshake, FaHeadset } from 'react-icons/fa'; // Added more relevant icons
+import { FaCrown,FaCode, FaDollarSign, FaRocket, FaHandshake, FaHeadset } from 'react-icons/fa'; // Added more relevant icons
 import { toast } from 'react-toastify'; // For notifications
 
 // Default theme for the app context

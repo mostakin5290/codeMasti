@@ -527,8 +527,24 @@ const Codefield = () => {
             setConsoleOutput(output);
             setTestResults(data);
             setSubmissionHistory(prev => [data, ...prev]); 
+            console.log("isDailyChallenge:"+problem?.isDailyChallenge);
+            console.log("isFirstAcceptedDailyChallengeToday:"+data?.isFirstAcceptedDailyChallengeToday);
+            console.log("userDailyChallenges:"+data?.userDailyChallenges);
+            
             if (data.status === 'Accepted') {
-                if (problem?.isDailyChallenge && data.isFirstAcceptedDailyChallengeToday && data.userDailyChallenges) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let isProblemDailyChallengeForToday = false;
+
+                if (problem?.isDailyChallenge && problem?.dailyChallengeDate) {
+                const challengeDate = new Date(problem.dailyChallengeDate);
+                challengeDate.setHours(0, 0, 0, 0); 
+
+                if (challengeDate.getTime() === today.getTime()) {
+                    isProblemDailyChallengeForToday = true;
+                }
+            }
+                if (isProblemDailyChallengeForToday && data.isFirstAcceptedDailyChallengeToday && data.userDailyChallenges) {
                     dispatch(updateUserDailyChallenges(data.userDailyChallenges));
                     setDailyChallengeStreakToShow(data.userDailyChallenges.currentStreak);
                     setShowDailyChallengeSuccessModal(true);

@@ -14,9 +14,9 @@ import ConfirmationModal from '../components/common/ConfirmationModal';
 import {
     FaCheck, FaPen, FaUndo, FaSearch, FaFilter, FaCalendarAlt, FaClock,
     FaFire, FaRandom, FaSortUp, FaSort,
-    FaRocket, FaLock, FaThLarge, FaList, FaExpandArrowsAlt, FaCompress, FaHistory,
-    FaSortDown, FaPlus, FaFolderOpen, FaStar, // FaStar for premium
-    FaEllipsisV, FaEdit, FaTrash // Icons for manage dropdown
+    FaRocket, FaLock, FaThLarge, FaList, FaHistory,
+    FaSortDown, FaPlus, FaFolderOpen, FaStar,
+    FaEllipsisV, FaEdit, FaTrash
 } from 'react-icons/fa';
 
 // NEW: Import for UpdatePlaylistModal (you'll need to create this similar to CreatePlaylistModal)
@@ -117,11 +117,10 @@ const ProblemPage = () => {
                 const recent = localStorage.getItem('recentlyViewedProblems');
                 if (recent) {
                     const parsedRecent = JSON.parse(recent);
-                    // Filter out problems that no longer exist, or just take first few valid IDs
                     const validRecentProblems = parsedRecent.map(id => enhancedData.find(p => p._id === id)).filter(Boolean);
                     setRecentlyViewed(validRecentProblems.slice(0, 3));
                 } else {
-                    setRecentlyViewed(enhancedData.slice(0, 3)); // Fallback
+                    setRecentlyViewed(enhancedData.slice(0, 3));
                 }
             } catch (err) {
                 console.error("Error fetching problems:", err);
@@ -132,19 +131,18 @@ const ProblemPage = () => {
             }
         };
         fetchProblems();
-    }, [user]); // Re-fetch on user change to get correct status etc.
+    }, [user]);
 
     // Update recently viewed when navigating to a problem
     const updateRecentlyViewed = useCallback((problemId) => {
         const currentRecent = JSON.parse(localStorage.getItem('recentlyViewedProblems') || '[]');
-        const newRecent = [problemId, ...currentRecent.filter(id => id !== problemId)].slice(0, 5); // Keep last 5
+        const newRecent = [problemId, ...currentRecent.filter(id => id !== problemId)].slice(0, 5);
         localStorage.setItem('recentlyViewedProblems', JSON.stringify(newRecent));
 
-        // Update state to reflect immediately if the problem is in the current problems array
         setRecentlyViewed(prev => {
             const problemToAdd = problems.find(p => p._id === problemId);
-            if (!problemToAdd) return prev; // Problem not found in fetched problems
-            return [problemToAdd, ...prev.filter(p => p._id !== problemId)].slice(0, 3); // Update the state list (showing 3)
+            if (!problemToAdd) return prev;
+            return [problemToAdd, ...prev.filter(p => p._id !== problemId)].slice(0, 3);
         });
     }, [problems]);
 
@@ -152,7 +150,6 @@ const ProblemPage = () => {
     // Fetch Daily Challenge
     useEffect(() => {
         const fetchDailyChallenge = async () => {
-            // Only fetch if user is logged in
             if (!user) {
                 setIsDailyChallengeLoading(false);
                 return;
@@ -177,7 +174,6 @@ const ProblemPage = () => {
 
     // Fetch User Playlists
     const fetchUserPlaylists = useCallback(async () => {
-        // Fetch playlists for all logged-in users, but filter/display based on premium status
         if (!user) {
             setUserPlaylists([]);
             setLoadingPlaylists(false);
@@ -232,7 +228,7 @@ const ProblemPage = () => {
         try {
             await axiosClient.put(`/playlist/${playlistId}`, { name, description });
             toast.success('Playlist updated successfully!');
-            fetchUserPlaylists(); // Re-fetch to update the list
+            fetchUserPlaylists();
             return true;
         } catch (err) {
             console.error('Error updating playlist:', err);
@@ -240,30 +236,24 @@ const ProblemPage = () => {
         }
     };
 
-    // // NEW: Handle Delete Playlist
-    // const handleDeletePlaylist = async (playlistId) => {
-    //     setPlaylistToDeleteId(playlistId);
-    //     setShowConfirmDeleteModal(true);
-    // };
-
     const handleDeletePlaylistClick = (playlistId) => {
         setPlaylistToDeleteId(playlistId);
         setShowConfirmDeleteModal(true);
     };
 
     const confirmDeletePlaylist = async () => {
-        setIsDeleting(true); // Set loading state for the confirmation modal button
+        setIsDeleting(true);
         try {
             await axiosClient.delete(`/playlist/${playlistToDeleteId}`);
             toast.success('Playlist deleted successfully!');
-            fetchUserPlaylists(); // Re-fetch to update the list
-            setShowConfirmDeleteModal(false); // Close the modal
-            setPlaylistToDeleteId(null); // Clear the ID
+            fetchUserPlaylists();
+            setShowConfirmDeleteModal(false);
+            setPlaylistToDeleteId(null);
         } catch (err) {
             console.error('Error deleting playlist:', err);
             toast.error(err.response?.data?.message || 'Failed to delete playlist.');
         } finally {
-            setIsDeleting(false); // Reset loading state
+            setIsDeleting(false);
         }
     };
 
@@ -338,7 +328,7 @@ const ProblemPage = () => {
         setDifficultyFilter('All');
         setStatusFilter('All');
         setTagFilter('All');
-        setCurrentPage(1); // Ensure page resets to 1 on reset
+        setCurrentPage(1);
         setSortBy('title');
         setSortOrder('asc');
     };
@@ -347,7 +337,6 @@ const ProblemPage = () => {
         if (filteredProblems.length > 0) {
             const randomIndex = Math.floor(Math.random() * filteredProblems.length);
             const randomProblem = filteredProblems[randomIndex];
-            // Call updateRecentlyViewed here
             updateRecentlyViewed(randomProblem._id);
             window.open(`/codefield/${randomProblem._id}`, '_blank');
         } else {
@@ -393,20 +382,19 @@ const ProblemPage = () => {
                         {statusIcon(problem.status)}
                         <Link
                             to={`/codefield/${problem._id}`}
-                            onClick={() => updateRecentlyViewed(problem._id)} // Add this line
+                            onClick={() => updateRecentlyViewed(problem._id)}
                             className={`text-lg font-semibold ${theme.text} hover:${theme.highlightSecondary} transition-colors duration-200`}
                         >
                             {problem.title}
                         </Link>
                         {problem.premium && <FaLock className={`h-4 w-4 ${theme.warningColor}`} title="Premium" />}
                     </div>
-                    {/* Add to Playlist button on card view (visible only to premium users) */}
                     {user?.isPremium && (
                         <button
                             onClick={(e) => {
-                                e.stopPropagation(); // Prevent navigating to problem link
-                                setSelectedProblemForPlaylist(problem); // Set the problem for the modal
-                                setShowAddProblemToPlaylistModal(true); // Open the modal
+                                e.stopPropagation();
+                                setSelectedProblemForPlaylist(problem);
+                                setShowAddProblemToPlaylistModal(true);
                             }}
                             className={`p-2 rounded-lg ${theme.cardBg}/50 border ${theme.border}/50 ${theme.cardText} hover:${theme.cardBg}/80 hover:${theme.highlight} transition-colors duration-200`}
                             title="Add to Playlist"
@@ -441,7 +429,6 @@ const ProblemPage = () => {
 
     return (
         <div className={`min-h-screen relative overflow-hidden ${theme.text} bg-gradient-to-br ${theme.gradientFrom} ${theme.gradientTo}`}>
-            {/* Background decorative elements */}
             <div className={`absolute top-0 left-0 w-80 h-80 ${theme.primary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[-20%] translate-y-[-20%] animate-blob`}></div>
             <div className={`absolute bottom-0 right-0 w-96 h-96 ${theme.secondary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[20%] translate-y-[20%] animate-blob animation-delay-2000`}></div>
             <div className={`absolute top-1/2 left-1/2 w-60 h-60 ${theme.highlight.replace('text-', 'bg-')}/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-blob animation-delay-4000`}></div>
@@ -451,7 +438,6 @@ const ProblemPage = () => {
 
             <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Enhanced Sidebar */}
                     <div className={`lg:w-80 flex-shrink-0 transition-all duration-300 ${sidebarOpen ? 'block' : 'hidden'} lg:block`}>
                         <div className="space-y-6">
                             {/* Daily Challenge Section */}
@@ -510,7 +496,7 @@ const ProblemPage = () => {
 
                                             <Link
                                                 to={`/codefield/${dailyChallenge._id}`}
-                                                onClick={() => updateRecentlyViewed(dailyChallenge._id)} // Add this line
+                                                onClick={() => updateRecentlyViewed(dailyChallenge._id)}
                                                 className={`inline-flex items-center px-6 py-3 ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} rounded-lg transition-all duration-200 font-medium transform shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-${getAccentColorBase()}-500 focus:ring-opacity-50`}
                                             >
                                                 <FaRocket className="mr-2 h-4 w-4" />
@@ -526,101 +512,100 @@ const ProblemPage = () => {
                             </div>
 
                             {/* My Playlists Section - Visible to all, but functionality restricted */}
-{user && (
-    <div className={`${sectionClasses} p-6`}>
-        <h3 className={`font-semibold text-lg mb-4 ${theme.text} flex items-center gap-2`}>
-            <FaFolderOpen className={`h-5 w-5 ${theme.highlight}`} />
-            My Playlists
-            {user?.isPremium && (
-                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${theme.successColor.replace('text-', 'bg-')}/20 ${theme.successColor} flex items-center gap-1`} title="Premium Feature Unlocked">
-                    <FaStar className="w-3 h-3" /> Premium
-                </span>
-            )}
-            <span className={`ml-auto ${theme.iconBg} ${theme.highlight} px-2 py-0.5 rounded-full text-xs font-bold`}>
-                {userPlaylists.length}
-            </span>
-        </h3>
+                            {user && (
+                                <div className={`${sectionClasses} p-6`}>
+                                    <h3 className={`font-semibold text-lg mb-4 ${theme.text} flex items-center gap-2`}>
+                                        <FaFolderOpen className={`h-5 w-5 ${theme.highlight}`} />
+                                        My Playlists
+                                        {user?.isPremium && (
+                                            <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${theme.successColor.replace('text-', 'bg-')}/20 ${theme.successColor} flex items-center gap-1`} title="Premium Feature Unlocked">
+                                                <FaStar className="w-3 h-3" /> Premium
+                                            </span>
+                                        )}
+                                        <span className={`ml-auto ${theme.iconBg} ${theme.highlight} px-2 py-0.5 rounded-full text-xs font-bold`}>
+                                            {userPlaylists.length}
+                                        </span>
+                                    </h3>
 
-        <div className="min-h-[250px]">
-            {user?.isPremium ? (
-                <>
-                    <button
-                        onClick={() => setShowCreatePlaylistModal(true)}
-                        className={`w-full flex items-center justify-center gap-2 px-4 py-2 ${theme.cardBg}/50 border ${theme.border}/50 ${theme.text} rounded-lg hover:${theme.cardBg}/80 hover:${theme.highlight} transition-all duration-200 font-medium shadow-md hover:shadow-lg mb-4`}
-                    >
-                        <FaPlus className="h-4 w-4" /> Create New Playlist
-                    </button>
-                    {loadingPlaylists ? (
-                        <div className="flex items-center justify-center h-32">
-                            <LoadingSpinner />
-                        </div>
-                    ) : userPlaylists.length > 0 ? (
-                        <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
-                            {userPlaylists.map(playlist => (
-                                <div key={playlist._id} className={`flex items-center justify-between px-4 py-3 ${theme.cardBg}/50 hover:${theme.cardBg}/80 rounded-lg border ${theme.border}/50 transition-colors duration-200 shadow-sm hover:shadow-md`}>
-                                    <Link
-                                        to={`/playlist/${playlist._id}`}
-                                        className={`${theme.text} truncate font-medium`}
-                                    >
-                                        {playlist.name} ({playlist.problems.length})
-                                    </Link>
-                                    {/* Manage Playlist Dropdown */}
-                                    <div className="dropdown dropdown-end relative z-100">
-                                        <button
-                                            tabIndex={0}
-                                            className={`${theme.cardText} hover:${theme.highlight} p-1 rounded-full`}
-                                            title="Manage Playlist"
-                                        >
-                                            <FaEllipsisV className="w-4 h-4" />
-                                        </button>
-                                        <ul tabIndex={0} className={`dropdown-content z-[100] menu p-2 shadow-lg ${theme.cardBg} rounded-box w-40 border ${theme.border}/50 absolute top-full right-0 mt-1`}>
-                                            <li>
-                                                <a
-                                                    onClick={() => {
-                                                        setSelectedPlaylistToManage(playlist);
-                                                        setShowUpdatePlaylistModal(true);
-                                                    }}
-                                                    className={`${theme.text} hover:${theme.highlightSecondary}`}
+                                    <div className="min-h-[250px]">
+                                        {user?.isPremium ? (
+                                            <>
+                                                <button
+                                                    onClick={() => setShowCreatePlaylistModal(true)}
+                                                    className={`w-full flex items-center justify-center gap-2 px-4 py-2 ${theme.cardBg}/50 border ${theme.border}/50 ${theme.text} rounded-lg hover:${theme.cardBg}/80 hover:${theme.highlight} transition-all duration-200 font-medium shadow-md hover:shadow-lg mb-4`}
                                                 >
-                                                    <FaEdit className="w-4 h-4" /> Edit
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a
-                                                    onClick={() => handleDeletePlaylistClick(playlist._id)}
-                                                    className={`${theme.errorColor} hover:${theme.errorColor.replace('text-', 'bg-')}/20`}
+                                                    <FaPlus className="h-4 w-4" /> Create New Playlist
+                                                </button>
+                                                {loadingPlaylists ? (
+                                                    <div className="flex items-center justify-center h-32">
+                                                        <LoadingSpinner />
+                                                    </div>
+                                                ) : userPlaylists.length > 0 ? (
+                                                    <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
+                                                        {userPlaylists.map(playlist => (
+                                                            <div key={playlist._id} className={`flex items-center justify-between px-4 py-3 ${theme.cardBg}/50 hover:${theme.cardBg}/80 rounded-lg border ${theme.border}/50 transition-colors duration-200 shadow-sm hover:shadow-md`}>
+                                                                <Link
+                                                                    to={`/playlist/${playlist._id}`}
+                                                                    className={`${theme.text} truncate font-medium`}
+                                                                >
+                                                                    {playlist.name} ({playlist.problems.length})
+                                                                </Link>
+                                                                <div className="dropdown dropdown-end relative z-100">
+                                                                    <button
+                                                                        tabIndex={0}
+                                                                        className={`${theme.cardText} hover:${theme.highlight} p-1 rounded-full`}
+                                                                        title="Manage Playlist"
+                                                                    >
+                                                                        <FaEllipsisV className="w-4 h-4" />
+                                                                    </button>
+                                                                    <ul tabIndex={0} className={`dropdown-content z-[100] menu p-2 shadow-lg ${theme.cardBg} rounded-box w-40 border ${theme.border}/50 absolute top-full right-0 mt-1`}>
+                                                                        <li>
+                                                                            <a
+                                                                                onClick={() => {
+                                                                                    setSelectedPlaylistToManage(playlist);
+                                                                                    setShowUpdatePlaylistModal(true);
+                                                                                }}
+                                                                                className={`${theme.text} hover:${theme.highlightSecondary}`}
+                                                                            >
+                                                                                <FaEdit className="w-4 h-4" /> Edit
+                                                                            </a>
+                                                                        </li>
+                                                                        <li>
+                                                                            <a
+                                                                                onClick={() => handleDeletePlaylistClick(playlist._id)}
+                                                                                className={`${theme.errorColor} hover:${theme.errorColor.replace('text-', 'bg-')}/20`}
+                                                                            >
+                                                                                <FaTrash className="w-4 h-4" /> Delete
+                                                                            </a>
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-32">
+                                                        <p className={`${theme.cardText} text-sm`}>You don't have any playlists yet.</p>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center h-30 gap-4">
+                                                <div className={`flex flex-col items-center mt-15 ${theme.text}`}>
+                                                    <FaLock className={`h-30 w-14 ${theme.warningColor}`} />
+                                                    <p className={`${theme.cardText} text-center`}>Unlock custom playlists and more premium features!</p>
+                                                </div>
+                                                <Link
+                                                    to="/premium"
+                                                    className={`inline-flex items-center px-6 py-3 ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-${getAccentColorBase()}-500 focus:ring-opacity-50`}
                                                 >
-                                                    <FaTrash className="w-4 h-4" /> Delete
-                                                </a>
-                                            </li>
-                                        </ul>
+                                                    Go Premium
+                                                </Link>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-center h-32">
-                            <p className={`${theme.cardText} text-sm`}>You don't have any playlists yet.</p>
-                        </div>
-                    )}
-                </>
-            ) : (
-                <div className="flex flex-col items-center justify-center h-30 gap-4">
-                    <div className={`flex flex-col items-center mt-15 ${theme.text}`}>
-                        <FaLock className={`h-30 w-14 ${theme.warningColor}`}/>
-                        <p className={`${theme.cardText} text-center`}>Unlock custom playlists and more premium features!</p>
-                    </div>
-                    <Link
-                        to="/premium"
-                        className={`inline-flex items-center px-6 py-3 ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-${getAccentColorBase()}-500 focus:ring-opacity-50`}
-                    >
-                        Go Premium
-                    </Link>
-                </div>
-            )}
-        </div>
-    </div>
-)}
+                            )}
                             {/* Recently Viewed Problems (unchanged) */}
                             <div className={`${sectionClasses} p-6`}>
                                 <h3 className={`font-semibold text-lg mb-4 ${theme.text} flex items-center gap-2`}>
@@ -633,7 +618,7 @@ const ProblemPage = () => {
                                             <Link
                                                 key={problem._id}
                                                 to={`/codefield/${problem._id}`}
-                                                onClick={() => updateRecentlyViewed(problem._id)} // Add this line
+                                                onClick={() => updateRecentlyViewed(problem._id)}
                                                 className={`block px-4 py-3 ${theme.cardBg}/50 hover:${theme.cardBg}/80 rounded-lg border ${theme.border}/50 transition-colors duration-200 shadow-sm hover:shadow-md`}
                                             >
                                                 <div className="flex items-center justify-between">
@@ -650,10 +635,7 @@ const ProblemPage = () => {
                         </div>
                     </div>
 
-                    {/* Main Content Area (Problems list, unchanged mostly) */}
-                    {/* ... (rest of main content area for problems list) ... */}
                     <div className="flex-1">
-                        {/* Header & View Options */}
                         <div className={`mb-8 ${sectionClasses} p-6`}>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div>
@@ -707,7 +689,6 @@ const ProblemPage = () => {
                             </div>
                         </div>
 
-                        {/* Filters Section */}
                         <div className={`mb-8 ${sectionClasses} p-6`}>
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className={`font-semibold text-lg ${theme.text} flex items-center gap-2`}>
@@ -778,7 +759,6 @@ const ProblemPage = () => {
                             </div>
                         </div>
 
-                        {/* Problems Content */}
                         {viewMode === 'table' ? (
                             <div className={`${sectionClasses} overflow-hidden`}>
                                 <div className="overflow-x-auto">
@@ -807,7 +787,6 @@ const ProblemPage = () => {
                                                         Difficulty {getSortIcon('difficulty')}
                                                     </button>
                                                 </th>
-                                                {/* NEW: Column for Add to Playlist button */}
                                                 {user?.isPremium && (
                                                     <th scope="col" className={`px-6 py-4 text-left text-xs font-semibold ${theme.cardText} uppercase tracking-wider`}>
                                                         Add
@@ -818,7 +797,6 @@ const ProblemPage = () => {
                                         <tbody className={`divide-y ${theme.border}/20`}>
                                             {loading ? (
                                                 <tr>
-                                                    {/* Adjust colspan based on whether premium column is present */}
                                                     <td colSpan={user?.isPremium ? "5" : "4"} className="px-6 py-12 text-center">
                                                         <LoadingSpinner />
                                                     </td>
@@ -860,12 +838,11 @@ const ProblemPage = () => {
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             {difficultyPill(problem.difficulty)}
                                                         </td>
-                                                        {/* NEW: Add to Playlist button for table view */}
                                                         {user?.isPremium && (
                                                             <td className="px-6 py-4 whitespace-nowrap">
                                                                 <button
                                                                     onClick={(e) => {
-                                                                        e.stopPropagation(); // Prevent navigating when clicking button in row
+                                                                        e.stopPropagation();
                                                                         setSelectedProblemForPlaylist(problem);
                                                                         setShowAddProblemToPlaylistModal(true);
                                                                     }}
@@ -915,7 +892,6 @@ const ProblemPage = () => {
                             </div>
                         )}
 
-                        {/* Pagination */}
                         {totalPages > 1 && (
                             <div className={`mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 ${sectionClasses} p-6`}>
                                 <div className={`text-sm ${theme.cardText}`}>
@@ -965,7 +941,6 @@ const ProblemPage = () => {
                 </div>
             </div>
 
-            {/* Modals for Playlist creation/addition/update */}
             <CreatePlaylistModal
                 isOpen={showCreatePlaylistModal}
                 onClose={() => setShowCreatePlaylistModal(false)}
@@ -981,7 +956,6 @@ const ProblemPage = () => {
                 onAddProblem={handleAddProblemToPlaylist}
                 appTheme={theme}
             />
-            {/* NEW: Update Playlist Modal */}
             <UpdatePlaylistModal
                 isOpen={showUpdatePlaylistModal}
                 onClose={() => setShowUpdatePlaylistModal(false)}
@@ -998,7 +972,7 @@ const ProblemPage = () => {
                 confirmText="Delete"
                 cancelText="Cancel"
                 isLoading={isDeleting}
-                appTheme={theme} // Pass the theme prop
+                appTheme={theme}
             >
                 <p>Are you sure you want to delete this playlist? This action cannot be undone, and all problems in this playlist will be removed from it.</p>
             </ConfirmationModal>

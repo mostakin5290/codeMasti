@@ -34,8 +34,9 @@ const Home = () => {
 
     useEffect(() => {
         const queryParams = new URLSearchParams(location.search);
+        console.log(queryParams)
         const status = queryParams.get('status');
-
+        console.log(status)
         if (status === 'premium-activated') {
             toast.success('🎉 Congratulations! Your Premium subscription is now active!', {
                 position: "top-center",
@@ -54,16 +55,12 @@ const Home = () => {
                 }
             });
 
-            // --- FIX HERE ---
-            dispatch(fetchUser()); // Correctly dispatch the fetchUser thunk
-            // --- END FIX ---
+            dispatch(fetchUser());
 
-            // Remove the query parameter from URL to prevent showing toast on refresh
             navigate(location.pathname, { replace: true });
         }
     }, [location, theme, dispatch, navigate]);
 
-    // ... (rest of the Home component remains unchanged) ...
     const getPrimaryGradient = () => `bg-gradient-to-r ${theme.buttonPrimary}`;
     const getPrimaryGradientHover = () => `hover:${theme.buttonPrimaryHover.replace('bg-', 'from-')} hover:${theme.buttonPrimaryHover.replace('bg-', 'to-')}`;
 

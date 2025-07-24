@@ -59,6 +59,7 @@ import PlaylistPage from "./Pages/PlaylisPage";
 import ForgotPassword from "./features/auth/ForgotPassword";
 import ResetPasswordPage from "./features/auth/ResetPasswordPage";
 import { AnimationProvider } from "./context/AnimationContext";
+import PremiumWelcomePage from "./Pages/PremiumWelcomePage";
 
 
 const AppRoutes = () => {
@@ -144,6 +145,7 @@ const AppRoutes = () => {
                 <Route path="/contests/:id/leaderboard" element={<ContestLeaderboardPage />} />
                 <Route path="/contests/:id" element={<ContestPublicDetailsPage />} />
                 <Route path="/explore-premium" element={<ExplorePremium />} />
+                <Route path="/test" element={<PremiumWelcomePage/> } />
                 
                 {/* --- Admin Routes --- */}
                 <Route element={<AdminRoute />}>
