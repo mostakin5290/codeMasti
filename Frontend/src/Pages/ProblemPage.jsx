@@ -20,7 +20,7 @@ import {
 } from 'react-icons/fa';
 
 // Corrected import path for DailyChallengeDetailsModal
-import DailyChallengeDetailsModal from '../components/ProblemPage/DailyChallengeDetailsModal';
+import DailyChallengeDetailsModal from '../components/ProblemPage/DailyChallengeDetailsModal'; // Corrected path
 
 const capitalizeFirstLetter = (string) => {
     if (!string) return '';
@@ -490,8 +490,8 @@ const ProblemPage = () => {
             daysArray.push({
                 date,
                 isCurrentDay: date.getTime() === today.getTime(),
-                hasChallenge: !!challengeForDay,
-                challengeDetails: challengeForDay,
+                hasChallenge: !!challengeForDay, // True if admin set a challenge for this day (regardless of solved status)
+                challengeDetails: challengeForDay, // Contains problem details and isSolvedByUser status from backend
                 isSolvedByUser: challengeForDay ? challengeForDay.isSolved : false, // IsSolved specifically by THIS user
                 isFuture: date.getTime() > today.getTime()
             });
@@ -517,8 +517,8 @@ const ProblemPage = () => {
     };
 
     const handleDateClick = (dayData) => {
-        // and is clickable (i.e., not a future date that's not today)
-        if (dayData && dayData.hasChallenge && !dayData.isFuture || dayData?.isCurrentDay) {
+        // Only open modal if the day is clickable (has a challenge and is not future, or is today's challenge)
+        if (dayData && dayData.hasChallenge && !dayData.isFuture || dayData?.isCurrentDay && dayData?.hasChallenge) {
             setSelectedDailyChallengeProblem(dayData.challengeDetails);
             setShowDailyChallengeDetailsModal(true);
         }
@@ -644,27 +644,32 @@ const ProblemPage = () => {
                                                     if (!dayData) {
                                                         dayClasses += ' opacity-30 pointer-events-none'; // Empty cells
                                                     } else if (dayData.isCurrentDay) {
-                                                        // Today's challenge - always highlighted if it exists
-                                                        dayClasses += ` ${theme.successColor.replace('text-', 'bg-')} ${theme.buttonText} font-bold`;
-                                                        isDayClickable = true;
+                                                        // Today's challenge - always highlighted if it exists and is relevant
+                                                        if (dayData.hasChallenge) {
+                                                            dayClasses += ` ${theme.successColor.replace('text-', 'bg-')} ${theme.buttonText} font-bold`;
+                                                            isDayClickable = true;
+                                                        } else {
+                                                            // Today, but no challenge set by admin
+                                                            dayClasses += ` ${theme.cardBg}/30 ${theme.cardText} opacity-50 pointer-events-none`; // Treat as non-challenge day
+                                                        }
                                                     } else if (dayData.hasChallenge && dayData.isSolvedByUser) {
                                                         // Past challenge solved by the user
-                                                        dayClasses += `  border-orange-500/50 ${theme.text}`;
+                                                        dayClasses += ` bg-orange-500/30 border-orange-500/50 ${theme.text} hover:bg-orange-500/50`;
                                                         isDayClickable = true;
                                                     } else if (dayData.hasChallenge && !dayData.isFuture) {
-                                                        // Past challenge NOT solved by user (still clickable to view details)
-                                                        dayClasses += ` ${theme.cardBg}/30 ${theme.cardText}`; // Default look, no highlight
+                                                        // Past challenge NOT solved by user (display with red dot, clickable)
+                                                        dayClasses += ` ${theme.cardBg}/30 ${theme.cardText} hover:${theme.cardBg}/50`; // Default look, but clickable
                                                         isDayClickable = true;
                                                     } else {
                                                         // Any other day: no special highlight, not clickable. This includes:
-                                                        // - Future challenges (whether set by admin or not)
+                                                        // - Future dates (whether set by admin or not)
                                                         // - Past/current dates with no challenge ever set
                                                         dayClasses += ` ${theme.cardBg}/30 ${theme.cardText} pointer-events-none opacity-50`;
                                                     }
 
                                                     // Apply clickable styles only if determined to be clickable
                                                     if (isDayClickable) {
-                                                        dayClasses += ` cursor-pointer hover:${theme.cardBg}/50`;
+                                                        dayClasses += ` cursor-pointer`; // Add hover effect in component itself
                                                     }
 
                                                     return (
@@ -675,18 +680,22 @@ const ProblemPage = () => {
                                                         >
                                                             {dayData ? (
                                                                 <>
-                                                                    {/* Background Icon: Only show for dates that are solved by the user or is today's challenge */}
-                                                                    {(dayData.isSolvedByUser) && (
+                                                                    {(dayData.isSolvedByUser || (dayData.isCurrentDay && dayData.hasChallenge)) && (
                                                                         <FaFire className={`absolute inset-1 m-auto text-4xl opacity-50 text-orange-500`} />
-
                                                                     )}
 
                                                                     <span className="relative z-10 text-sm">{dayData.date.getDate()}</span>
 
-                                                                    {/* Small dot for past unsolved challenges that *had* a challenge */}
-                                                                    {dayData.hasChallenge  && (
+                                                                    {/* Small Checkmark for solved past challenges */}
+                                                                    {dayData.hasChallenge && dayData.isSolvedByUser && !dayData.isCurrentDay && (
                                                                         <div className="absolute bottom-1 right-1 text-xs">
-                                                                            <span className={`w-1.5 h-1.5 rounded-full ${theme.errorColor.replace('text-', 'bg-')}`} title="Not Solved"></span>
+                                                                            <FaCheck className={`${theme.successColor} text-xs`} title="Solved" />
+                                                                        </div>
+                                                                    )}
+                                                                    {/* Small Red Dot for past unsolved challenges that *had* a challenge */}
+                                                                    {dayData.hasChallenge && !dayData.isSolvedByUser && !dayData.isFuture && !dayData.isCurrentDay && (
+                                                                        <div className="absolute bottom-1 right-1 text-xs">
+                                                                            <span className={`w-1.5 h-1.5 rounded-full bg-amber-600 `} title="Not Solved"></span>
                                                                         </div>
                                                                     )}
                                                                 </>
@@ -1157,7 +1166,7 @@ const ProblemPage = () => {
 
             <ConfirmationModal
                 isOpen={showConfirmDeleteModal}
-                onClose={() => setShowConfirmDeleteModal(false)}
+                onClose={() => setShowConfirmModal(false)}
                 onConfirm={confirmDeletePlaylist}
                 title="Confirm Playlist Deletion"
                 confirmText="Delete"

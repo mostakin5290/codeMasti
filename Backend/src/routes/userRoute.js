@@ -20,8 +20,9 @@ const {
     updateUserRole,
     adminDeleteUser,
     toggleUserPremiumStatus,
-    forgotPassword, // NEW: Import forgotPassword
-    resetPassword   // NEW: Import resetPassword
+    forgotPassword,
+    resetPassword ,
+    getUserRank
 } = require('../controllers/AuthControllers');
 const userMiddleware = require('../middleware/userMiddleware');
 const coAdminMiddleware = require('../middleware/coAdminMiddleware');
@@ -63,7 +64,8 @@ authRouter.get('/', coAdminMiddleware, getAllUsersForAdmin);         // Get all 
 authRouter.put('/:userId/role', coAdminMiddleware, updateUserRole);  // Update user role
 authRouter.delete('/:userId', adminMiddleware, adminDeleteUser);     // Admin delete user
 authRouter.put('/:userId/premium', coAdminMiddleware, toggleUserPremiumStatus); // Toggle premium status
-
+// Route to get user rank
+authRouter.get('/rank/:userId', userMiddleware, getUserRank);
 // Authentication check route
 authRouter.get('/check', userMiddleware, (req, res) => {
     const reply = {

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('../models/user');
 const OTP = require('../models/OTP')
 const validUser = require('../utils/userValidator');
@@ -1632,6 +1633,89 @@ const toggleUserPremiumStatus = async (req, res) => {
 };
 
 
+const getUserRank = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ success: false, message: "Invalid user ID format." });
+        }
+
+        // Aggregate to calculate ranks for all users
+        const ranks = await User.aggregate([
+            {
+                $project: {
+                    _id: 1,
+                    // Calculate the size of problemsSolved array.
+                    // If problemsSolved might be null/undefined/missing, use $ifNull or $size if it's guaranteed to be an array.
+                    problemsSolvedCount: { $size: { $ifNull: ["$problemsSolved", []] } }
+                }
+            },
+            {
+                // Correct usage of $setWindowFields: includes sortBy directly within the stage.
+                $setWindowFields: {
+                    sortBy: { problemsSolvedCount: -1 }, // <--- THIS IS THE CRUCIAL FIX
+                    output: {
+                        rank: {
+                            $denseRank: {}
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    problemsSolvedCount: 1,
+                    rank: 1
+                }
+            }
+        ]);
+
+        // Find the rank and problemsSolvedCount of the specific userId from the computed ranks
+        const currentUserRankInfo = ranks.find(rankDoc => rankDoc._id.toString() === userId);
+
+        if (!currentUserRankInfo) {
+            const userExists = await User.findById(userId); // Check if user genuinely exists
+            if (!userExists) {
+                return res.status(404).json({ success: false, message: "User not found." });
+            } else {
+                // User exists but might not have appeared in the `ranks` array if it was filtered
+                // or if they have 0 solved problems and the rank calculation inherently skips them
+                // (which $denseRank won't if all users are processed).
+                // A user with 0 problemsSolvedCount will naturally get the last rank.
+                // If they are not found in `currentUserRankInfo`, it means no data for them after aggregation.
+                // It's safer to query totalUsers here and assign rank if 0 problems solved.
+                const totalUsersCount = await User.countDocuments({});
+                return res.status(200).json({
+                    success: true,
+                    rank: totalUsersCount > 0 ? totalUsersCount : "N/A", // If 0 users, N/A, otherwise last rank
+                    problemsSolvedCount: 0,
+                    totalUsers: totalUsersCount
+                });
+            }
+        }
+
+        // Get total number of users for context (e.g., "Rank X out of Y users")
+        const totalUsers = await User.countDocuments({});
+
+        res.status(200).json({
+            success: true,
+            rank: currentUserRankInfo.rank,
+            problemsSolvedCount: currentUserRankInfo.problemsSolvedCount,
+            totalUsers: totalUsers
+        });
+
+    } catch (error) {
+        console.error('Error fetching user rank:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while fetching user rank.'
+        });
+    }
+};
+
+
+
 module.exports = {
     register,
     sendOTP,
@@ -1652,5 +1736,6 @@ module.exports = {
     adminDeleteUser,
     toggleUserPremiumStatus,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    getUserRank
 };

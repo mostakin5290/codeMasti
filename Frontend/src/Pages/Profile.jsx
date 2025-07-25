@@ -6,8 +6,9 @@ import {
     FaTrophy, FaCode, FaClipboardList, FaCheck, FaCalendarAlt, FaStar,
     FaChevronRight, FaMedal, FaChartLine, FaLayerGroup, FaAward, FaCrown,
     FaArrowLeft, FaArrowRight, FaCommentAlt, FaArrowUp, FaRegUser,
-    FaFire // Import FaFire for the streak icon
-} from 'react-icons/fa'; // Added FaCommentAlt, FaArrowUp, FaRegUser
+    FaFire // FaFire is typically in 'react-icons/fa'
+} from 'react-icons/fa';
+import { FaRankingStar } from 'react-icons/fa6'; // Correct import for FaRankingStar
 import { RiSwordFill, RiGitRepositoryLine } from 'react-icons/ri';
 import { SiLeetcode } from 'react-icons/si';
 import Header from '../components/layout/Header';
@@ -66,6 +67,9 @@ function ProfilePage() {
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
 
+    const [userRank, setUserRank] = useState(null); // State for user rank
+    const [totalUsersForRank, setTotalUsersForRank] = useState(0); // State for total users in ranking
+
     // Pagination state for Activity tab
     const [activityCurrentPage, setActivityCurrentPage] = useState(1);
     const submissionsPerPage = 10; // 10 submissions per page
@@ -108,18 +112,40 @@ function ProfilePage() {
                 try {
                     const postsResponse = await axiosClient.get(`/discuss/user/${userIdToFetch}/posts?page=${postsCurrentPage}&limit=${postsPerPage}`);
                     postsData = postsResponse?.data?.posts;
-                    postsTotal = postsData.length ; 
-                    console.log(postsData)// Use totalPosts from backend if available
+                    postsTotal = postsResponse?.data?.totalPosts || 0; // Use totalPosts from backend if available
                 } catch (err) {
                     console.log("No solution posts found for user, using empty array.", err);
                 }
 
+                // Fetch user's rank
+                let fetchedRank = null;
+                let fetchedTotalUsers = 0;
+                // Only fetch rank if there's a logged-in user and it's their own profile
+                // Or if you want to show rank for public profiles too (backend getUserRank allows it)
+                if (userIdToFetch) { // Ensure userIdToFetch is valid for the rank API call
+                    try {
+                        const rankResponse = await axiosClient.get(`/user/rank/${userIdToFetch}`);
+                        if (rankResponse.data.success) {
+                            fetchedRank = rankResponse.data.rank;
+                            fetchedTotalUsers = rankResponse.data.totalUsers;
+                        }
+                    } catch (err) {
+                        console.log("Could not fetch user rank (may have no solved problems):", err.response?.data?.message || err.message);
+                        // If user has 0 problems, backend returns N/A for rank, set it to 0 or leave null if N/A
+                        if (err.response?.status === 404 && err.response?.data?.message === "User not found or has no solved problems.") {
+                             fetchedRank = 0; // Display 0 problems solved
+                             fetchedTotalUsers = (await axiosClient.get(`/user/rank/${userIdToFetch}`)).data.totalUsers; // Fetch total users explicitly
+                        }
+                    }
+                }
 
                 if (profileResponse.data.success) {
                     setProfile(profileResponse.data.profile);
                     setSubmissions(submissionsData);
                     setSolutionPosts(postsData);
                     setTotalPosts(postsTotal); // Set total posts count
+                    setUserRank(fetchedRank); // Set user rank
+                    setTotalUsersForRank(fetchedTotalUsers); // Set total users for rank context
                 } else {
                     setError("Failed to load profile data.");
                 }
@@ -131,7 +157,8 @@ function ProfilePage() {
         };
 
         fetchProfileData();
-    }, [userIdToFetch, postsCurrentPage]); // Re-fetch posts when postsCurrentPage changes
+    }, [userIdToFetch, postsCurrentPage]); // Re-fetch posts when postsCurrentPage changes, and fetch rank with profile
+
 
     // Themed Stat Card (remains unchanged)
     const StatCard = useCallback(({ title, value, icon, subtext, color }) => (
@@ -432,7 +459,8 @@ function ProfilePage() {
         { iconBg: `${appTheme.successColor.replace('text-', 'bg-')}/20`, iconText: appTheme.successColor },
         // Updated color for Streak card (using orange/fire theme)
         { iconBg: `bg-orange-500/20`, iconText: `text-orange-500` },
-        { iconBg: `${appTheme.highlight.replace('text-', 'bg-')}/20`, iconText: appTheme.highlight }
+        { iconBg: `${appTheme.highlight.replace('text-', 'bg-')}/20`, iconText: appTheme.highlight },
+        { iconBg: `${appTheme.infoColor.replace('text-', 'bg-')}/20`, iconText: appTheme.infoColor } // Color for rank stat card
     ];
 
     // Get current submissions for the active Activity tab page
@@ -531,6 +559,7 @@ function ProfilePage() {
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ delay: 0.3 }}
                             >
+                                {/* Order: Location, Member Since (Joined Year), Rank */}
                                 <div className="flex items-center">
                                     <FaMapMarkerAlt className={`mr-2 ${appTheme.successColor}`} />
                                     <span>{profile.location || 'Unknown'}</span>
@@ -539,10 +568,13 @@ function ProfilePage() {
                                     <FaUser className={`mr-2 ${appTheme.infoColor}`} />
                                     <span>Member since {format(new Date(profile.createdAt), 'MMMM yyyy')}</span>
                                 </div>
-                                <div className="flex items-center">
-                                    <FaCalendarAlt className={`mr-2 ${appTheme.highlightTertiary}`} />
-                                    <span>{activationYears} year{activationYears !== 1 ? 's' : ''}</span>
-                                </div>
+                                {/* Rank Information */}
+                                {userRank !== null && (
+                                    <div className="flex items-center">
+                                        <FaRankingStar className={`mr-2 ${appTheme.highlightTertiary}`} /> {/* Using highlightTertiary for rank icon */}
+                                        <span>Rank: #{userRank}</span>
+                                    </div>
+                                )}
                             </motion.div>
 
                         </div>
@@ -765,7 +797,7 @@ function ProfilePage() {
                                                 <RiSwordFill className={`mr-2 ${appTheme.highlight}`} />
                                                 Recent Activity
                                             </h3>
-                                            <span onClick={() => setActiveTab('activity')} className={`${appTheme.successColor} flex items-center cursor-pointer hover:underline`}> {/* Added cursor-pointer */}
+                                            <span onClick={() => setActiveTab('activity')} className={`${appTheme.successColor} flex items-center cursor-pointer hover:underline`}>
                                                 View all activity <FaChevronRight className="ml-1 text-xs" />
                                             </span>
                                         </div>
