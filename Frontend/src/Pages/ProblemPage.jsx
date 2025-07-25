@@ -19,7 +19,8 @@ import {
     FaEllipsisV, FaEdit, FaTrash, FaChevronLeft, FaChevronRight
 } from 'react-icons/fa';
 
-import DailyChallengeDetailsModal from '../components/ProblemPage/DailyChallengeDetailsModal'; // Corrected path (was ProblemPage)
+// Corrected import path for DailyChallengeDetailsModal
+import DailyChallengeDetailsModal from '../components/ProblemPage/DailyChallengeDetailsModal';
 
 const capitalizeFirstLetter = (string) => {
     if (!string) return '';
@@ -68,7 +69,7 @@ const ProblemPage = () => {
     const [statusFilter, setStatusFilter] = useState('All');
     const [tagFilter, setTagFilter] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
-    const problemsPerPage = 10;
+    const problemsPerPage = 12;
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [viewMode, setViewMode] = useState('table');
     const [sortBy, setSortBy] = useState('title');
@@ -492,7 +493,7 @@ const ProblemPage = () => {
                 date,
                 isCurrentDay: date.getTime() === today.getTime(),
                 hasChallenge: !!challengeForDay, // True if admin set a challenge for this day (regardless of solved status)
-                challengeDetails: challengeForDay, // Contains problem details and isSolved status from backend
+                challengeDetails: challengeForDay, // Contains problem details and isSolvedByUser status from backend
                 isSolvedByUser: challengeForDay ? challengeForDay.isSolved : false, // IsSolved specifically by THIS user
                 isFuture: date.getTime() > today.getTime()
             });
@@ -519,7 +520,8 @@ const ProblemPage = () => {
 
     const handleDateClick = (dayData) => {
         // Only open modal if it's a past/current challenge AND has a problem associated
-        if (dayData && dayData.hasChallenge && !dayData.isFuture) {
+        // and is clickable (i.e., not a future date that's not today)
+        if (dayData && dayData.hasChallenge && !dayData.isFuture || dayData?.isCurrentDay) {
             setSelectedDailyChallengeProblem(dayData.challengeDetails);
             setShowDailyChallengeDetailsModal(true);
         }
@@ -639,29 +641,34 @@ const ProblemPage = () => {
                                                     <div key={day} className={`font-semibold ${theme.cardText} text-sm py-2`}>{day}</div>
                                                 ))}
                                                 {calendarDays.map((dayData, index) => {
-                                                    let dayClasses = `relative w-9 h-9 sm:w-10 sm:h-10 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-colors duration-200 group overflow-hidden`;
+                                                    let dayClasses = `relative w-9 h-9 sm:w-10 sm:h-10 flex flex-col items-center justify-center rounded-lg transition-colors duration-200 group overflow-hidden`;
+                                                    let isDayClickable = false; // Flag to control cursor and hover
 
                                                     if (!dayData) {
-                                                        dayClasses += ' opacity-30 pointer-events-none'; // For empty cells (days outside the month)
+                                                        dayClasses += ' opacity-30 pointer-events-none'; // Empty cells
                                                     } else if (dayData.isCurrentDay) {
                                                         // Today's challenge - always highlighted if it exists
                                                         dayClasses += ` ${theme.successColor.replace('text-', 'bg-')} ${theme.buttonText} font-bold`;
+                                                        isDayClickable = true;
                                                     } else if (dayData.hasChallenge && dayData.isSolvedByUser) {
-                                                        // Past challenge solved by the user (or current month but not today)
-                                                        dayClasses += ` bg-orange-500/30 border-orange-500/50 ${theme.text} hover:bg-orange-500/50`; // Using orange for 'FaFire' like
+                                                        // Past challenge solved by the user
+                                                        dayClasses += ` bg-orange-500/30 border-orange-500/50 ${theme.text}`;
+                                                        isDayClickable = true;
+                                                    } else if (dayData.hasChallenge && !dayData.isFuture) {
+                                                        // Past challenge NOT solved by user (still clickable to view details)
+                                                        dayClasses += ` ${theme.cardBg}/30 ${theme.cardText}`; // Default look, no highlight
+                                                        isDayClickable = true;
                                                     } else {
-                                                        // Any other day: no special highlight. This includes:
-                                                        // - Past challenges not solved by user
+                                                        // Any other day: no special highlight, not clickable. This includes:
                                                         // - Future challenges (whether set by admin or not)
-                                                        // - Days without any challenge (past, present, or future)
-                                                        dayClasses += ` ${theme.cardBg}/30 ${theme.cardText} hover:${theme.cardBg}/50`;
+                                                        // - Past/current dates with no challenge ever set
+                                                        dayClasses += ` ${theme.cardBg}/30 ${theme.cardText} pointer-events-none opacity-50`;
                                                     }
 
-                                                    // Disable pointer events for future dates that are not 'today'
-                                                    if (dayData && dayData.isFuture && !dayData.isCurrentDay) {
-                                                        dayClasses += ' pointer-events-none opacity-50'; // Make future unclickable and slightly faded
+                                                    // Apply clickable styles only if determined to be clickable
+                                                    if (isDayClickable) {
+                                                        dayClasses += ` cursor-pointer hover:${theme.cardBg}/50`;
                                                     }
-
 
                                                     return (
                                                         <div
@@ -675,7 +682,6 @@ const ProblemPage = () => {
                                                                     {(dayData.isSolvedByUser || dayData.isCurrentDay) && (
                                                                         <FaFire className={`absolute inset-0 m-auto text-4xl opacity-5 ${theme.cardText}`} />
                                                                     )}
-                                                                    {/* NOTE: FaRocket was removed as per request to imply "solved" with FaFire icon */}
 
                                                                     <span className="relative z-10 text-sm">{dayData.date.getDate()}</span>
 
@@ -683,6 +689,12 @@ const ProblemPage = () => {
                                                                     {dayData.hasChallenge && dayData.isSolvedByUser && !dayData.isCurrentDay && (
                                                                         <div className="absolute bottom-1 right-1 text-xs">
                                                                             <FaCheck className={`${theme.successColor} text-xs`} title="Solved" />
+                                                                        </div>
+                                                                    )}
+                                                                    {/* Small dot for past unsolved challenges that *had* a challenge */}
+                                                                    {dayData.hasChallenge && !dayData.isSolvedByUser && !dayData.isFuture && !dayData.isCurrentDay && (
+                                                                        <div className="absolute bottom-1 right-1 text-xs">
+                                                                            <span className={`w-1.5 h-1.5 rounded-full ${theme.errorColor.replace('text-', 'bg-')}`} title="Not Solved"></span>
                                                                         </div>
                                                                     )}
                                                                 </>

@@ -11,11 +11,8 @@ import {
     FaTextHeight, FaBold, FaItalic, FaUnderline, FaStrikethrough,
     FaPalette, FaLink as FaLinkIcon, FaUndo, FaRedo, FaTrashAlt // FaListUl, FaListOl, FaQuoteLeft were unused/redundant if using StarterKit defaults
 } from 'react-icons/fa';
-// FiCheckCircle, FiXCircle were imported but not used in this component's JSX
-// and are not strictly needed for basic functionality.
 import { useTheme } from '../../context/ThemeContext';
 
-// Rich text editor imports
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';

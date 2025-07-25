@@ -466,7 +466,7 @@ const SignUp = () => {
                         type="text"
                         {...register('firstName')}
                         className={`bg-white/5 border ${errors.firstName ? 'border-red-500/50' : 'border-white/10'} focus:ring-2 focus:ring-primary/50 focus:border-primary/50 block w-full pl-10 pr-3 py-3 rounded-lg text-white placeholder-white/30 shadow-sm transition-all duration-200`}
-                        placeholder="John"
+                        placeholder="First Name"
                       />
                     </div>
                     {errors.firstName && (
@@ -488,7 +488,7 @@ const SignUp = () => {
                         type="text"
                         {...register('lastName')}
                         className={`bg-white/5 border ${errors.lastName ? 'border-red-500/50' : 'border-white/10'} focus:ring-2 focus:ring-primary/50 focus:border-primary/50 block w-full pl-10 pr-3 py-3 rounded-lg text-white placeholder-white/30 shadow-sm transition-all duration-200`}
-                        placeholder="Doe"
+                        placeholder="Last Name"
                       />
                     </div>
                     {errors.lastName && (
