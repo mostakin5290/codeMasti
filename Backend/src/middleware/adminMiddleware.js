@@ -7,7 +7,6 @@ const adminMiddleware = async (req, res, next) => {
         const { token } = req.cookies;
 
         if (!token) {
-            // Be explicit about missing token
             return res.status(401).json({ message: 'Authentication required: Please log in to access this resource.' });
         }
 
