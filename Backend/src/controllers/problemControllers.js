@@ -302,84 +302,81 @@ const searchProblems = async (req, res) => {
     }
 };
 
-const getAllScheduledAndHistoricalDailyChallenges = async (req, res) => {
-    try {
-        // Fetch all historical challenges from the new collection
-        const historicalChallenges = await DailyChallengeHistory.find()
-            .populate('problemId', 'title difficulty tags') // Populate problem details for display
-            .sort({ challengeDate: -1 }); // Latest dates first
+// const getAllScheduledAndHistoricalDailyChallenges = async (req, res) => {
+//     try {
+//         // Fetch all historical challenges from the new collection
+//         const historicalChallenges = await DailyChallengeHistory.find()
+//             .populate('problemId', 'title difficulty tags') // Populate problem details for display
+//             .sort({ challengeDate: -1 }); // Latest dates first
 
-        // Get the currently active daily challenge (from the Problem model)
-        const currentActiveChallenge = await Problem.findOne({ isDailyChallenge: true })
-            .select('title difficulty dailyChallengeDate _id');
+//         // Get the currently active daily challenge (from the Problem model)
+//         const currentActiveChallenge = await Problem.findOne({ isDailyChallenge: true })
+//             .select('title difficulty dailyChallengeDate _id');
 
-        const combinedChallenges = [];
-        const seenDates = new Set(); // To prevent duplicates in case the active challenge also has a history record
+//         const combinedChallenges = [];
+//         const seenDates = new Set(); // To prevent duplicates in case the active challenge also has a history record
 
-        // Add historical challenges to the list
-        historicalChallenges.forEach(hist => {
-            if (hist.problemId) { // Ensure problemId is populated
-                const normalizedDate = new Date(hist.challengeDate);
-                normalizedDate.setUTCHours(0, 0, 0, 0); // Normalize history date
-                const dateKey = normalizedDate.toISOString();
+//         // Add historical challenges to the list
+//         historicalChallenges.forEach(hist => {
+//             if (hist.problemId) { // Ensure problemId is populated
+//                 const normalizedDate = new Date(hist.challengeDate);
+//                 normalizedDate.setUTCHours(0, 0, 0, 0); // Normalize history date
+//                 const dateKey = normalizedDate.toISOString();
 
-                if (!seenDates.has(dateKey)) {
-                    combinedChallenges.push({
-                        _id: hist._id, // This is the ID of the DailyChallengeHistory record (for deletion/editing)
-                        problemId: hist.problemId._id, // The ID of the actual problem
-                        title: hist.problemId.title,
-                        difficulty: hist.problemId.difficulty,
-                        dailyChallengeDate: hist.challengeDate,
-                        isCurrentActive: false // History records are not 'active'
-                    });
-                    seenDates.add(dateKey);
-                }
-            }
-        });
+//                 if (!seenDates.has(dateKey)) {
+//                     combinedChallenges.push({
+//                         _id: hist._id, // This is the ID of the DailyChallengeHistory record (for deletion/editing)
+//                         problemId: hist.problemId._id, // The ID of the actual problem
+//                         title: hist.problemId.title,
+//                         difficulty: hist.problemId.difficulty,
+//                         dailyChallengeDate: hist.challengeDate,
+//                         isCurrentActive: false // History records are not 'active'
+//                     });
+//                     seenDates.add(dateKey);
+//                 }
+//             }
+//         });
 
-        // Add the current active challenge if it exists and is not already in the combined list (e.g., just set it)
-        if (currentActiveChallenge && currentActiveChallenge.dailyChallengeDate) {
-            const currentChallengeDate = new Date(currentActiveChallenge.dailyChallengeDate);
-            currentChallengeDate.setUTCHours(0, 0, 0, 0); // Normalize active challenge date
-            const dateKey = currentChallengeDate.toISOString();
+//         // Add the current active challenge if it exists and is not already in the combined list (e.g., just set it)
+//         if (currentActiveChallenge && currentActiveChallenge.dailyChallengeDate) {
+//             const currentChallengeDate = new Date(currentActiveChallenge.dailyChallengeDate);
+//             currentChallengeDate.setUTCHours(0, 0, 0, 0); // Normalize active challenge date
+//             const dateKey = currentChallengeDate.toISOString();
 
-            if (!seenDates.has(dateKey)) {
-                combinedChallenges.push({
-                    _id: currentActiveChallenge._id, // For current active, _id is the problem's ID
-                    problemId: currentActiveChallenge._id,
-                    title: currentActiveChallenge.title,
-                    difficulty: currentActiveChallenge.difficulty,
-                    dailyChallengeDate: currentActiveChallenge.dailyChallengeDate,
-                    isCurrentActive: true // This one is the current active
-                });
-            } else {
-                // If a history record already exists for this date, ensure its 'isCurrentActive' status is true
-                const existingIndex = combinedChallenges.findIndex(c =>
-                    new Date(c.dailyChallengeDate).setUTCHours(0,0,0,0) === currentChallengeDate.getTime()
-                );
-                if (existingIndex !== -1) {
-                    combinedChallenges[existingIndex].isCurrentActive = true;
-                    // Also ensure its _id is the history id if it was a history record
-                    // And problemId is consistent.
-                    // If combinedChallenges[existingIndex]._id was problem ID, keep it.
-                    // If it was history ID, keep it. This relies on frontend using problemId for selection.
-                }
-            }
-        }
+//             if (!seenDates.has(dateKey)) {
+//                 combinedChallenges.push({
+//                     _id: currentActiveChallenge._id, // For current active, _id is the problem's ID
+//                     problemId: currentActiveChallenge._id,
+//                     title: currentActiveChallenge.title,
+//                     difficulty: currentActiveChallenge.difficulty,
+//                     dailyChallengeDate: currentActiveChallenge.dailyChallengeDate,
+//                     isCurrentActive: true // This one is the current active
+//                 });
+//             } else {
+//                 // If a history record already exists for this date, ensure its 'isCurrentActive' status is true
+//                 const existingIndex = combinedChallenges.findIndex(c =>
+//                     new Date(c.dailyChallengeDate).setUTCHours(0,0,0,0) === currentChallengeDate.getTime()
+//                 );
+//                 if (existingIndex !== -1) {
+//                     combinedChallenges[existingIndex].isCurrentActive = true;
+//                     // Also ensure its _id is the history id if it was a history record
+//                     // And problemId is consistent.
+//                     // If combinedChallenges[existingIndex]._id was problem ID, keep it.
+//                     // If it was history ID, keep it. This relies on frontend using problemId for selection.
+//                 }
+//             }
+//         }
 
-        // Final sort by date, latest first for admin display
-        combinedChallenges.sort((a, b) => new Date(b.dailyChallengeDate).getTime() - new Date(a.dailyChallengeDate).getTime());
+//         // Final sort by date, latest first for admin display
+//         combinedChallenges.sort((a, b) => new Date(b.dailyChallengeDate).getTime() - new Date(a.dailyChallengeDate).getTime());
 
-        res.status(200).json(combinedChallenges);
-    } catch (err) {
-        console.error("Error fetching all daily challenge history:", err);
-        res.status(500).json({ message: "Error fetching daily challenge history", error: err.message });
-    }
-};
+//         res.status(200).json(combinedChallenges);
+//     } catch (err) {
+//         console.error("Error fetching all daily challenge history:", err);
+//         res.status(500).json({ message: "Error fetching daily challenge history", error: err.message });
+//     }
+// };
 
-// Backend/controllers/problemControllers.js
-
-// ... (other imports and functions) ...
 
 const getTodayChallenge = async (req, res) => {
     try {
@@ -612,6 +609,124 @@ const deleteDailyChallenge = async (req, res) => {
     }
 };
 
+
+const getAllScheduledAndHistoricalDailyChallenges = async (req, res) => {
+    try {
+        const historicalChallenges = await DailyChallengeHistory.find()
+            .populate('problemId', 'title difficulty tags') // Populate problem details for display
+            .sort({ challengeDate: -1 }); // Latest dates first
+
+        const currentActiveChallenge = await Problem.findOne({ isDailyChallenge: true })
+            .select('title difficulty dailyChallengeDate _id');
+
+        const combinedChallenges = [];
+        const seenDates = new Set(); // To prevent duplicates in case the active challenge also has a history record
+
+        historicalChallenges.forEach(hist => {
+            if (hist.problemId) { // Ensure problemId is populated
+                const normalizedDate = new Date(hist.challengeDate);
+                normalizedDate.setUTCHours(0, 0, 0, 0); // Normalize history date
+                const dateKey = normalizedDate.toISOString();
+
+                if (!seenDates.has(dateKey)) {
+                    combinedChallenges.push({
+                        _id: hist._id, // This is the ID of the DailyChallengeHistory record (for deletion/editing)
+                        problemId: hist.problemId._id, // The ID of the actual problem
+                        title: hist.problemId.title,
+                        difficulty: hist.problemId.difficulty,
+                        dailyChallengeDate: hist.challengeDate,
+                        isCurrentActive: false, // History records are not 'active'
+                        tags: hist.problemId.tags // Include tags
+                    });
+                    seenDates.add(dateKey);
+                }
+            }
+        });
+
+        if (currentActiveChallenge && currentActiveChallenge.dailyChallengeDate) {
+            const currentChallengeDate = new Date(currentActiveChallenge.dailyChallengeDate);
+            currentChallengeDate.setUTCHours(0, 0, 0, 0); // Normalize active challenge date
+            const dateKey = currentChallengeDate.toISOString();
+
+            if (!seenDates.has(dateKey)) {
+                const fullProblemDetails = await Problem.findById(currentActiveChallenge._id).select('title difficulty tags');
+                if (fullProblemDetails) {
+                    combinedChallenges.push({
+                        _id: currentActiveChallenge._id, // For current active, _id is the problem's ID
+                        problemId: currentActiveChallenge._id,
+                        title: fullProblemDetails.title,
+                        difficulty: fullProblemDetails.difficulty,
+                        dailyChallengeDate: currentActiveChallenge.dailyChallengeDate,
+                        isCurrentActive: true, // This one is the current active
+                        tags: fullProblemDetails.tags // Include tags
+                    });
+                }
+            } else {
+                const existingIndex = combinedChallenges.findIndex(c =>
+                    new Date(c.dailyChallengeDate).setUTCHours(0, 0, 0, 0) === currentChallengeDate.getTime()
+                );
+                if (existingIndex !== -1) {
+                    combinedChallenges[existingIndex].isCurrentActive = true;
+                }
+            }
+        }
+
+        combinedChallenges.sort((a, b) => new Date(b.dailyChallengeDate).getTime() - new Date(a.dailyChallengeDate).getTime());
+
+        res.status(200).json(combinedChallenges);
+    } catch (err) {
+        console.error("Error fetching all daily challenge history:", err);
+        res.status(500).json({ message: "Error fetching daily challenge history", error: err.message });
+    }
+};
+
+const getDailyChallengeCalendarData = async (req, res) => {
+    try {
+        const userId = req.user._id; // Get authenticated user ID
+
+        const historicalChallenges = await DailyChallengeHistory.find({})
+            .populate('problemId', 'title difficulty tags') // Populate problem details
+            .lean(); // Use lean() for better performance as we are modifying
+
+        const user = await User.findById(userId)
+            .select('dailyChallenges.completed')
+            .lean();
+
+        const userCompletedChallengesMap = new Map();
+        if (user && user.dailyChallenges && user.dailyChallenges.completed) {
+            user.dailyChallenges.completed.forEach(completion => {
+                const dateKey = new Date(completion.date).setUTCHours(0, 0, 0, 0);
+                const problemId = completion.challengeId.toString();
+                userCompletedChallengesMap.set(`${problemId}-${dateKey}`, true);
+            });
+        }
+
+        const calendarData = historicalChallenges.map(challenge => {
+            const challengeDateKey = new Date(challenge.challengeDate).setUTCHours(0, 0, 0, 0);
+            const isSolved = userCompletedChallengesMap.has(`${challenge.problemId._id.toString()}-${challengeDateKey}`);
+
+            return {
+                _id: challenge._id, // History record ID
+                problemId: challenge.problemId, // Populated problem object
+                dailyChallengeDate: challenge.challengeDate,
+                title: challenge.problemId.title,
+                difficulty: challenge.problemId.difficulty,
+                tags: challenge.problemId.tags,
+                isSolved: isSolved // Add solved status for the user
+            };
+        });
+
+        res.status(200).json(calendarData);
+
+    } catch (err) {
+        console.error("Error fetching daily challenge calendar data:", err);
+        res.status(500).json({
+            message: "Error fetching daily challenge calendar data",
+            error: err.message
+        });
+    }
+};
+
 module.exports = {
     createProblem,
     updateProblem,
@@ -625,5 +740,6 @@ module.exports = {
     setDailyChallenge,
     // getPreviousChallenges,
     deleteDailyChallenge,
-    getAllScheduledAndHistoricalDailyChallenges
+    getAllScheduledAndHistoricalDailyChallenges,
+    getDailyChallengeCalendarData
 };

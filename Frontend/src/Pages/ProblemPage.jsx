@@ -8,19 +8,18 @@ import { useTheme } from '../context/ThemeContext';
 import CreatePlaylistModal from '../components/Playlist/CreatePlaylistModal';
 import AddProblemToPlaylistModal from '../components/Playlist/AddProblemToPlaylistModal';
 import { toast } from 'react-toastify';
-
 import ConfirmationModal from '../components/common/ConfirmationModal';
+import UpdatePlaylistModal from '../components/Playlist/UpdatePlaylistModal';
 
 import {
     FaCheck, FaPen, FaUndo, FaSearch, FaFilter, FaCalendarAlt, FaClock,
     FaFire, FaRandom, FaSortUp, FaSort,
     FaRocket, FaLock, FaThLarge, FaList, FaHistory,
     FaSortDown, FaPlus, FaFolderOpen, FaStar,
-    FaEllipsisV, FaEdit, FaTrash
+    FaEllipsisV, FaEdit, FaTrash, FaChevronLeft, FaChevronRight
 } from 'react-icons/fa';
 
-// NEW: Import for UpdatePlaylistModal (you'll need to create this similar to CreatePlaylistModal)
-import UpdatePlaylistModal from '../components/Playlist/UpdatePlaylistModal';
+import DailyChallengeDetailsModal from '../components/ProblemPage/DailyChallengeDetailsModal'; // Corrected path (was ProblemPage)
 
 const capitalizeFirstLetter = (string) => {
     if (!string) return '';
@@ -55,6 +54,11 @@ const defaultTheme = {
     accent: 'bg-cyan-500',
 };
 
+// Calendar Helper Functions
+const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay(); // 0 = Sunday, 1 = Monday
+const getMonthName = (date) => date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
 const ProblemPage = () => {
     const { user } = useSelector((state) => state.auth);
     const [problems, setProblems] = useState([]);
@@ -72,11 +76,18 @@ const ProblemPage = () => {
     const [recentlyViewed, setRecentlyViewed] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
 
-    // Daily Challenge States
+    // Daily Challenge States (for the currently active challenge)
     const [dailyChallenge, setDailyChallenge] = useState(null);
     const [isDailyChallengeLoading, setIsDailyChallengeLoading] = useState(true);
     const [alreadySolvedToday, setAlreadySolvedToday] = useState(false);
     const [userCurrentStreak, setUserCurrentStreak] = useState(0);
+
+    // NEW Daily Challenge Calendar States
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [dailyChallengeCalendarData, setDailyChallengeCalendarData] = useState([]);
+    const [isLoadingDailyChallengeHistory, setIsLoadingDailyChallengeHistory] = useState(true);
+    const [showDailyChallengeDetailsModal, setShowDailyChallengeDetailsModal] = useState(false);
+    const [selectedDailyChallengeProblem, setSelectedDailyChallengeProblem] = useState(null);
 
     // Playlist States
     const [userPlaylists, setUserPlaylists] = useState([]);
@@ -84,11 +95,8 @@ const ProblemPage = () => {
     const [showCreatePlaylistModal, setShowCreatePlaylistModal] = useState(false);
     const [showAddProblemToPlaylistModal, setShowAddProblemToPlaylistModal] = useState(false);
     const [selectedProblemForPlaylist, setSelectedProblemForPlaylist] = useState(null);
-
-    // NEW: States for playlist management
     const [showUpdatePlaylistModal, setShowUpdatePlaylistModal] = useState(false);
     const [selectedPlaylistToManage, setSelectedPlaylistToManage] = useState(null);
-
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [playlistToDeleteId, setPlaylistToDeleteId] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -147,7 +155,7 @@ const ProblemPage = () => {
     }, [problems]);
 
 
-    // Fetch Daily Challenge
+    // Fetch Daily Challenge (Current Day)
     useEffect(() => {
         const fetchDailyChallenge = async () => {
             if (!user) {
@@ -171,6 +179,29 @@ const ProblemPage = () => {
         };
         fetchDailyChallenge();
     }, [user]);
+
+    // NEW: Fetch all daily challenges for calendar (from the new endpoint)
+    useEffect(() => {
+        const fetchDailyChallengeData = async () => {
+            if (!user) {
+                setIsLoadingDailyChallengeHistory(false);
+                setDailyChallengeCalendarData([]);
+                return;
+            }
+            setIsLoadingDailyChallengeHistory(true);
+            try {
+                const { data } = await axiosClient.get('/problem/daily/calendar'); // Call the new endpoint
+                setDailyChallengeCalendarData(data);
+            } catch (err) {
+                console.error("Error fetching daily challenge calendar data:", err);
+                setDailyChallengeCalendarData([]);
+            } finally {
+                setIsLoadingDailyChallengeHistory(false);
+            }
+        };
+        fetchDailyChallengeData();
+    }, [user]); // Rerun when user changes
+
 
     // Fetch User Playlists
     const fetchUserPlaylists = useCallback(async () => {
@@ -427,11 +458,79 @@ const ProblemPage = () => {
         </div>
     );
 
+    // Memoize the calendar data for the current month
+    const calendarDays = useMemo(() => {
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        const numDays = getDaysInMonth(year, month);
+        const firstDayIndex = getFirstDayOfMonth(year, month); // 0 = Sunday, 1 = Monday
+
+        const daysArray = [];
+        // Add leading nulls for empty days at the start of the month
+        for (let i = 0; i < firstDayIndex; i++) {
+            daysArray.push(null);
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize today's date for comparison
+
+        // Map challenges for quick lookup by date string
+        const challengeMap = new Map();
+        dailyChallengeCalendarData.forEach(challenge => {
+            const challengeDate = new Date(challenge.dailyChallengeDate);
+            challengeDate.setHours(0, 0, 0, 0); // Normalize date
+            challengeMap.set(challengeDate.toISOString(), challenge);
+        });
+
+        for (let i = 1; i <= numDays; i++) {
+            const date = new Date(year, month, i);
+            date.setHours(0, 0, 0, 0); // Normalize current day in loop
+            const dateKey = date.toISOString();
+            const challengeForDay = challengeMap.get(dateKey);
+
+            daysArray.push({
+                date,
+                isCurrentDay: date.getTime() === today.getTime(),
+                hasChallenge: !!challengeForDay, // True if admin set a challenge for this day (regardless of solved status)
+                challengeDetails: challengeForDay, // Contains problem details and isSolved status from backend
+                isSolvedByUser: challengeForDay ? challengeForDay.isSolved : false, // IsSolved specifically by THIS user
+                isFuture: date.getTime() > today.getTime()
+            });
+        }
+
+        // Add trailing nulls to fill the grid (e.g., to 6 rows = 42 cells)
+        const totalCells = daysArray.length;
+        const remainingCells = 42 - totalCells;
+        for (let i = 0; i < remainingCells; i++) {
+            daysArray.push(null);
+        }
+
+        return daysArray;
+    }, [currentMonth, dailyChallengeCalendarData]);
+
+
+    const goToPreviousMonth = () => {
+        setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    };
+
+    const goToNextMonth = () => {
+        setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    };
+
+    const handleDateClick = (dayData) => {
+        // Only open modal if it's a past/current challenge AND has a problem associated
+        if (dayData && dayData.hasChallenge && !dayData.isFuture) {
+            setSelectedDailyChallengeProblem(dayData.challengeDetails);
+            setShowDailyChallengeDetailsModal(true);
+        }
+    };
+
+
     return (
         <div className={`min-h-screen relative overflow-hidden ${theme.text} bg-gradient-to-br ${theme.gradientFrom} ${theme.gradientTo}`}>
             <div className={`absolute top-0 left-0 w-80 h-80 ${theme.primary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[-20%] translate-y-[-20%] animate-blob`}></div>
             <div className={`absolute bottom-0 right-0 w-96 h-96 ${theme.secondary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[20%] translate-y-[20%] animate-blob animation-delay-2000`}></div>
-            <div className={`absolute top-1/2 left-1/2 w-60 h-60 ${theme.highlight.replace('text-', 'bg-')}/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-blob animation-delay-4000`}></div>
+            <div className={`absolute top-1/2 left-1/2 w-60 h-60 ${theme.highlight.replace('text-', 'bg-')}/5 rounded-full blur-3xl -translate-x-1/2 -translate-x-1/2 animate-blob animation-delay-4000`}></div>
 
 
             <Header />
@@ -440,7 +539,7 @@ const ProblemPage = () => {
                 <div className="flex flex-col lg:flex-row gap-8">
                     <div className={`lg:w-80 flex-shrink-0 transition-all duration-300 ${sidebarOpen ? 'block' : 'hidden'} lg:block`}>
                         <div className="space-y-6">
-                            {/* Daily Challenge Section */}
+                            {/* Daily Challenge Section - Current Day */}
                             <div className={`${sectionClasses} p-6 relative overflow-hidden`}>
                                 {isDailyChallengeLoading ? (
                                     <div className="text-center">
@@ -450,13 +549,13 @@ const ProblemPage = () => {
                                 ) : dailyChallenge ? (
                                     <>
                                         <div className={`absolute top-0 left-0 w-24 h-24 ${theme.highlight.replace('text-', 'bg-')}/10 rounded-full blur-xl -translate-x-1/2 -translate-y-1/2`}></div>
-                                        <div className={`absolute bottom-0 right-0 w-32 h-32 ${theme.highlightSecondary.replace('text-', 'bg-')}/10 rounded-full blur-xl translate-x-1/2 translate-y-1/2`}></div>
+                                        <div className={`absolute bottom-0 right-0 w-32 h-32 ${theme.highlightSecondary.replace('text-', 'bg-')}/10 rounded-full blur-xl translate-x-1/2 -translate-y-1/2`}></div>
 
                                         <div className="relative z-10">
                                             <div className="flex items-center mb-4 gap-2">
                                                 <FaCalendarAlt className={`h-6 w-6 ${theme.highlightTertiary}`} />
-                                                <h2 className={`text-xl font-bold bg-gradient-to-r ${theme.highlight} ${theme.highlightSecondary} bg-clip-text  `}>
-                                                    Daily Challenge
+                                                <h2 className={`text-xl font-bold bg-gradient-to-r ${theme.primary} ${theme.highlight} bg-clip-text text-transparent`}>
+                                                    Today's Challenge
                                                 </h2>
                                             </div>
 
@@ -511,7 +610,95 @@ const ProblemPage = () => {
                                 )}
                             </div>
 
-                            {/* My Playlists Section - Visible to all, but functionality restricted */}
+                            {/* Daily Challenge Calendar Section */}
+                            {user && (
+                                <div className={`${sectionClasses} p-6`}>
+                                    <h3 className={`font-semibold text-lg mb-4 ${theme.text} flex items-center gap-2`}>
+                                        <FaCalendarAlt className={`h-5 w-5 ${theme.highlightTertiary}`} />
+                                        Daily Challenge Calendar
+                                    </h3>
+
+                                    {isLoadingDailyChallengeHistory ? (
+                                        <div className="text-center py-6">
+                                            <LoadingSpinner />
+                                            <p className={`${theme.cardText} mt-2`}>Loading calendar...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center">
+                                            <div className="flex items-center justify-between w-full mb-4">
+                                                <button onClick={goToPreviousMonth} className={`p-2 rounded-full ${theme.cardBg}/50 ${theme.text} hover:${theme.cardBg}/80 transition-colors`}>
+                                                    <FaChevronLeft />
+                                                </button>
+                                                <span className={`text-xl font-semibold ${theme.highlight}`}>{getMonthName(currentMonth)}</span>
+                                                <button onClick={goToNextMonth} className={`p-2 rounded-full ${theme.cardBg}/50 ${theme.text} hover:${theme.cardBg}/80 transition-colors`}>
+                                                    <FaChevronRight />
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-7 gap-1 text-center w-full max-w-sm">
+                                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+                                                    <div key={day} className={`font-semibold ${theme.cardText} text-sm py-2`}>{day}</div>
+                                                ))}
+                                                {calendarDays.map((dayData, index) => {
+                                                    let dayClasses = `relative w-9 h-9 sm:w-10 sm:h-10 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-colors duration-200 group overflow-hidden`;
+
+                                                    if (!dayData) {
+                                                        dayClasses += ' opacity-30 pointer-events-none'; // For empty cells (days outside the month)
+                                                    } else if (dayData.isCurrentDay) {
+                                                        // Today's challenge - always highlighted if it exists
+                                                        dayClasses += ` ${theme.successColor.replace('text-', 'bg-')} ${theme.buttonText} font-bold`;
+                                                    } else if (dayData.hasChallenge && dayData.isSolvedByUser) {
+                                                        // Past challenge solved by the user (or current month but not today)
+                                                        dayClasses += ` bg-orange-500/30 border-orange-500/50 ${theme.text} hover:bg-orange-500/50`; // Using orange for 'FaFire' like
+                                                    } else {
+                                                        // Any other day: no special highlight. This includes:
+                                                        // - Past challenges not solved by user
+                                                        // - Future challenges (whether set by admin or not)
+                                                        // - Days without any challenge (past, present, or future)
+                                                        dayClasses += ` ${theme.cardBg}/30 ${theme.cardText} hover:${theme.cardBg}/50`;
+                                                    }
+
+                                                    // Disable pointer events for future dates that are not 'today'
+                                                    if (dayData && dayData.isFuture && !dayData.isCurrentDay) {
+                                                        dayClasses += ' pointer-events-none opacity-50'; // Make future unclickable and slightly faded
+                                                    }
+
+
+                                                    return (
+                                                        <div
+                                                            key={index}
+                                                            className={dayClasses}
+                                                            onClick={() => handleDateClick(dayData)}
+                                                        >
+                                                            {dayData ? (
+                                                                <>
+                                                                    {/* Background Icon: Only show for dates that are solved by the user or is today's challenge */}
+                                                                    {(dayData.isSolvedByUser || dayData.isCurrentDay) && (
+                                                                        <FaFire className={`absolute inset-0 m-auto text-4xl opacity-5 ${theme.cardText}`} />
+                                                                    )}
+                                                                    {/* NOTE: FaRocket was removed as per request to imply "solved" with FaFire icon */}
+
+                                                                    <span className="relative z-10 text-sm">{dayData.date.getDate()}</span>
+
+                                                                    {/* Status indicators: Only show checkmark for user-solved (not today, as today has full background) */}
+                                                                    {dayData.hasChallenge && dayData.isSolvedByUser && !dayData.isCurrentDay && (
+                                                                        <div className="absolute bottom-1 right-1 text-xs">
+                                                                            <FaCheck className={`${theme.successColor} text-xs`} title="Solved" />
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            ) : (
+                                                                ''
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* My Playlists Section */}
                             {user && (
                                 <div className={`${sectionClasses} p-6`}>
                                     <h3 className={`font-semibold text-lg mb-4 ${theme.text} flex items-center gap-2`}>
@@ -639,7 +826,7 @@ const ProblemPage = () => {
                         <div className={`mb-8 ${sectionClasses} p-6`}>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div>
-                                    <h1 className={`text-3xl font-bold bg-gradient-to-r ${theme.primary} ${theme.highlight} bg-clip-text  `}>
+                                    <h1 className={`text-3xl font-bold bg-gradient-to-r ${theme.primary} ${theme.highlight} bg-clip-text text-transparent `}>
                                         Problems
                                     </h1>
                                     <p className={`mt-1 ${theme.cardText}`}>
@@ -976,6 +1163,15 @@ const ProblemPage = () => {
             >
                 <p>Are you sure you want to delete this playlist? This action cannot be undone, and all problems in this playlist will be removed from it.</p>
             </ConfirmationModal>
+
+            {/* Daily Challenge Details Modal */}
+            <DailyChallengeDetailsModal
+                isOpen={showDailyChallengeDetailsModal}
+                onClose={() => setShowDailyChallengeDetailsModal(false)}
+                challengeDetails={selectedDailyChallengeProblem}
+                appTheme={theme}
+                updateRecentlyViewed={updateRecentlyViewed}
+            />
         </div>
     );
 };

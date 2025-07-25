@@ -989,7 +989,7 @@ const deleteUserAccount = async (req, res) => {
 const getFullUserProfile = async (req, res) => {
     try {
 
-        const { userId } = req.params; // We'll get the ID from the route parameter
+        const { userId } = req.params; 
 
         const user = await User.findById(userId).select('-password');
 
@@ -997,7 +997,6 @@ const getFullUserProfile = async (req, res) => {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        // --- Fetch Submission Data for the Heatmap and Recent Activity ---
         const oneYearAgo = new Date();
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
@@ -1005,11 +1004,10 @@ const getFullUserProfile = async (req, res) => {
             userId: userId,
             createdAt: { $gte: oneYearAgo }
         })
-            .populate('problemId', 'title difficulty') // Populate with problem details
-            .sort({ createdAt: -1 }) // Get newest first
-            .select('problemId status createdAt'); // Select only the necessary fields
+            .populate('problemId', 'title difficulty') 
+            .sort({ createdAt: -1 }) 
+            .select('problemId status createdAt'); 
 
-        // --- Combine and send the data ---
         res.status(200).json({
             success: true,
             profile: user,

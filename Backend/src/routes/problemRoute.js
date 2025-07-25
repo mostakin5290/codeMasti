@@ -12,6 +12,7 @@ const {
     getTodayChallenge,
     getUserStreak,
     setDailyChallenge,
+    getDailyChallengeCalendarData,
     // getPreviousChallenges, // <--- NOTE: If getPreviousChallenges is still intended for "past" problems NOT necessarily from DailyChallengeHistory, keep its route. Otherwise, it might be redundant with getAllScheduledAndHistoricalDailyChallenges.
     getAllScheduledAndHistoricalDailyChallenges,
     deleteDailyChallenge // This controller now expects history record ID
@@ -44,5 +45,7 @@ problemRouter.post('/daily/set', coAdminMiddleware, setDailyChallenge); // Set a
 // Admin-specific daily challenge management (using DailyChallengeHistory)
 problemRouter.get('/daily/all', coAdminMiddleware, getAllScheduledAndHistoricalDailyChallenges); // Get all scheduled and historical challenges for admin
 problemRouter.delete('/daily/history/:id', coAdminMiddleware, deleteDailyChallenge); // Delete a specific daily challenge history record
+
+problemRouter.get('/daily/calendar', userMiddleware, getDailyChallengeCalendarData);
 
 module.exports = problemRouter;
