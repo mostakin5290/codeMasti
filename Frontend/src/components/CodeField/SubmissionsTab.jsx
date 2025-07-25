@@ -122,7 +122,6 @@ const ComplexityAnalysis = ({ analysis, loading, appTheme }) => {
 // --- SubmissionDetails Component (Themed) ---
 const SubmissionDetails = ({ testResults, setTestResults, appTheme }) => {
     const theme = { ...defaultAppTheme, ...appTheme }; // Merge with default
-    // console.log(testResults);
     const statusColors = {
         'Accepted': theme.successColor,
         'Wrong Answer': theme.errorColor,
@@ -149,13 +148,12 @@ const SubmissionDetails = ({ testResults, setTestResults, appTheme }) => {
             setAnalysisError(null);
 
             const response = await axiosClient.post('/ai/analysis', {
-                code: testResults.code // Use the code from the submission
+                code: testResults.code 
             });
 
             setComplexityAnalysis(response.data.analysis);
             setShowAnalysis(true);
         } catch (err) {
-            console.error("Complexity analysis error:", err);
             setAnalysisError(err.response?.data?.error || "Failed to analyze code complexity.");
         } finally {
             setLoadingAnalysis(false);
@@ -310,7 +308,6 @@ const SubmissionsTab = ({ submissionHistory, testResults, setTestResults }) => {
             setError(null);
 
             const response = await axiosClient.get(`/submission/details/${submission._id}`);
-            console.log("Submission details response:", response.data); // Debugging log
             const formattedResult = {
                 ...response.data, // response.data already contains all fields including testCases, code, language
                 createdAt: submission.createdAt // Re-add createdAt from history list

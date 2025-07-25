@@ -57,21 +57,37 @@ const solveDoubt = async (req, res) => {
 };
 
 const tryParseGeminiResponse = (text) => {
+    let cleanedText = text.trim();
+
+    // 1. Try to unwrap markdown code blocks
+    const jsonBlockRegex = /^```json\s*([\s\S]*?)\s*```$/; // Matches ```json\n{...}\n```
+    const match = cleanedText.match(jsonBlockRegex);
+
+    if (match && match) {
+        cleanedText = match.trim(); // Extract the content inside the JSON block
+    }
+
     try {
-        // First try to parse as pure JSON
-        if (text.startsWith('{') && text.endsWith('}')) {
-            return JSON.parse(text);
-        }
-
-        // Handle the { t.c: ..., s.c: ... } format
-        const cleaned = text
-            .replace(/'/g, '"')
-            .replace(/(\w+)\.(\w+)/g, '"$1.$2"')
-            .replace(/(\w+):/g, '"$1":');
-
-        return JSON.parse(cleaned);
+        // 2. Attempt to parse as pure JSON first (after unwrap)
+        // This handles cases where Gemini directly returns valid JSON without extra formatting
+        // like { "tc": "O(1)", "sc": "O(1)" }
+        return JSON.parse(cleanedText);
     } catch (e) {
-        return { error: "Could not parse response", raw: text };
+        // 3. If direct parsing fails, try to fix common Gemini formatting issues:
+        //    - Convert single quotes to double quotes
+        //    - Add double quotes around unquoted keys (e.g., tc: -> "tc":)
+        const formatFixedText = cleanedText
+            .replace(/'/g, '"') // Convert single quotes to double quotes
+            // This regex specifically targets property names that are alphanumeric
+            // followed by a colon, ensuring it doesn't mess up values.
+            .replace(/([a-zA-Z0-9_]+):/g, '"$1":');
+
+        try {
+            return JSON.parse(formatFixedText);
+        } catch (e2) {
+            // If all parsing attempts fail
+            return { error: "Could not parse response", raw: text };
+        }
     }
 };
 
@@ -113,7 +129,6 @@ const analyzeCode = async (req, res) => {
         const response = result.response;
         const text = response.text();
 
-        // 7. Return raw JSON-style response (should be { t.c: ..., s.c: ... })
         res.status(200).json({
             success: true,
             analysis: {
@@ -174,11 +189,10 @@ const help = async (req, res) => {
         // 7. Return the AI's natural language response
         res.status(200).json({
             success: true,
-            response: text, 
+            response: text,
         });
 
     } catch (error) {
-        console.error("Error communicating with AI Assistant:", error);
         if (error.response && error.response.data) {
             return res.status(error.response.status).json({
                 success: false,

@@ -60,6 +60,7 @@ import ForgotPassword from "./features/auth/ForgotPassword";
 import ResetPasswordPage from "./features/auth/ResetPasswordPage";
 import { AnimationProvider } from "./context/AnimationContext";
 import PremiumWelcomePage from "./Pages/PremiumWelcomePage";
+import ComingSoonPage from "./components/common/ComingSoon";
 
 
 const AppRoutes = () => {
@@ -146,6 +147,7 @@ const AppRoutes = () => {
                 <Route path="/contests/:id" element={<ContestPublicDetailsPage />} />
                 <Route path="/explore-premium" element={<ExplorePremium />} />
                 <Route path="/test" element={<PremiumWelcomePage/> } />
+                <Route path="/coming" element={<ComingSoonPage/> } />
                 
                 {/* --- Admin Routes --- */}
                 <Route element={<AdminRoute />}>

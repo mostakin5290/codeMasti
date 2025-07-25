@@ -467,33 +467,31 @@ const ProblemPage = () => {
         const firstDayIndex = getFirstDayOfMonth(year, month); // 0 = Sunday, 1 = Monday
 
         const daysArray = [];
-        // Add leading nulls for empty days at the start of the month
         for (let i = 0; i < firstDayIndex; i++) {
             daysArray.push(null);
         }
 
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize today's date for comparison
+        today.setHours(0, 0, 0, 0);
 
-        // Map challenges for quick lookup by date string
         const challengeMap = new Map();
         dailyChallengeCalendarData.forEach(challenge => {
             const challengeDate = new Date(challenge.dailyChallengeDate);
-            challengeDate.setHours(0, 0, 0, 0); // Normalize date
+            challengeDate.setHours(0, 0, 0, 0);
             challengeMap.set(challengeDate.toISOString(), challenge);
         });
 
         for (let i = 1; i <= numDays; i++) {
             const date = new Date(year, month, i);
-            date.setHours(0, 0, 0, 0); // Normalize current day in loop
+            date.setHours(0, 0, 0, 0);
             const dateKey = date.toISOString();
             const challengeForDay = challengeMap.get(dateKey);
 
             daysArray.push({
                 date,
                 isCurrentDay: date.getTime() === today.getTime(),
-                hasChallenge: !!challengeForDay, // True if admin set a challenge for this day (regardless of solved status)
-                challengeDetails: challengeForDay, // Contains problem details and isSolvedByUser status from backend
+                hasChallenge: !!challengeForDay,
+                challengeDetails: challengeForDay,
                 isSolvedByUser: challengeForDay ? challengeForDay.isSolved : false, // IsSolved specifically by THIS user
                 isFuture: date.getTime() > today.getTime()
             });
@@ -519,7 +517,6 @@ const ProblemPage = () => {
     };
 
     const handleDateClick = (dayData) => {
-        // Only open modal if it's a past/current challenge AND has a problem associated
         // and is clickable (i.e., not a future date that's not today)
         if (dayData && dayData.hasChallenge && !dayData.isFuture || dayData?.isCurrentDay) {
             setSelectedDailyChallengeProblem(dayData.challengeDetails);
@@ -652,7 +649,7 @@ const ProblemPage = () => {
                                                         isDayClickable = true;
                                                     } else if (dayData.hasChallenge && dayData.isSolvedByUser) {
                                                         // Past challenge solved by the user
-                                                        dayClasses += ` bg-orange-500/30 border-orange-500/50 ${theme.text}`;
+                                                        dayClasses += `  border-orange-500/50 ${theme.text}`;
                                                         isDayClickable = true;
                                                     } else if (dayData.hasChallenge && !dayData.isFuture) {
                                                         // Past challenge NOT solved by user (still clickable to view details)
@@ -679,20 +676,15 @@ const ProblemPage = () => {
                                                             {dayData ? (
                                                                 <>
                                                                     {/* Background Icon: Only show for dates that are solved by the user or is today's challenge */}
-                                                                    {(dayData.isSolvedByUser || dayData.isCurrentDay) && (
-                                                                        <FaFire className={`absolute inset-0 m-auto text-4xl opacity-5 ${theme.cardText}`} />
+                                                                    {(dayData.isSolvedByUser) && (
+                                                                        <FaFire className={`absolute inset-1 m-auto text-4xl opacity-50 text-orange-500`} />
+
                                                                     )}
 
                                                                     <span className="relative z-10 text-sm">{dayData.date.getDate()}</span>
 
-                                                                    {/* Status indicators: Only show checkmark for user-solved (not today, as today has full background) */}
-                                                                    {dayData.hasChallenge && dayData.isSolvedByUser && !dayData.isCurrentDay && (
-                                                                        <div className="absolute bottom-1 right-1 text-xs">
-                                                                            <FaCheck className={`${theme.successColor} text-xs`} title="Solved" />
-                                                                        </div>
-                                                                    )}
                                                                     {/* Small dot for past unsolved challenges that *had* a challenge */}
-                                                                    {dayData.hasChallenge && !dayData.isSolvedByUser && !dayData.isFuture && !dayData.isCurrentDay && (
+                                                                    {dayData.hasChallenge  && (
                                                                         <div className="absolute bottom-1 right-1 text-xs">
                                                                             <span className={`w-1.5 h-1.5 rounded-full ${theme.errorColor.replace('text-', 'bg-')}`} title="Not Solved"></span>
                                                                         </div>

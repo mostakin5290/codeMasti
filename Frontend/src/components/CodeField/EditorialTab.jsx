@@ -138,8 +138,8 @@ const VideoControls = ({
 }) => {
     const { theme: appTheme } = useTheme();
     const [showSettings, setShowSettings] = useState(false);
-    const [showSpeedOptions, setShowSpeedOptions] = useState(false);
-    const [showQualityOptions, setShowQualityOptions] = useState(false);
+    const [showSpeedOptions, setShowSpeedOptions] = useState(false); // This state is not needed with VideoSettingsMenu
+    const [showQualityOptions, setShowQualityOptions] = useState(false); // This state is not needed with VideoSettingsMenu
 
     const formatTime = (time) => {
         const minutes = Math.floor(time / 60);
@@ -149,8 +149,8 @@ const VideoControls = ({
 
     const handleSettingsClick = () => {
         setShowSettings(!showSettings);
-        setShowSpeedOptions(false);
-        setShowQualityOptions(false);
+        // Removed: setShowSpeedOptions(false); setShowQualityOptions(false);
+        // VideoSettingsMenu will manage its own close logic via `onClose` prop
     };
 
     return (
@@ -201,67 +201,9 @@ const VideoControls = ({
                 </div>
 
                 <div className="flex items-center space-x-3">
-                    {videoQualities.length > 1 && (
-                        <div className="relative">
-                            <button
-                                onClick={() => {
-                                    setShowQualityOptions(!showQualityOptions);
-                                    setShowSpeedOptions(false);
-                                    setShowSettings(false);
-                                }}
-                                className={`px-2 py-1 text-xs rounded ${showQualityOptions ? appTheme.primary : appTheme.iconBg} hover:${appTheme.primaryHover} transition-colors`}
-                            >
-                                {videoQualities.find(q => q.value === currentQuality)?.label || 'Auto'}
-                            </button>
-                            {showQualityOptions && (
-                                <div className={`absolute bottom-8 right-0 w-24 ${appTheme.cardBg} rounded-md shadow-lg z-10 border ${appTheme.border}`}>
-                                    {videoQualities.map(quality => (
-                                        <button
-                                            key={quality.value}
-                                            onClick={() => {
-                                                onQualityChange(quality.value);
-                                                setShowQualityOptions(false);
-                                            }}
-                                            className={`block w-full text-left px-3 py-1.5 text-sm hover:${appTheme.primary} ${currentQuality === quality.value ? appTheme.primary : appTheme.cardText
-                                                }`}
-                                        >
-                                            {quality.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    <div className="relative">
-                        <button
-                            onClick={() => {
-                                setShowSpeedOptions(!showSpeedOptions);
-                                setShowQualityOptions(false);
-                                setShowSettings(false);
-                            }}
-                            className={`px-2 py-1 text-xs rounded ${showSpeedOptions ? appTheme.primary : appTheme.iconBg} hover:${appTheme.primaryHover} transition-colors`}
-                        >
-                            {playbackRate}x
-                        </button>
-                        {showSpeedOptions && (
-                            <div className={`absolute bottom-8 right-0 w-20 ${appTheme.cardBg} rounded-md shadow-lg z-10 border ${appTheme.border}`}>
-                                {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map(speed => (
-                                    <button
-                                        key={speed}
-                                        onClick={() => {
-                                            onPlaybackRateChange(speed);
-                                            setShowSpeedOptions(false);
-                                        }}
-                                        className={`block w-full text-left px-3 py-1.5 text-sm hover:${appTheme.primary} ${speed === playbackRate ? appTheme.primary : appTheme.cardText
-                                            }`}
-                                    >
-                                        {speed}x
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    {/* Quality and Speed buttons should open the settings menu now */}
+                    {/* The previous separate quality/speed dropdowns are now managed by VideoSettingsMenu */}
+                    {/* You can optionally add a button here to show current quality/speed if desired */}
 
                     <div className="relative">
                         <button
@@ -275,20 +217,20 @@ const VideoControls = ({
                             playbackRate={playbackRate}
                             onPlaybackRateChange={(rate) => {
                                 onPlaybackRateChange(rate);
-                                setShowSettings(false);
+                                setShowSettings(false); // Close settings after selection
                             }}
                             videoQualities={videoQualities}
                             currentQuality={currentQuality}
                             onQualityChange={(quality) => {
                                 onQualityChange(quality);
-                                setShowSettings(false);
+                                setShowSettings(false); // Close settings after selection
                             }}
                             onTogglePiP={() => {
                                 onTogglePiP();
-                                setShowSettings(false);
+                                setShowSettings(false); // Close settings after PiP
                             }}
                             isPiPSupported={isPiPSupported}
-                            onClose={() => setShowSettings(false)}
+                            onClose={() => setShowSettings(false)} // Close when clicking outside or item selected
                         />
                     </div>
 
@@ -341,10 +283,11 @@ const VideoPlayer = ({ secureUrl, thumbnailUrl, duration, videoQualities = [] })
 
     // Initialize with default quality if available
     useEffect(() => {
-        if (videoQualities.length > 0) {
+        if (videoQualities.length > 0 && currentQuality === 'auto') { // Only set if not explicitly changed
             setCurrentQuality(videoQualities[0].value);
         }
-    }, [videoQualities]);
+    }, [videoQualities, currentQuality]);
+
 
     useEffect(() => {
         if (videoRef.current) {
@@ -436,8 +379,9 @@ const VideoPlayer = ({ secureUrl, thumbnailUrl, duration, videoQualities = [] })
 
     const handleQualityChange = (quality) => {
         setCurrentQuality(quality);
-        // Here you would typically switch video sources based on quality
-        // For this example, we're just setting the state
+        // In a real scenario, you'd update the video.src here to the URL for the selected quality.
+        // For example: videoRef.current.src = getQualitySpecificUrl(quality, secureUrl);
+        // As secureUrl is a single URL, this example won't visibly change quality unless it's an HLS/DASH stream.
         resetControlsTimeout();
     };
 
@@ -470,7 +414,10 @@ const VideoPlayer = ({ secureUrl, thumbnailUrl, duration, videoQualities = [] })
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => {
                 setIsHovering(false);
-                setShowControls(false);
+                // Only hide controls if not playing or settings menu is not open
+                if (!isPlaying && !showSettings) { // Keep controls visible if playing, or if settings open
+                    setShowControls(false);
+                }
             }}
         >
             <video
@@ -485,7 +432,7 @@ const VideoPlayer = ({ secureUrl, thumbnailUrl, duration, videoQualities = [] })
                 preload="metadata"
             />
 
-            {(showControls || isHovering) && (
+            {(showControls || isHovering || isPlaying) && ( // Show controls if playing, hovering or explicit `showControls`
                 <VideoControls
                     videoRef={videoRef}
                     isPlaying={isPlaying}
@@ -528,7 +475,8 @@ const EditorialTab = ({ problem }) => {
     const appTheme = { ...defaultAppTheme, ...(appThemeFromContext) };
 
     const hasEditorialContent = problem.editorial && (problem.editorial.approach || problem.editorial.solutionCode || problem.editorial.complexityAnalysis || problem.editorial.communitySolutions);
-    const hasVideoSolution = problem.secureUrl;
+    // Directly use problem.solutionVideo.secureUrl now
+    const hasVideoSolution = problem.solutionVideo?.secureUrl;
 
     // Mock video qualities - in a real app, these would come from your video source
     const videoQualities = [
@@ -562,14 +510,14 @@ const EditorialTab = ({ problem }) => {
                         <h3 className={`text-lg font-semibold ${appTheme.text}`}>Video Solution</h3>
                     </div>
                     <VideoPlayer
-                        secureUrl={problem.secureUrl}
-                        thumbnailUrl={problem.thumbnailUrl}
-                        duration={problem.duration}
+                        secureUrl={problem.solutionVideo.secureUrl} // Use problem.solutionVideo.secureUrl
+                        thumbnailUrl={problem.solutionVideo.thumbnailUrl} // Use problem.solutionVideo.thumbnailUrl
+                        duration={problem.solutionVideo.duration} // Use problem.solutionVideo.duration
                         videoQualities={videoQualities}
                     />
-                    {problem.duration && (
+                    {problem.solutionVideo.duration && (
                         <p className={`text-sm ${appTheme.cardText} mt-3 text-right`}>
-                            Duration: {Math.floor(problem.duration / 60)}m {Math.round(problem.duration % 60)}s
+                            Duration: {Math.floor(problem.solutionVideo.duration / 60)}m {Math.round(problem.solutionVideo.duration % 60)}s
                         </p>
                     )}
                 </div>

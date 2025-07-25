@@ -4,7 +4,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axiosClient from '../../api/axiosClient';
 import { FaEdit, FaTrash, FaPlus, FaCode, FaSearch, FaFilter, FaTags, FaUpload, FaVideoSlash } from 'react-icons/fa';
-import { MdOutlineVideocam } from 'react-icons/md';
+import { MdOutlineVideocam } from 'react-icons/md'; // This icon is not used in the final version, but kept for consistency with original
 import LoadingSpinner from '../common/LoadingSpinner';
 import ConfirmationModal from '../common/ConfirmationModal';
 import VideoUploadModal from './problems/components/VideoUploadModal';
@@ -156,6 +156,7 @@ const ProblemList = () => {
 
     // --- Video Upload Handlers ---
     const handleUploadVideoClick = (problem) => {
+        // Pass the problem object directly to the modal for problemId
         setSelectedProblemForVideo(problem);
         setShowVideoUploadModal(true);
     };
@@ -164,7 +165,7 @@ const ProblemList = () => {
         // Update the specific problem in 'problems' state with the new solutionVideo data
         setProblems(prevProblems => prevProblems.map(p =>
             p._id === uploadedVideoData.problemId
-                ? { ...p, solutionVideo: uploadedVideoData }
+                ? { ...p, solutionVideo: uploadedVideoData } // Replace or add the full video object
                 : p
         ));
         setShowVideoUploadModal(false); // Close the modal
@@ -173,11 +174,11 @@ const ProblemList = () => {
 
     // --- Video Delete Handlers ---
     const handleDeleteVideoClick = (problem) => {
-        // Here, problem.solutionVideo contains the _id of the video document
+        // problem.solutionVideo now contains the full video object from backend
         if (problem.solutionVideo && problem.solutionVideo._id) {
             setVideoToDelete(problem.solutionVideo);
             // It's good practice to also pass the problem title for the confirmation modal
-            setProblemToDelete({ title: problem.title, _id: problem._id });
+            setProblemToDelete({ title: problem.title, _id: problem._id }); // Set problem context for modal
             setShowVideoDeleteConfirmModal(true);
         } else {
             toast.error("No video found to delete for this problem.");
@@ -193,7 +194,7 @@ const ProblemList = () => {
             // Update state: remove solutionVideo from the problem object
             setProblems(prevProblems => prevProblems.map(p =>
                 p._id === videoToDelete.problemId // videoToDelete also has problemId
-                    ? { ...p, solutionVideo: null } // Set solutionVideo to null or undefined
+                    ? { ...p, solutionVideo: null } // Set solutionVideo to null
                     : p
             ));
             toast.success('Video deleted successfully!', {
@@ -267,7 +268,7 @@ const ProblemList = () => {
                     background: `${appTheme.cardBg}/10`,
                     backdropFilter: 'blur(20px)',
                     border: `1px solid ${appTheme.border}/20`,
-                    color: appTheme.text // Use the text class directly from appTheme
+                    color: appTheme.text.replace('text-', '')
                 }}
             />
 
@@ -362,7 +363,9 @@ const ProblemList = () => {
                                                 <div className={`w-2 h-12 bg-gradient-to-b ${appTheme.primary.replace('bg-', 'from-')} ${appTheme.secondary.replace('bg-', 'to-')} rounded-full mr-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
                                                 <div>
                                                     <h3 className={`font-bold ${appTheme.text} text-lg group-hover:${appTheme.highlight} transition-colors duration-300`}>
-                                                        {problem.title}
+                                                        <Link to={`/admin/problems/edit/${problem._id}`} className="hover:underline">
+                                                            {problem.title}
+                                                        </Link>
                                                     </h3>
                                                     <p className={`${appTheme.cardText} text-sm mt-1`}>ID: {problem._id.slice(-8)}</p>
                                                 </div>
@@ -404,7 +407,7 @@ const ProblemList = () => {
                                                 </Link>
 
                                                 {/* Video Upload/Delete Button */}
-                                                {problem.solutionVideo ? (
+                                                {problem.solutionVideo ? ( // Check for the solutionVideo object
                                                     <button
                                                         onClick={() => handleDeleteVideoClick(problem)}
                                                         className={getIconButtonClasses(appTheme.errorColor)}

@@ -459,7 +459,8 @@ const Home = () => {
                         )}
 
                         <Link
-                            to="/demo"
+                            to="https://youtu.be/mc6xfVDaLeE?si=yyaNJR4XFEQCEw_V"
+                            target='_blank'
                             className={`inline-flex items-center justify-center px-8 py-4 border-2 ${theme.border} rounded-lg hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-colors duration-300 font-semibold text-lg bg-transparent`}
                         >
                             Watch Demo

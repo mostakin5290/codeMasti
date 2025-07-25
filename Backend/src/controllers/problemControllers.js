@@ -131,24 +131,27 @@ const getProblemById = async (req, res) => {
         if (!id) {
             return res.status(400).json({ message: "Invalid ID provided." });
         }
-        const problem = await Problem.findById(id);
+        // When fetching by ID, populate the solution video directly if it exists.
+        const problem = await Problem.findById(id).lean(); // Use lean() for flexibility
 
         if (!problem) {
             return res.status(404).json({ message: "Problem not found." });
         }
 
-        const video = await Video.findOne({ problemId: id }).lean(); 
+        // Fetch the associated video solution
+        const video = await Video.findOne({ problemId: id }).lean();
 
+        // Attach video details directly to the problem object for convenience
         if (video) {
-            problem.secureUrl = video.secureUrl;
-            problem.cloudinaryPublicId = video.cloudinaryPublicId;
-            problem.thumbnailUrl = video.thumbnailUrl;
-            problem.duration = video.duration;
-            problem.videoSolutionId = video._id;
+            problem.solutionVideo = video; // Attach the whole video object
+        } else {
+            problem.solutionVideo = null;
         }
+
         res.status(200).json(problem);
-    } 
+    }
     catch (err) {
+        console.error('Error fetching problem by ID:', err); // Use a distinct error message
         res.status(500).json({ message: 'Error fetching problem', error: err.message });
     }
 };
@@ -161,7 +164,7 @@ const getAllProblem = async (req, res) => {
         const problems = await Problem.aggregate([
             {
                 $lookup: {
-                    from: 'submissions', 
+                    from: 'submissions',
                     localField: '_id',
                     foreignField: 'problemId',
                     as: 'submissions'
@@ -169,10 +172,10 @@ const getAllProblem = async (req, res) => {
             },
             {
                 $lookup: {
-                    from: 'Videos', 
+                    from: 'videos', // Correct collection name should be 'videos' (lowercase, plural)
                     localField: '_id',
                     foreignField: 'problemId',
-                    as: 'Videos'
+                    as: 'videos' // Changed alias to 'videos' (lowercase) for consistency
                 }
             },
             {
@@ -237,7 +240,8 @@ const getAllProblem = async (req, res) => {
                             }
                         }
                     },
-                    Video: { $arrayElemAt: ['$Videos', 0] } // Gets the first video if multiple exist
+                    // Attach the first video found to a 'solutionVideo' field
+                    solutionVideo: { $arrayElemAt: ['$videos', 0] } // Corrected alias to 'videos'
                 }
             },
             {
@@ -248,11 +252,12 @@ const getAllProblem = async (req, res) => {
                     tags: 1,
                     status: 1,
                     acceptance: 1,
-                    'Video._id': 1, 
-                    'Video.cloudinaryPublicId': 1,
-                    'Video.secureUrl': 1,
-                    'Video.thumbnailUrl': 1,
-                    'Video.duration': 1
+                    // Include all relevant video fields from the 'solutionVideo' object
+                    'solutionVideo._id': 1,
+                    'solutionVideo.cloudinaryPublicId': 1,
+                    'solutionVideo.secureUrl': 1,
+                    'solutionVideo.thumbnailUrl': 1,
+                    'solutionVideo.duration': 1
                 }
             }
         ]);
