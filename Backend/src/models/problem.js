@@ -65,7 +65,7 @@ const problemSchema = new Schema({
         completeCode: { type: String, required: [true, 'Solution code is required'] }
     }],
     executionConfig: {
-        inputOutputConfig: { 
+        inputOutputConfig: {
             inputFormat: {
                 type: String,
                 enum: ['array', 'single', 'object', 'string'],
@@ -105,49 +105,45 @@ problemSchema.pre('save', function (next) {
     next();
 });
 
-
-
 function generateJavascriptMethodCall(ioConfig) {
-    const params = ioConfig.parameters;
     const functionName = ioConfig.functionName;
     const inputFormat = ioConfig.inputFormat;
     const returnType = ioConfig.returnType;
+    const parameters = ioConfig.parameters;
 
-    let parsingCode = '';
+    let code = '';
+    // `parsedInput` is already available from the template's `JSON.parse(rawTestInput)`
+    // The code generated here assumes `parsedInput` exists.
+
     let functionCallArgs = [];
-    let resultHandlingCode = '';
 
-    // Parse the input (which is now expected to be a JSON array of arguments)
-    parsingCode += `    let parsedInput;\n`;
-    parsingCode += `    try { parsedInput = JSON.parse(rawTestInput); } catch (e) { parsedInput = rawTestInput; }\n\n`;
+    if (inputFormat === 'array') {
+        code += `    if (!Array.isArray(parsedInput)) {\n`;
+        code += `        throw new Error('Input format is "array" but the parsed input is not an array. This indicates a problem with the test case definition or input configuration.');\n`;
+        code += `    }\n`;
 
-    if (inputFormat === 'array' && params.length > 0) {
-        // For 'array' input format, and multiple parameters, assume parsedInput is [arg1, arg2, ...]
-        params.forEach((param, index) => {
-            const paramName = `param_${param.name}_${index}`;
-            parsingCode += `    let ${paramName} = parsedInput[${index}];\n`;
-            // Add type conversion if necessary (e.g., if parsing '5' to int vs string)
-            // For JS, JSON.parse usually handles basic types fine.
-            functionCallArgs.push(paramName);
-        });
+        if (parameters && parameters.length === 1 && parameters[0].type === 'array') {
+            functionCallArgs.push('parsedInput');
+        } else {
+            functionCallArgs.push('...parsedInput');
+        }
     } else if (inputFormat === 'single' || inputFormat === 'string' || inputFormat === 'object') {
-        // For single argument inputs, just pass the parsed input directly
         functionCallArgs.push('parsedInput');
     } else {
-        // Fallback for unexpected formats
-        parsingCode += `    // WARNING: Unsupported input format/parameter count. Calling with raw parsed input.\n`;
+        code += `    // WARNING: Unsupported input format '${inputFormat}'. Calling with parsed input as a single argument.\n`;
         functionCallArgs.push('parsedInput');
     }
 
     const functionCallLine = `    const result = ${functionName}(${functionCallArgs.join(', ')});`;
+    code += functionCallLine + '\n';
 
     if (returnType !== 'void') {
-        resultHandlingCode = `    console.log(JSON.stringify(result));`;
+        code += `    console.log(JSON.stringify(result));\n`;
     } else {
-        resultHandlingCode = `    // Void return type, no output printed.`;
+        code += `    // Void return type, no output printed.`;
     }
 
-    return `${parsingCode}${functionCallLine}\n${resultHandlingCode}`;
+    return code;
 }
 
 problemSchema.methods.generateExecutableCode = function (userCode, language, testInput) {
@@ -163,11 +159,22 @@ problemSchema.methods.generateExecutableCode = function (userCode, language, tes
     const ioConfig = this.executionConfig.inputOutputConfig;
 
     let embeddedTestInput;
+    const inputForStringify = testInput === undefined ? null : testInput;
     try {
-        embeddedTestInput = JSON.stringify(testInput);
+        // Step 1: Convert the actual test input value into its JSON string representation.
+        // Example: [2,3] -> "[2,3]"
+        // Example: "hello" -> "\"hello\""
+        // Example: 10 -> "10"
+        const jsonStringRepresentation = JSON.stringify(inputForStringify);
+
+        // Step 2: Now, embed this JSON string representation safely into a JavaScript string literal.
+        // JSON.stringify will add outer quotes and escape any internal quotes for a JS string literal.
+        // Example: "[2,3]" becomes "\"\[2,3]\""
+        // Example: "\"hello\"" becomes "\"\\\"hello\\\"\""
+        embeddedTestInput = JSON.stringify(jsonStringRepresentation);
+
     } catch (e) {
-        embeddedTestInput = String(testInput);
-        console.warn(`Test input for problem ${this.id} (${language}) not JSON serializable, using string representation. Input:`, testInput);
+        throw new Error(`Test input is not JSON serializable: ${e.message}`);
     }
 
     let executableCode = template
@@ -177,13 +184,16 @@ problemSchema.methods.generateExecutableCode = function (userCode, language, tes
 
     if (normalizedLanguage === 'javascript') {
         dynamicInputParsingAndMethodCall = generateJavascriptMethodCall(ioConfig);
+    } else {
+        dynamicInputParsingAndMethodCall = `    throw new Error("Execution logic generation not implemented for language: ${normalizedLanguage}");\n`;
     }
 
     executableCode = executableCode
+        // {{TEST_INPUT}} will be replaced by a string like "\"\[2,3]\"".
+        // The template's `const rawTestInput = {{TEST_INPUT}};` will then become
+        // `const rawTestInput = "\[2,3]";` after the JS engine processes the string literal.
+        // This ensures rawTestInput holds a clean JSON string.
         .replace(/\{\{TEST_INPUT\}\}/g, embeddedTestInput)
-        .replace(/\{\{INPUT_FORMAT\}\}/g, ioConfig.inputFormat || '')
-        .replace(/\{\{FUNCTION_NAME\}\}/g, ioConfig.functionName)
-        .replace(/\{\{RETURN_TYPE\}\}/g, ioConfig.returnType || '')
         .replace(/\{\{DYNAMIC_INPUT_PARSING_AND_METHOD_CALL\}\}/g, dynamicInputParsingAndMethodCall);
 
     return executableCode;

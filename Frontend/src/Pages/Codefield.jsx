@@ -34,7 +34,7 @@ const capitalizeFirstLetter = (string) => {
 };
 
 const languageDisplayNames = {
-    'c++': 'C++',
+    'cpp': 'C++',
     'javascript': 'JavaScript',
     'python': 'Python',
     'java': 'Java',
@@ -659,7 +659,6 @@ const Codefield = () => {
                     ref={editorContainerRef}
                     className={`flex flex-col flex-1 ${appTheme.background} overflow-hidden`}
                 >
-                    {/* NEW: Contest Context Banner */}
                     {contestId && (
                         <div className={`p-3 text-center ${appTheme.infoColor.replace('text-', 'bg-')}/10 ${appTheme.infoColor} font-semibold border-b ${appTheme.border}`}>
                             You are solving problem {problem.title} as part of a Contest. <Link to={`/contests/${contestId}/participate`} className="underline hover:no-underline ml-2">Go to Contest</Link>
@@ -721,7 +720,7 @@ const Codefield = () => {
                                                 max={28}
                                                 value={fontSize}
                                                 onChange={e => setFontSize(parseInt(e.target.value))}
-                                                className={`w-full h-2 ${appTheme.background}/50 rounded-lg appearance-none cursor-pointer slider`}
+                                                className={`w-full h-2 ${appTheme.secondary} rounded-lg appearance-none cursor-pointer slider`}
                                             />
                                         </div>
                                     </div>
