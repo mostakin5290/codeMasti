@@ -22,7 +22,8 @@ const {
     toggleUserPremiumStatus,
     forgotPassword,
     resetPassword ,
-    getUserRank
+    getUserRank,
+    getTotalRank
 } = require('../controllers/AuthControllers');
 const userMiddleware = require('../middleware/userMiddleware');
 const coAdminMiddleware = require('../middleware/coAdminMiddleware');
@@ -66,6 +67,7 @@ authRouter.delete('/:userId', adminMiddleware, adminDeleteUser);     // Admin de
 authRouter.put('/:userId/premium', coAdminMiddleware, toggleUserPremiumStatus); // Toggle premium status
 // Route to get user rank
 authRouter.get('/rank/:userId', userMiddleware, getUserRank);
+authRouter.get('/total-rank',userMiddleware,getTotalRank);
 // Authentication check route
 authRouter.get('/check', userMiddleware, (req, res) => {
     const reply = {

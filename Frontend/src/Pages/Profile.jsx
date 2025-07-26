@@ -570,10 +570,10 @@ function ProfilePage() {
                                 </div>
                                 {/* Rank Information */}
                                 {userRank !== null && (
-                                    <div className="flex items-center">
+                                    <Link to="/world-rank" className="flex items-center">
                                         <FaRankingStar className={`mr-2 ${appTheme.highlightTertiary}`} /> {/* Using highlightTertiary for rank icon */}
                                         <span>Rank: #{userRank}</span>
-                                    </div>
+                                    </Link>
                                 )}
                             </motion.div>
 

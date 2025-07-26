@@ -990,7 +990,7 @@ const deleteUserAccount = async (req, res) => {
 const getFullUserProfile = async (req, res) => {
     try {
 
-        const { userId } = req.params; 
+        const { userId } = req.params;
 
         const user = await User.findById(userId).select('-password');
 
@@ -1005,9 +1005,9 @@ const getFullUserProfile = async (req, res) => {
             userId: userId,
             createdAt: { $gte: oneYearAgo }
         })
-            .populate('problemId', 'title difficulty') 
-            .sort({ createdAt: -1 }) 
-            .select('problemId status createdAt'); 
+            .populate('problemId', 'title difficulty')
+            .sort({ createdAt: -1 })
+            .select('problemId status createdAt');
 
         res.status(200).json({
             success: true,
@@ -1298,7 +1298,7 @@ const getAllUsersForAdmin = async (req, res) => {
 
         // Search functionality
         if (search) {
-            const searchRegex = new RegExp(search, 'i'); // Case-insensitive search
+            const searchRegex = new RegExp(search, 'i');
             query.$or = [
                 { firstName: searchRegex },
                 { lastName: searchRegex },
@@ -1311,13 +1311,13 @@ const getAllUsersForAdmin = async (req, res) => {
             query.isPremium = true;
         } else if (filter === 'normal') {
             query.isPremium = false;
-        } else if (filter === 'admin') { // Filter specifically for 'admin'
+        } else if (filter === 'admin') {
             query.role = 'admin';
-        } else if (filter === 'co-admin') { // Filter specifically for 'co-admin'
+        } else if (filter === 'co-admin') {
             query.role = 'co-admin';
-        } else if (filter === 'user') { // Filter for regular 'user'
+        } else if (filter === 'user') {
             query.role = 'user';
-        } else if (filter === 'all_admins') { // New filter to get both admin and co-admin
+        } else if (filter === 'all_admins') {
             query.role = { $in: ['admin', 'co-admin'] };
         }
         const users = await User.find(query)
@@ -1641,20 +1641,16 @@ const getUserRank = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid user ID format." });
         }
 
-        // Aggregate to calculate ranks for all users
         const ranks = await User.aggregate([
             {
                 $project: {
                     _id: 1,
-                    // Calculate the size of problemsSolved array.
-                    // If problemsSolved might be null/undefined/missing, use $ifNull or $size if it's guaranteed to be an array.
                     problemsSolvedCount: { $size: { $ifNull: ["$problemsSolved", []] } }
                 }
             },
             {
-                // Correct usage of $setWindowFields: includes sortBy directly within the stage.
                 $setWindowFields: {
-                    sortBy: { problemsSolvedCount: -1 }, // <--- THIS IS THE CRUCIAL FIX
+                    sortBy: { problemsSolvedCount: -1 },
                     output: {
                         rank: {
                             $denseRank: {}
@@ -1671,31 +1667,23 @@ const getUserRank = async (req, res) => {
             }
         ]);
 
-        // Find the rank and problemsSolvedCount of the specific userId from the computed ranks
         const currentUserRankInfo = ranks.find(rankDoc => rankDoc._id.toString() === userId);
 
         if (!currentUserRankInfo) {
-            const userExists = await User.findById(userId); // Check if user genuinely exists
+            const userExists = await User.findById(userId);
             if (!userExists) {
                 return res.status(404).json({ success: false, message: "User not found." });
             } else {
-                // User exists but might not have appeared in the `ranks` array if it was filtered
-                // or if they have 0 solved problems and the rank calculation inherently skips them
-                // (which $denseRank won't if all users are processed).
-                // A user with 0 problemsSolvedCount will naturally get the last rank.
-                // If they are not found in `currentUserRankInfo`, it means no data for them after aggregation.
-                // It's safer to query totalUsers here and assign rank if 0 problems solved.
                 const totalUsersCount = await User.countDocuments({});
                 return res.status(200).json({
                     success: true,
-                    rank: totalUsersCount > 0 ? totalUsersCount : "N/A", // If 0 users, N/A, otherwise last rank
+                    rank: totalUsersCount > 0 ? totalUsersCount : "N/A",
                     problemsSolvedCount: 0,
                     totalUsers: totalUsersCount
                 });
             }
         }
 
-        // Get total number of users for context (e.g., "Rank X out of Y users")
         const totalUsers = await User.countDocuments({});
 
         res.status(200).json({
@@ -1710,6 +1698,66 @@ const getUserRank = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Server error while fetching user rank.'
+        });
+    }
+};
+
+
+const getTotalRank = async (req, res) => {
+    try {
+        const allUsersRanked = await User.aggregate([
+            {
+                $project: {
+                    _id: 1,
+                    firstName: 1, // Include firstName
+                    lastName: 1,  // Include lastName
+                    emailId: 1,   // Include emailId
+                    avatar: 1,    // Include avatar
+                    // Calculate the size of problemsSolved array.
+                    problemsSolvedCount: { $size: { $ifNull: ["$problemsSolved", []] } }
+                }
+            },
+            {
+                // Sort by solved problems count in descending order
+                $sort: { problemsSolvedCount: -1 }
+            },
+            {
+                // Assign a rank to each user based on the sorted count
+                // $denseRank is good for leaderboards as it handles ties gracefully (1,1,2,3)
+                $setWindowFields: {
+                    sortBy: { problemsSolvedCount: -1 }, // Required sortBy for ranking functions
+                    output: {
+                        rank: {
+                            $denseRank: {}
+                        }
+                    }
+                }
+            },
+            {
+                // Project the final desired fields
+                $project: {
+                    _id: 1,
+                    firstName: 1,
+                    lastName: 1,
+                    avatar: 1,
+                    problemsSolvedCount: 1,
+                    rank: 1
+                }
+            }
+        ]);
+
+        // Return the entire list of ranked users
+        res.status(200).json({
+            success: true,
+            ranks: allUsersRanked,
+            totalUsers: allUsersRanked.length // Total users is simply the length of the aggregated array
+        });
+
+    } catch (error) {
+        console.error('Error fetching total ranks:', error); // Log the specific error
+        res.status(500).json({
+            success: false,
+            message: 'Server error while fetching total ranks.'
         });
     }
 };
@@ -1737,5 +1785,6 @@ module.exports = {
     toggleUserPremiumStatus,
     forgotPassword,
     resetPassword,
-    getUserRank
+    getUserRank,
+    getTotalRank
 };

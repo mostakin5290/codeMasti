@@ -170,7 +170,7 @@ const FrontPage = () => {
                                         Start Practicing <FiChevronRight className="ml-1.5" />
                                     </a>
                                     <a
-                                        href="/help"
+                                        href="https://youtu.be/mc6xfVDaLeE?si=I0t-kCDX9pCr-Bgf"
                                         className="px-7 py-3.5 rounded-lg bg-white/5 border border-white/20 text-white font-medium hover:bg-white/10 transition-all flex items-center justify-center transform hover:scale-[1.02]"
                                     >
                                         Learn More
