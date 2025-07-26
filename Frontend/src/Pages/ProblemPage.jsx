@@ -659,7 +659,7 @@ const ProblemPage = () => {
                                                         isDayClickable = true;
                                                     } else if (dayData.hasChallenge && !dayData.isFuture) {
                                                         // Past challenge NOT solved by user (display with red dot, clickable)
-                                                        dayClasses += ` ${theme.cardBg} ${theme.cardText} hover:${theme.cardBg}`; // Default look, but clickable
+                                                        dayClasses += ` text-red-600  hover:${theme.cardBg}`; // Default look, but clickable
                                                         isDayClickable = true;
                                                     } else {
                                                         // Any other day: no special highlight, not clickable. This includes:
@@ -681,8 +681,8 @@ const ProblemPage = () => {
                                                         >
                                                             {dayData ? (
                                                                 <>
-                                                                    {(dayData.isSolvedByUser || (dayData.isCurrentDay && dayData.hasChallenge&&dayData.isSolvedByUser)) && (
-                                                                        <FaFire className={`absolute inset-1 m-auto text-4xl opacity-50 text-orange-500`} />
+                                                                    {((dayData.isSolvedByUser && !dayData.isCurrentDay) || (dayData.isCurrentDay && dayData.hasChallenge && dayData.isSolvedByUser)) && (
+                                                                        <FaFire className={`absolute inset-0 m-auto text-4xl opacity-60 text-red-700`} />
                                                                     )}
 
                                                                     <span className="relative z-10 text-sm">{dayData.date.getDate()}</span>
@@ -693,20 +693,12 @@ const ProblemPage = () => {
                                                                             <FaCheck className={`${theme.successColor} text-xs`} title="Solved" />
                                                                         </div>
                                                                     )}
-                                                                    {/* Small Red Dot for past unsolved challenges that *had* a challenge */}
-                                                                    {/* {dayData.hasChallenge && !dayData.isSolvedByUser && !dayData.isFuture && !dayData.isCurrentDay && (
-                                                                        <div className="absolute bottom-1 right-1 text-xs">
-                                                                            <span className={`w-10 h-10 rounded-full bg-amber-600 `} title="Not Solved"></span>
-                                                                        </div>
-                                                                    )} */}
-
+                                    
                                                                     {dayData.hasChallenge && !dayData.isFuture && !dayData.isSolvedByUser && (
-                                                                        <div className="absolute bottom-1 right-1 text-xs">
+                                                                        <div className="absolute bottom-0 right-2.5 text-xs">
                                                                             <LuDot className={`${theme.errorColor} text-xl`} title="Solved" />
-
                                                                         </div>
                                                                     )}
-
                                                                     
                                                                 </>
                                                             ) : (

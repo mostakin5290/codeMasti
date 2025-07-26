@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
-import { FaTrash, FaCheckCircle, FaUserShield, FaCrown, FaSearch, FaFilter, FaUserCog, FaUserAlt } from 'react-icons/fa'; 
+import { FaTrash, FaCheckCircle, FaUserShield, FaCrown, FaSearch, FaFilter, FaUserCog, FaUserAlt } from 'react-icons/fa';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import ConfirmationModal from '../../components/common/ConfirmationModal'; 
+import ConfirmationModal from '../../components/common/ConfirmationModal';
 import { useTheme } from '../../context/ThemeContext';
 import { useSelector } from 'react-redux';
+import { Link, Navigate } from 'react-router-dom'; // Import Link from react-router-dom
 
 // Default theme for fallback
 const defaultAppTheme = {
@@ -22,16 +23,16 @@ const defaultAppTheme = {
 };
 
 const AdminUsersPage = () => {
-    const { user: currentUser } = useSelector(state => state.auth); 
+    const { user: currentUser } = useSelector(state => state.auth);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterBy, setFilterBy] = useState('all'); 
+    const [filterBy, setFilterBy] = useState('all');
 
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [modalAction, setModalAction] = useState(null); 
-    const [modalIsLoading, setModalIsLoading] = useState(false); 
+    const [modalAction, setModalAction] = useState(null);
+    const [modalIsLoading, setModalIsLoading] = useState(false);
 
     // NEW STATES for Premium Duration
     const [selectedPremiumDuration, setSelectedPremiumDuration] = useState('1month');
@@ -44,7 +45,7 @@ const AdminUsersPage = () => {
     const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
-            const { data } = await axiosClient.get('user', { 
+            const { data } = await axiosClient.get('user', {
                 params: {
                     search: searchTerm,
                     filter: filterBy
@@ -57,11 +58,11 @@ const AdminUsersPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [searchTerm, filterBy]); 
+    }, [searchTerm, filterBy]);
 
     useEffect(() => {
         fetchUsers();
-    }, [fetchUsers]); 
+    }, [fetchUsers]);
 
     // --- Modal Confirmation Handlers ---
     const openConfirmModal = (actionType, user, newRole = null, newPremiumStatus = null) => {
@@ -72,7 +73,7 @@ const AdminUsersPage = () => {
             newPremiumStatus
         });
         // Reset premium duration selection when opening modal for *granting* premium
-        if (actionType === 'togglePremium' && newPremiumStatus) { 
+        if (actionType === 'togglePremium' && newPremiumStatus) {
             setSelectedPremiumDuration('1month'); // Default to 1 month
             setCustomMonthsInput('');
         }
@@ -87,11 +88,11 @@ const AdminUsersPage = () => {
             toast.error("You are not authorized to delete user accounts.");
             setShowConfirmModal(false);
             setModalAction(null);
-            return; 
+            return;
         }
 
         // Frontend validation for premium grant (only when granting, not revoking)
-        if (modalAction.type === 'togglePremium' && modalAction.newPremiumStatus) { 
+        if (modalAction.type === 'togglePremium' && modalAction.newPremiumStatus) {
             if (selectedPremiumDuration === 'custom') {
                 const months = parseInt(customMonthsInput, 10);
                 if (isNaN(months) || months <= 0) {
@@ -101,7 +102,7 @@ const AdminUsersPage = () => {
             }
         }
 
-        setModalIsLoading(true); 
+        setModalIsLoading(true);
 
         try {
             const { type, user, newRole, newPremiumStatus } = modalAction;
@@ -142,9 +143,9 @@ const AdminUsersPage = () => {
             console.error('Admin action error:', err);
             toast.error(err.response?.data?.message || 'An error occurred.');
         } finally {
-            setModalIsLoading(false); 
-            setShowConfirmModal(false); 
-            setModalAction(null); 
+            setModalIsLoading(false);
+            setShowConfirmModal(false);
+            setModalAction(null);
             // Reset premium selection states after action or cancel
             setSelectedPremiumDuration('1month');
             setCustomMonthsInput('');
@@ -177,7 +178,7 @@ const AdminUsersPage = () => {
     }
 
     // Determine if the "Confirm" button in the modal should be disabled
-    const disableConfirmButtonInModal = modalIsLoading || 
+    const disableConfirmButtonInModal = modalIsLoading ||
                                        (modalAction?.type === 'delete' && currentUser.role === 'co-admin') ||
                                        (modalAction?.type === 'togglePremium' && modalAction.newPremiumStatus && selectedPremiumDuration === 'custom' && (isNaN(parseInt(customMonthsInput, 10)) || parseInt(customMonthsInput, 10) <= 0));
 
@@ -206,12 +207,12 @@ const AdminUsersPage = () => {
                     className={`w-full sm:w-1/4 ${appTheme.cardBg}/10 border ${appTheme.border} ${appTheme.text} rounded-lg shadow-sm py-2 px-4 focus:outline-none focus:ring-2 focus:ring-${appTheme.primary.split('-')[1]}-500 focus:border-transparent appearance-none`}
                 >
                     <option value="all">All Users</option>
-                    <option value="all_admins">All Admin Roles</option> 
+                    <option value="all_admins">All Admin Roles</option>
                     <option value="admin">Admins</option>
-                    <option value="co-admin">Co-Admins</option> 
+                    <option value="co-admin">Co-Admins</option>
                     <option value="user">Regular Users</option>
                     <option value="premium">Premium Users</option>
-                    <option value="normal">Non-Premium Users</option> 
+                    <option value="normal">Non-Premium Users</option>
                 </select>
             </div>
 
@@ -239,24 +240,23 @@ const AdminUsersPage = () => {
                                 const isCurrentUser = currentUser && currentUser._id === user._id;
 
                                 // canModifyTarget: User cannot modify themselves.
-                                const canModifyTarget = !isCurrentUser; 
+                                const canModifyTarget = !isCurrentUser;
 
                                 return (
                                     <tr key={user._id} className={`hover:${appTheme.cardBg}/50 transition-all duration-200`}>
                                         <td className="px-3 py-4 sm:px-6 sm:py-4">
-                                            <div className="flex items-center gap-2 sm:gap-3">
+                                            <Link to={`/profile/${user._id}`} className="flex items-center gap-2 sm:gap-3 group">
                                                 <div className="flex-shrink-0 h-10 w-10 md:h-12 md:w-12">
                                                     <img className={`h-full w-full rounded-full object-cover border-2 ${appTheme.primary.replace('bg-', 'border-')}/30`} src={user.avatar || 'https://uxwing.com/wp-content/themes/uxwing/download/business-professional-services/business-professional-icon.png'} alt="User Avatar" />
                                                 </div>
                                                 <div>
-                                                    <div className={`font-bold ${appTheme.text} text-sm sm:text-base`}>{user.firstName} {user.lastName}</div>
-                                                    <div className={`text-xs ${appTheme.cardText} opacity-70 sm:text-sm`}>{user.emailId}</div>
+                                                    <div className={`font-bold ${appTheme.text} text-sm sm:text-base group-hover:${appTheme.highlight} transition-colors`}>{user.firstName} {user.lastName}</div>
                                                 </div>
-                                            </div>
+                                            </Link>
                                         </td>
                                         {/* Role Column - Updated for admin, co-admin, user display and actions */}
                                         <td className="px-3 py-4 sm:px-6 sm:py-4">
-                                            <div className='flex flex-col items-start'> 
+                                            <div className='flex flex-col items-start'>
                                                 {user.role === 'admin' && (
                                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${appTheme.primary.replace('bg-', 'bg-')} ${appTheme.primary} border ${appTheme.primary.replace('bg-', 'border-')}`}>
                                                         <FaUserShield className="mr-1" />Admin
@@ -320,7 +320,7 @@ const AdminUsersPage = () => {
                                                     </>
                                                 )}
                                                 {/* Message for current logged-in user (no action) */}
-                                                {!canModifyTarget && ( 
+                                                {!canModifyTarget && (
                                                     <p className={`mt-1 text-xs ${appTheme.cardText}/70`}></p>
                                                 )}
                                             </div>
@@ -360,7 +360,7 @@ const AdminUsersPage = () => {
                                                 onClick={() => openConfirmModal('delete', user)}
                                                 className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${appTheme.errorColor.replace('text-', 'border-')}/50 ${appTheme.errorColor} hover:${appTheme.errorColor.replace('text-', 'bg-')}/10 transition-all duration-200`}
                                                 title="Delete User"
-                                                disabled={modalIsLoading || isCurrentUser || user.role === 'admin'} 
+                                                disabled={modalIsLoading || isCurrentUser || user.role === 'admin'}
                                             >
                                                 <FaTrash />
                                             </button>
@@ -381,7 +381,7 @@ const AdminUsersPage = () => {
                     onConfirm={handleConfirmAction}
                     isLoading={modalIsLoading}
                     // Pass disableConfirm to the modal
-                    disableConfirm={disableConfirmButtonInModal} 
+                    disableConfirm={disableConfirmButtonInModal}
                     title={
                         modalAction.type === 'delete' ? 'Delete User?' :
                             modalAction.type === 'toggleRole' ? `Change ${modalAction.user.firstName}'s Role?` :
@@ -389,9 +389,9 @@ const AdminUsersPage = () => {
                                     'Confirm Action'
                     }
                     confirmText={
-                        modalAction.type === 'delete' ? (currentUser.role === 'co-admin' ? 'Not Authorized' : 'Delete Permanently') : 
+                        modalAction.type === 'delete' ? (currentUser.role === 'co-admin' ? 'Not Authorized' : 'Delete Permanently') :
                             modalAction.type === 'toggleRole' ? `Confirm ${modalAction.newRole === 'co-admin' ? 'Promotion' : 'Demotion'}` :
-                                modalAction.type === 'togglePremium' ? `Confirm ${modalAction.newPremiumStatus ? 'Grant Premium' : 'Revoke Premium'}` : // Updated text for premium
+                                modalAction.type === 'togglePremium' ? `Confirm ${modalAction.newPremiumStatus ? 'Grant Premium' : 'Revoke Premium'}` :
                                     'Confirm'
                     }
                     cancelText="Cancel"
@@ -407,7 +407,7 @@ const AdminUsersPage = () => {
                                 <>
                                     <p className={`${appTheme.cardText}`}>Are you sure you want to permanently delete user: <br /> <strong className={`${appTheme.primary.replace('bg-', 'text-')}`}>{modalAction.user.firstName} {modalAction.user.lastName}</strong> ({modalAction.user.emailId})?</p>
                                     <p className={`mt-2 text-sm ${appTheme.errorColor}`}>This action cannot be undone and will remove all their associated data (posts, comments, etc.).</p>
-                                    {modalAction.user.role === 'admin' && ( 
+                                    {modalAction.user.role === 'admin' && (
                                         <p className={`mt-2 text-sm ${appTheme.warningColor} font-bold`}>WARNING: This user has 'admin' role. Deleting an admin is typically not allowed directly. Backend may prevent this.</p>
                                     )}
                                 </>
@@ -423,7 +423,7 @@ const AdminUsersPage = () => {
                     {modalAction.type === 'togglePremium' && (
                         <>
                             <p className={`${appTheme.cardText}`}>You are about to {modalAction.newPremiumStatus ? 'grant' : 'revoke'} premium access for <strong className={`${appTheme.primary.replace('bg-', 'text-')}`}>{modalAction.user.firstName} {modalAction.user.lastName}</strong>.</p>
-                            
+
                             {modalAction.newPremiumStatus && ( // Show duration options only when granting premium
                                 <div className="mt-4">
                                     <label className={`block mb-2 text-sm font-medium ${appTheme.text}`}>Select Premium Duration:</label>

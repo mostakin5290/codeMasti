@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser, checkAuth } from '../../features/auth/authSlice';
 import { useTheme } from '../../context/ThemeContext'; // Import useTheme hook
 import { FiCode } from 'react-icons/fi'; // Import FiCode icon for logo
-import { FaCrown } from 'react-icons/fa'; // Import FaCrown icon for premium indication
+import { FaCrown, FaUserShield, FaUserCog, FaUserAlt } from 'react-icons/fa'; // Import FaCrown, and new Fa icons for roles
+import { FaRankingStar } from 'react-icons/fa6';
 // Default theme to prevent errors if theme context fails or is incomplete
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
@@ -154,6 +155,13 @@ const Header = () => {
                                         <span>Discuss</span>
                                     </span>
                                 </NavLink>
+                                {/* NEW: Rank Link */}
+                                <NavLink to="/world-rank" className={getNavLinkClass} onClick={closeAllMenus}>
+                                    <span className="relative z-10 flex items-center space-x-2">
+                                        <FaRankingStar className="w-4 h-4" /> {/* FaRankingStar imported from 'fa' or 'fa6' */}
+                                        <span>Ranks</span>
+                                    </span>
+                                </NavLink>
                             </nav>
                         </div>
 
@@ -179,12 +187,9 @@ const Header = () => {
                                                 </span>
                                                 {user?.isPremium ? (
                                                     <span className={`text-xs font-bold text-yellow-500 group-hover:${theme.cardText} transition-colors duration-300`}>Premium</span>
-
-                                                    // <div className={`text-xs flex gap-0.5 font-bold text-yellow-500`}><FaCrown />Premium</div>
                                                 ) : (
                                                     <span className={`text-xs ${theme.cardText} group-hover:${theme.cardText} transition-colors duration-300`}>online</span>
                                                 )}
-                                                {/* <span className={`text-xs ${theme.cardText} group-hover:${theme.cardText} transition-colors duration-300`}></span> */}
                                             </div>
                                             <svg className={`hidden lg:block h-4 w-4 ${theme.cardText} group-hover:${theme.highlight} transition-colors duration-300`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -206,10 +211,21 @@ const Header = () => {
                                                         </div>
                                                         <div>
                                                             <p className={`text-base font-semibold ${theme.text}`}>{user?.firstName} {user?.lastName}</p>
-                                                            <p className={`text-sm ${theme.cardText} truncate`}>{user?.email}</p>
-                                                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${theme.successColor.replace('text-', 'bg-')}/20 ${theme.highlightSecondary} border ${theme.highlightSecondary.replace('text-', 'border-')}/30 mt-1`}>
-                                                                {(user.role === 'admin' && user.role === 'co-admin') ? 'Admin' : "Member"}
-                                                            </span>
+                                                            {user.role === 'admin' && (
+                                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${theme.primary.replace('bg-', 'bg-')}/10 ${theme.primary} border ${theme.primary.replace('bg-', 'border-')} mt-1`}>
+                                                                    <FaUserShield className="mr-1" /> Admin
+                                                                </span>
+                                                            )}
+                                                            {user.role === 'co-admin' && (
+                                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${theme.secondary.replace('bg-', 'bg-')}/10 ${theme.secondary} border ${theme.secondary.replace('bg-', 'border-')}/30 mt-1`}>
+                                                                    <FaUserCog className="mr-1" /> Co-Admin
+                                                                </span>
+                                                            )}
+                                                            {user.role === 'user' && (
+                                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${theme.cardBg}/50 ${theme.cardText} border ${theme.border}/50 mt-1`}>
+                                                                    <FaUserAlt className="mr-1" /> User
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -238,6 +254,7 @@ const Header = () => {
                                                             </div>
                                                         </NavLink>
                                                     )}
+                                                    
                                                     <NavLink
                                                         to="/settings"
                                                         className={`${userMenuItem} ${theme.cardText} hover:${theme.text}`}
@@ -355,6 +372,13 @@ const Header = () => {
                                 <span>Discuss</span>
                             </div>
                         </NavLink>
+                        {/* NEW: Rank Link in Mobile dropdown */}
+                        <NavLink to="/world-rank" className={getMobileNavLinkClass} onClick={closeAllMenus}>
+                            <div className="flex items-center space-x-3">
+                                <FaRankingStar className="w-5 h-5" />
+                                <span>Ranks</span>
+                            </div>
+                        </NavLink>
                     </div>
 
                     {isAuthenticated ? (
@@ -371,7 +395,7 @@ const Header = () => {
                                     <span>Your Profile</span>
                                 </div>
                             </NavLink>
-                            {user.role === 'admin' && (
+                            {(user.role === 'admin'||user.role === 'co-admin') && (
                                 <NavLink
                                     to="/admin"
                                     className={getMobileNavLinkClass}
