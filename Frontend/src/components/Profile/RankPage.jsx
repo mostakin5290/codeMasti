@@ -172,7 +172,7 @@ const RankPage = () => {
                 <div className={`p-6 rounded-2xl ${appTheme.cardBg}/50 border ${appTheme.border}/20 shadow-xl backdrop-blur-xl mb-8`}>
                     <div className="flex items-center mb-4">
                         <FaRankingStar className={`text-3xl mr-3 ${appTheme.highlight}`} />
-                        <h1 className={`text-3xl font-bold bg-gradient-to-r ${appTheme.primary.replace('bg-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')} bg-clip-text text-transparent`}>
+                        <h1 className={`text-3xl font-bold bg-gradient-to-r ${appTheme.primary.replace('bg-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')} bg-clip-text`}>
                             Global Leaderboard
                         </h1>
                     </div>
