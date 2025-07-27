@@ -55,7 +55,7 @@ const GameRoomDetailsPage = () => {
     const gameRoomSocketRef = useRef(null);
     const timerIntervalRef = useRef(null);
 
-    const backendUrl = import.meta.env.VITE_API_URL;
+    const VITE_API_URL = import.meta.env.VITE_API_URL;
 
     // Helper to start the countdown timer
     const startCountdown = useCallback((endTimeMs) => {
@@ -112,7 +112,7 @@ const GameRoomDetailsPage = () => {
                 return gameRoomSocketRef.current;
             }
 
-            const newSocket = io(backendUrl, {
+            const newSocket = io(VITE_API_URL, {
                 withCredentials: true,
                 query: { userId: user._id }
             });
@@ -291,7 +291,7 @@ const GameRoomDetailsPage = () => {
         const fetchAndConnect = async () => {
             setLoading(true); // Start loading
             try {
-                const response = await axios.get(`${backendUrl}/game/room/${roomId}`, { withCredentials: true });
+                const response = await axios.get(`${VITE_API_URL}/game/room/${roomId}`, { withCredentials: true });
                 const fetchedRoom = response.data.room;
 
                 if (!isMounted) return; // Prevent state updates if component unmounted
@@ -354,7 +354,7 @@ const GameRoomDetailsPage = () => {
                 battleAnimationTimerRef.current = null;
             }
         };
-    }, [roomId, isAuthenticated, user, navigate, backendUrl, startCountdown, startBattleAnimationAndNavigate]); // Added `startBattleAnimationAndNavigate` to dependencies
+    }, [roomId, isAuthenticated, user, navigate, VITE_API_URL, startCountdown, startBattleAnimationAndNavigate]); // Added `startBattleAnimationAndNavigate` to dependencies
 
     const handlePlayerReady = () => {
         if (room?.players.length === room.maxPlayers && !room.players.some(p => p.userId?._id === user._id && p.status === 'ready')) {
