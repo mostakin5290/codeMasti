@@ -9,38 +9,39 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 const app = express();
-const server = http.createServer(app); // Create HTTP server for Express and Socket.IO
+const server = http.createServer(app);
 
-// ----------------------------------------------------
-// Socket.IO Server Configuration
-// IMPORTANT: Use the HTTP server created above.
-// ----------------------------------------------------
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+];
+
 const io = new Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL, // e.g., "https://codemasti.vercel.app"
+        origin: allowedOrigins,
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true,
-        exposedHeaders: ['set-cookie']
-
     },
     transports: ['polling', 'websocket'],
-    pingInterval: 25000,
-    pingTimeout: 60000
 });
 
-app.set('socketio', io); // Make io instance accessible via `req.app.get('socketio')`
+app.set('socketio', io);
 
-// ----------------------------------------------------
-// Express CORS Middleware - Must be placed early!
-// ----------------------------------------------------
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL, // e.g., "https://codemasti.vercel.app"
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
     exposedHeaders: ['set-cookie']
 }));
 
-// Raw body parser for specific routes (keep its original position)
 app.use((req, res, next) => {
     if (req.originalUrl === '/payment/verify-payment') {
         let rawBody = '';
