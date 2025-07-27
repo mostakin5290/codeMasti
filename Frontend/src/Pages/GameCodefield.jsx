@@ -423,7 +423,7 @@ const GameCodefield = () => {
                 timerIntervalRef.current = null;
             }
         };
-    }, [roomId, isAuthenticated, user, navigate, backendUrl,problem]); // Add 'problem' to dependencies to re-run problem-related effects
+    }, [roomId, isAuthenticated, user, navigate, backendUrl]); // Add 'problem' to dependencies to re-run problem-related effects
 
     // Monaco Editor setup
     const handleEditorDidMount = (editor, monaco) => {

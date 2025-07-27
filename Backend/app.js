@@ -11,9 +11,18 @@ const mongoose = require('mongoose');
 const app = express();
 const server = http.createServer(app);
 
+// Get the frontend URL from environment variables
+const frontendUrl = process.env.FRONTEND_URL;
+
+// Define allowed origins. For local development, you MUST include localhost.
+// In production, ensure process.env.FRONTEND_URL is set correctly.
 const allowedOrigins = [
-    process.env.FRONTEND_URL,
+    frontendUrl,
+    "http://localhost:5173", // Add your local frontend development server
+    // Add any other specific development origins if you have them, e.g., "http://127.0.0.1:5173"
 ];
+
+console.log('Allowed Origins for Socket.IO and Express CORS:', allowedOrigins);
 
 const io = new Server(server, {
     cors: {
@@ -26,15 +35,18 @@ const io = new Server(server, {
 
 app.set('socketio', io);
 
-
+// Configure CORS for Express API routes
 app.use(cors({
     origin: function (origin, callback) {
+        console.log('Incoming Express API request origin:', origin);
         if (!origin) return callback(null, true);
 
         if (allowedOrigins.indexOf(origin) === -1) {
             const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            console.error('Express CORS Blocked:', msg, 'Origin:', origin);
             return callback(new Error(msg), false);
         }
+        console.log('Express CORS Allowed:', origin);
         return callback(null, true);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -42,25 +54,7 @@ app.use(cors({
     exposedHeaders: ['set-cookie']
 }));
 
-app.use((req, res, next) => {
-    if (req.originalUrl === '/payment/verify-payment') {
-        let rawBody = '';
-        req.setEncoding('utf8');
-        req.on('data', (chunk) => { rawBody += chunk; });
-        req.on('end', () => {
-            req.rawBody = rawBody;
-            try {
-                req.body = JSON.parse(rawBody);
-            } catch (e) {
-                console.error('Error parsing webhook JSON:', e);
-                return res.status(400).send('Invalid JSON');
-            }
-            next();
-        });
-    } else {
-        next();
-    }
-});
+// ... (rest of your app.js code remains the same) ...
 
 // General Express Middlewares
 app.use(express.json());
@@ -110,27 +104,12 @@ app.use('/game', gameRoutes); // Your game routes
 const gameTimers = new Map();
 
 io.on('connection', (socket) => {
-    console.log(`User connected: ${socket.id}`);
+    console.log(`Socket.IO: User connected: ${socket.id}`);
+    console.log(`Socket.IO: Connection origin: ${socket.handshake.headers.origin}`);
+    console.log(`Socket.IO: Connection path: ${socket.handshake.url}`);
+    console.log(`Socket.IO: Initial transport: ${socket.handshake.query.transport}`);
+
     const userId = socket.handshake.query.userId;
-
-    // --- IMPORTANT: Handle potential "double connection" or quick disconnects
-    // This part of your code seems to be initiating reconnections and updates,
-    // which is good, but the underlying transport needs to be stable first.
-    // The previous error "Session ID unknown" implies the polling transport failed
-    // before the actual Socket.IO connection was fully established/re-established.
-    // With proper Vercel configuration, this should stabilize.
-
-    // Your existing socket.io event handlers go here:
-    // socket.on('joinGameRoom', ...)
-    // socket.on('playerReady', ...)
-    // socket.on('gameRunCode', ...)
-    // socket.on('gameCodeSubmission', ...)
-    // socket.on('leaveGameRoom', ...)
-    // socket.on('disconnect', ...)
-
-    // ... (Your existing socket.io code from the previous app.js) ...
-    // Paste all your existing `socket.on(...)` handlers here.
-    // I'm omitting them for brevity, but they should remain unchanged.
 
     if (userId) {
         GameRoom.findOne({ 'players.userId': userId })
@@ -138,9 +117,10 @@ io.on('connection', (socket) => {
                 if (room) {
                     const player = room.players.find(p => p.userId && p.userId.toString() === userId);
                     if (player && player.socketId !== socket.id) {
+                        console.log(`Socket.IO: Updating socketId for user ${userId} from ${player.socketId} to ${socket.id} in room ${room.roomId}`);
                         player.socketId = socket.id;
                         await room.save();
-                        console.log(`Updated socketId for user ${userId} in room ${room.roomId}`);
+                        console.log(`Socket.IO: Updated socketId for user ${userId} in room ${room.roomId}`);
 
                         if (room.status === 'in-progress' && player.status === 'disconnected') {
                             player.status = 'playing';
@@ -152,31 +132,35 @@ io.on('connection', (socket) => {
                         }
                     }
                 }
-            }).catch(err => console.error("Error updating user socket ID on reconnect:", err));
+            }).catch(err => console.error("Socket.IO: Error updating user socket ID on reconnect:", err));
     }
 
     socket.on('joinGameRoom', async ({ roomId, userId }) => {
         try {
+            console.log(`Socket.IO: User ${userId} attempting to join room: ${roomId}`);
             const gameRoom = await GameRoom.findOne({ roomId });
 
             if (!gameRoom) {
+                console.warn(`Socket.IO: Room ${roomId} not found for joinGameRoom from ${userId}`);
                 socket.emit('gameError', { message: 'Room not found.' });
                 return;
             }
 
             const player = gameRoom.players.find(p => p.userId?.toString() === userId);
             if (!player) {
+                console.warn(`Socket.IO: User ${userId} not a player in room ${roomId}.`);
                 socket.emit('gameError', { message: 'You are not a player in this room.' });
                 return;
             }
 
             if (player.socketId !== socket.id) {
+                console.log(`Socket.IO: Updating player ${userId} socketId for join: ${player.socketId} -> ${socket.id}`);
                 player.socketId = socket.id;
                 await gameRoom.save();
             }
 
             socket.join(roomId);
-            console.log(`User ${userId} (${socket.id}) joined Socket.IO room: ${roomId}`);
+            console.log(`Socket.IO: User ${userId} (${socket.id}) joined Socket.IO room: ${roomId}`);
 
             await gameRoom.populate('players.userId', 'firstName lastName emailId avatar');
             await gameRoom.populate('problemIds', 'title difficulty tags description starterCode visibleTestCases executionConfig');
@@ -184,6 +168,7 @@ io.on('connection', (socket) => {
             io.to(socket.id).emit('roomUpdate', { room: gameRoom, message: 'Welcome to the room!' });
 
             if (gameRoom.status === 'in-progress') {
+                console.log(`Socket.IO: Game ${roomId} in progress, sending gameStart to reconnected user ${userId}.`);
                 io.to(socket.id).emit('gameStart', {
                     room: gameRoom,
                     message: 'Game is already in progress. Resuming...',
@@ -192,7 +177,7 @@ io.on('connection', (socket) => {
             }
 
         } catch (error) {
-            console.error('Error handling joinGameRoom socket event:', error);
+            console.error('Socket.IO: Error handling joinGameRoom socket event:', error);
             if (error.name === 'ValidationError') {
                 socket.emit('gameError', { message: `Validation failed: ${error.message}` });
             } else {
@@ -203,6 +188,7 @@ io.on('connection', (socket) => {
 
     socket.on('playerReady', async ({ roomId, userId }) => {
         try {
+            console.log(`Socket.IO: User ${userId} in room ${roomId} is ready.`);
             const gameRoom = await GameRoom.findOne({ roomId });
             if (!gameRoom) {
                 socket.emit('gameError', { message: 'Room not found.' });
@@ -233,7 +219,7 @@ io.on('connection', (socket) => {
 
                 const timerId = setTimeout(() => {
                     endGame(io, roomId, 'Time Expired');
-                }, gameRoom.timeLimit * 60 * 1000 + 5000);
+                }, gameRoom.timeLimit * 60 * 1000 + 5000); // Give a small buffer
                 gameTimers.set(roomId, timerId);
 
                 io.to(roomId).emit('gameStart', {
@@ -241,11 +227,11 @@ io.on('connection', (socket) => {
                     message: 'Game starting now!',
                     problem: gameRoom.problemIds[gameRoom.currentProblemIndex]
                 });
-                console.log(`Game ${roomId} started with time limit: ${gameRoom.timeLimit} minutes.`);
+                console.log(`Socket.IO: Game ${roomId} started with time limit: ${gameRoom.timeLimit} minutes.`);
             }
 
         } catch (error) {
-            console.error('Error handling playerReady:', error);
+            console.error('Socket.IO: Error handling playerReady:', error);
             if (error.name === 'ValidationError') {
                 socket.emit('gameError', { message: `Validation failed: ${error.message}` });
             } else {
@@ -256,6 +242,7 @@ io.on('connection', (socket) => {
 
     socket.on('gameRunCode', async ({ roomId, userId, problemId, code, language, customInput }) => {
         try {
+            console.log(`Socket.IO: User ${userId} in room ${roomId} running code for problem ${problemId}.`);
             const gameRoom = await GameRoom.findOne({ roomId });
             if (!gameRoom || gameRoom.status !== 'in-progress') {
                 io.to(socket.id).emit('gameError', { message: 'Game not in progress, or room not found for running code.' });
@@ -279,7 +266,7 @@ io.on('connection', (socket) => {
             io.to(socket.id).emit('codeResult', runResult);
 
         } catch (error) {
-            console.error('Error handling gameRunCode:', error);
+            console.error('Socket.IO: Error handling gameRunCode:', error);
             io.to(socket.id).emit('gameError', { message: 'Error processing run code request.' });
             io.to(socket.id).emit('codeResult', { status: 'Error', message: `Internal server error during code run: ${error.message}` });
         }
@@ -287,6 +274,7 @@ io.on('connection', (socket) => {
 
     socket.on('gameCodeSubmission', async ({ roomId, userId, problemId, code, language }) => {
         try {
+            console.log(`Socket.IO: User ${userId} in room ${roomId} submitting code for problem ${problemId}.`);
             const gameRoom = await GameRoom.findOne({ roomId });
             if (!gameRoom || gameRoom.status !== 'in-progress') {
                 io.to(socket.id).emit('gameError', { message: 'Game not in progress, or room not found.' });
@@ -364,7 +352,7 @@ io.on('connection', (socket) => {
             }
 
         } catch (error) {
-            console.error('Error handling gameCodeSubmission:', error);
+            console.error('Socket.IO: Error handling gameCodeSubmission:', error);
             io.to(socket.id).emit('gameError', { message: 'Error processing submission.' });
             io.to(socket.id).emit('codeResult', { status: 'Error', message: `Internal server error during submission: ${error.message}` });
         }
@@ -372,15 +360,16 @@ io.on('connection', (socket) => {
 
     socket.on('leaveGameRoom', async ({ roomId, userId }) => {
         try {
+            console.log(`Socket.IO: User ${userId} explicitly leaving room ${roomId}.`);
             const gameRoom = await GameRoom.findOne({ roomId });
             if (!gameRoom) {
-                console.warn(`Attempted to leave non-existent room ${roomId}`);
+                console.warn(`Socket.IO: Attempted to leave non-existent room ${roomId}`);
                 return;
             }
 
             const playerIndex = gameRoom.players.findIndex(p => p.userId?.toString() === userId);
             if (playerIndex === -1) {
-                console.warn(`User ${userId} not found in room ${roomId} to leave.`);
+                console.warn(`Socket.IO: User ${userId} not found in room ${roomId} to leave.`);
                 return;
             }
 
@@ -392,7 +381,7 @@ io.on('connection', (socket) => {
             await gameRoom.save();
 
 
-            console.log(`User ${userId} explicitly left room ${roomId}.`);
+            console.log(`Socket.IO: User ${userId} explicitly left room ${roomId}.`);
             io.to(roomId).emit('playerLeftRoom', { room: gameRoom, leftPlayerId: userId, message: `${leftUserName} left the room.` });
 
             const activePlayers = gameRoom.players.filter(p => p.status !== 'disconnected');
@@ -413,15 +402,15 @@ io.on('connection', (socket) => {
                         winnerId: null,
                         room: gameRoom
                     });
-                    console.log(`In-progress room ${gameRoom.roomId} cancelled due to all players disconnecting.`);
+                    console.log(`Socket.IO: In-progress room ${gameRoom.roomId} cancelled due to all players disconnecting.`);
                     setTimeout(async () => {
                         await GameRoom.findByIdAndDelete(gameRoom._id);
-                        console.log(`Cancelled room ${gameRoom.roomId} deleted after cleanup timeout.`);
+                        console.log(`Socket.IO: Cancelled room ${gameRoom.roomId} deleted after cleanup timeout.`);
                     }, 5 * 60 * 1000);
                 }
             } else if (gameRoom.status === 'waiting') {
                 if (activePlayers.length === 0) {
-                    console.log(`Waiting room ${gameRoom.roomId} is now empty. Scheduling for deletion in 1 minute.`);
+                    console.log(`Socket.IO: Waiting room ${gameRoom.roomId} is now empty. Scheduling for deletion in 1 minute.`);
                     setTimeout(async () => {
                         const latestRoomState = await GameRoom.findById(gameRoom._id);
                         if (latestRoomState && latestRoomState.players.every(p => p.status === 'disconnected')) {
@@ -430,10 +419,10 @@ io.on('connection', (socket) => {
                                 gameTimers.delete(latestRoomState.roomId);
                             }
                             await GameRoom.findByIdAndDelete(latestRoomState._id);
-                            console.log(`Empty waiting room ${latestRoomState.roomId} deleted after grace period.`);
+                            console.log(`Socket.IO: Empty waiting room ${latestRoomState.roomId} deleted after grace period.`);
                             io.to(latestRoomState.roomId).emit('roomDeleted', { roomId: latestRoomState.roomId, message: "Room is empty and has been deleted." });
                         } else if (latestRoomState) {
-                            console.log(`Room ${latestRoomState.roomId} re-populated during grace period. Not deleting.`);
+                            console.log(`Socket.IO: Room ${latestRoomState.roomId} re-populated during grace period. Not deleting.`);
                         }
                     }, 60 * 1000);
                 } else {
@@ -442,17 +431,17 @@ io.on('connection', (socket) => {
             }
 
         } catch (error) {
-            console.error('Error handling leaveGameRoom:', error);
+            console.error('Socket.IO: Error handling leaveGameRoom:', error);
             if (error.name === 'ValidationError') {
-                console.error('Validation error on leaveGameRoom:', error.errors);
+                console.error('Socket.IO: Validation error on leaveGameRoom:', error.errors);
             }
         }
     });
 
 
-    socket.on('disconnect', async () => {
+    socket.on('disconnect', async (reason) => {
         try {
-            console.log(`User disconnected: ${socket.id}`);
+            console.log(`Socket.IO: User disconnected: ${socket.id}. Reason: ${reason}`);
             const gameRoom = await GameRoom.findOne({ 'players.socketId': socket.id });
 
             if (gameRoom) {
@@ -462,7 +451,7 @@ io.on('connection', (socket) => {
                     await gameRoom.save();
 
                     const playerName = (await User.findById(player.userId))?.firstName || 'A player';
-                    console.log(`${playerName} (${socket.id}) disconnected from room ${gameRoom.roomId}.`);
+                    console.log(`Socket.IO: ${playerName} (${socket.id}) disconnected from room ${gameRoom.roomId}.`);
 
                     io.to(gameRoom.roomId).emit('playerStatusUpdate', {
                         userId: player.userId,
@@ -489,15 +478,15 @@ io.on('connection', (socket) => {
                                 winnerId: null,
                                 room: gameRoom
                             });
-                            console.log(`In-progress room ${gameRoom.roomId} cancelled due to all players disconnecting.`);
+                            console.log(`Socket.IO: In-progress room ${gameRoom.roomId} cancelled due to all players disconnecting.`);
                             setTimeout(async () => {
                                 await GameRoom.findByIdAndDelete(gameRoom._id);
-                                console.log(`Cancelled room ${gameRoom.roomId} deleted after cleanup timeout.`);
+                                console.log(`Socket.IO: Cancelled room ${gameRoom.roomId} deleted after cleanup timeout.`);
                             }, 5 * 60 * 1000);
                         }
                     } else if (gameRoom.status === 'waiting') {
                         if (activePlayers.length === 0) {
-                            console.log(`Waiting room ${gameRoom.roomId} is now empty. Scheduling for deletion in 1 minute.`);
+                            console.log(`Socket.IO: Waiting room ${gameRoom.roomId} is now empty. Scheduling for deletion in 1 minute.`);
                             setTimeout(async () => {
                                 const latestRoomState = await GameRoom.findById(gameRoom._id);
                                 if (latestRoomState && latestRoomState.players.every(p => p.status === 'disconnected')) {
@@ -506,10 +495,10 @@ io.on('connection', (socket) => {
                                         gameTimers.delete(latestRoomState.roomId);
                                     }
                                     await GameRoom.findByIdAndDelete(latestRoomState._id);
-                                    console.log(`Empty waiting room ${latestRoomState.roomId} deleted after grace period.`);
+                                    console.log(`Socket.IO: Empty waiting room ${latestRoomState.roomId} deleted after grace period.`);
                                     io.to(latestRoomState.roomId).emit('roomDeleted', { roomId: latestRoomState.roomId, message: "Room is empty and has been deleted." });
                                 } else if (latestRoomState) {
-                                    console.log(`Room ${latestRoomState.roomId} re-populated during grace period. Not deleting.`);
+                                    console.log(`Socket.IO: Room ${latestRoomState.roomId} re-populated during grace period. Not deleting.`);
                                 }
                             }, 60 * 1000);
                         } else {
@@ -517,23 +506,20 @@ io.on('connection', (socket) => {
                         }
                     }
                 } else {
-                    console.log(`Disconnected socket ${socket.id} not found in any game room.`);
+                    console.log(`Socket.IO: Disconnected socket ${socket.id} not found in any game room.`);
                 }
             }
         } catch (error) {
-            console.error('Error handling disconnect:', error);
+            console.error('Socket.IO: Error handling disconnect:', error);
             if (error.name === 'ValidationError') {
-                console.error('Validation error on disconnect:', error.errors);
+                console.error('Socket.IO: Validation error on disconnect:', error.errors);
             }
         }
-    }
-    ); // Corrected: This is the end of socket.on('disconnect', async () => { ... });
-
-}); // This is the end of io.on('connection', (socket) => { ... });
-
+    });
+});
 
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('Express App Error:', err.stack);
     res.status(500).send('Something broke!');
 });
 
