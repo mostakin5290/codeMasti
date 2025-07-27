@@ -2,64 +2,45 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
-const main = require('./src/config/db'); // Your database connection function
+const main = require('./src/config/db'); // Your database connection
 const cookieParser = require('cookie-parser');
-const redisClient = require('./src/config/redis'); // Your Redis client instance
+const redisClient = require('./src/config/redis'); // Your Redis client
 const cors = require('cors');
 const mongoose = require('mongoose');
-const { createAdapter } = require("@socket.io/redis-adapter"); // Import the adapter
 
 const app = express();
-const server = http.createServer(app); // Create HTTP server for both Express and Socket.IO
+const server = http.createServer(app); // Create HTTP server for Express and Socket.IO
 
-// --- IMPORTANT: Connect Redis clients for Socket.IO Adapter first ---
-let pubClient;
-let subClient;
-
-const setupRedisAdapter = async () => {
-    try {
-        // Ensure redisClient is an ioredis client or similar that can be duplicated
-        if (!redisClient || typeof redisClient.duplicate !== 'function') {
-            console.error("Redis client is not properly initialized or does not have a 'duplicate' method.");
-            throw new Error("Invalid Redis client for Socket.IO adapter.");
-        }
-        
-        pubClient = redisClient.duplicate();
-        subClient = redisClient; // Using the main redisClient for subscription
-
-        await Promise.all([pubClient.connect(), subClient.connect()]);
-        io.adapter(createAdapter(pubClient, subClient));
-        console.log("Socket.IO Redis adapter connected successfully.");
-    } catch (err) {
-        console.error("Failed to connect Socket.IO Redis adapter:", err);
-        // Depending on criticality, you might want to exit process or degrade gracefully
-    }
-};
-
-// --- Socket.IO Server Configuration ---
+// ----------------------------------------------------
+// Socket.IO Server Configuration
+// IMPORTANT: Use the HTTP server created above.
+// ----------------------------------------------------
 const io = new Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL, // Ensure this matches exactly "https://codemasti.vercel.app"
+        origin: process.env.FRONTEND_URL, // e.g., "https://codemasti.vercel.app"
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true
     },
-    transports: ['polling', 'websocket'], // Prioritize polling for Vercel
+    // Explicitly set transports. Vercel often prefers 'polling' first due to its nature.
+    // However, 'websocket' is still good to try.
+    transports: ['polling', 'websocket'], // Prefer polling, then websocket
     pingInterval: 25000,
     pingTimeout: 60000 
 });
 
-app.set('socketio', io); // Make io instance available via `req.app.get('socketio')`
+app.set('socketio', io); // Make io instance accessible via `req.app.get('socketio')`
 
-// --- Express CORS Middleware ---
-// This must be placed *before* any routes that need CORS.
+// ----------------------------------------------------
+// Express CORS Middleware - Must be placed early!
+// ----------------------------------------------------
 app.use(cors({
-    origin: process.env.FRONTEND_URL, // Ensure this matches exactly "https://codemasti.vercel.app"
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS for preflight
+    origin: process.env.FRONTEND_URL, // e.g., "https://codemasti.vercel.app"
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
     exposedHeaders: ['set-cookie']
 }));
 
-// Your raw body parser for payment webhook (keep its original position)
+// Raw body parser for specific routes (keep its original position)
 app.use((req, res, next) => {
     if (req.originalUrl === '/payment/verify-payment') {
         let rawBody = '';
@@ -80,12 +61,19 @@ app.use((req, res, next) => {
     }
 });
 
-// Other Express Middlewares
+// General Express Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Route Imports (Make sure these are defined after all middlewares)
+// Database/Model Imports
+const GameRoom = require('./src/models/gameRoomSchema');
+const Problem = require('./src/models/problem');
+const User = require('./src/models/user');
+const { submitCodeInternal, runCodeInternal } = require('./src/controllers/submitControllers');
+const { endGame } = require('./src/controllers/gameController');
+
+// Router Imports
 const userRouter = require('./src/routes/userRoute');
 const problemRouter = require('./src/routes/problemRoute');
 const submitRoute = require('./src/routes/submitRoutes');
@@ -100,6 +88,7 @@ const playlistRouter = require('./src/routes/playlistRoutes');
 const premiumRouter = require('./src/routes/premiumRouter');
 const gameRoutes = require('./src/routes/gameRoutes');
 
+// Define Routes
 app.use('/user', userRouter);
 app.use('/problem', problemRouter);
 app.use('/submission', submitRoute);
@@ -112,23 +101,36 @@ app.use('/images', imageRoutes);
 app.use('/payment', payRouter);
 app.use('/playlist', playlistRouter);
 app.use('/premium', premiumRouter);
-app.use('/game', gameRoutes);
+app.use('/game', gameRoutes); // Your game routes
 
-// Database/Model/Controller Imports (can be here or at top)
-const GameRoom = require('./src/models/gameRoomSchema');
-const Problem = require('./src/models/problem');
-const User = require('./src/models/user');
-const { submitCodeInternal, runCodeInternal } = require('./src/controllers/submitControllers');
-const { endGame } = require('./src/controllers/gameController');
-
-// Socket.IO Connection Logic
+// ----------------------------------------------------
+// Socket.IO Connection Logic (within Express app)
+// ----------------------------------------------------
 const gameTimers = new Map();
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
     const userId = socket.handshake.query.userId;
 
+    // --- IMPORTANT: Handle potential "double connection" or quick disconnects
+    // This part of your code seems to be initiating reconnections and updates,
+    // which is good, but the underlying transport needs to be stable first.
+    // The previous error "Session ID unknown" implies the polling transport failed
+    // before the actual Socket.IO connection was fully established/re-established.
+    // With proper Vercel configuration, this should stabilize.
+
     // Your existing socket.io event handlers go here:
+    // socket.on('joinGameRoom', ...)
+    // socket.on('playerReady', ...)
+    // socket.on('gameRunCode', ...)
+    // socket.on('gameCodeSubmission', ...)
+    // socket.on('leaveGameRoom', ...)
+    // socket.on('disconnect', ...)
+
+    // ... (Your existing socket.io code from the previous app.js) ...
+    // Paste all your existing `socket.on(...)` handlers here.
+    // I'm omitting them for brevity, but they should remain unchanged.
+
     if (userId) {
         GameRoom.findOne({ 'players.userId': userId })
             .then(async (room) => {
@@ -434,7 +436,7 @@ io.on('connection', (socket) => {
                         }
                     }, 60 * 1000);
                 } else {
-                    io.to(gameRoom.roomId).emit('roomStatusChange', { roomId: gameRoom.roomId, newStatus: 'waiting', message: 'A player disconnected. Waiting for new player.' });
+                    io.to(gameRoom.roomId).emit('roomStatusChange', { roomId: gameRoom.roomId, newStatus: 'waiting', message: 'A player left. Waiting for new player.' });
                 }
             }
 
