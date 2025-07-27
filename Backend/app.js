@@ -17,15 +17,15 @@ const server = http.createServer(app); // Create HTTP server for Express and Soc
 // ----------------------------------------------------
 const io = new Server(server, {
     cors: {
-        origin: "*", // e.g., "https://codemasti.vercel.app"
+        origin: process.env.FRONTEND_URL, // e.g., "https://codemasti.vercel.app"
         methods: ["GET", "POST", "PUT", "DELETE"],
-        credentials: true
+        credentials: true,
+        exposedHeaders: ['set-cookie']
+
     },
-    // Explicitly set transports. Vercel often prefers 'polling' first due to its nature.
-    // However, 'websocket' is still good to try.
-    transports: ['polling', 'websocket'], // Prefer polling, then websocket
+    transports: ['polling', 'websocket'],
     pingInterval: 25000,
-    pingTimeout: 60000 
+    pingTimeout: 60000
 });
 
 app.set('socketio', io); // Make io instance accessible via `req.app.get('socketio')`
@@ -424,7 +424,7 @@ io.on('connection', (socket) => {
                     setTimeout(async () => {
                         const latestRoomState = await GameRoom.findById(gameRoom._id);
                         if (latestRoomState && latestRoomState.players.every(p => p.status === 'disconnected')) {
-                             if (gameTimers.has(latestRoomState.roomId)) {
+                            if (gameTimers.has(latestRoomState.roomId)) {
                                 clearTimeout(gameTimers.get(latestRoomState.roomId));
                                 gameTimers.delete(latestRoomState.roomId);
                             }
@@ -500,7 +500,7 @@ io.on('connection', (socket) => {
                             setTimeout(async () => {
                                 const latestRoomState = await GameRoom.findById(gameRoom._id);
                                 if (latestRoomState && latestRoomState.players.every(p => p.status === 'disconnected')) {
-                                     if (gameTimers.has(latestRoomState.roomId)) {
+                                    if (gameTimers.has(latestRoomState.roomId)) {
                                         clearTimeout(gameTimers.get(latestRoomState.roomId));
                                         gameTimers.delete(latestRoomState.roomId);
                                     }
@@ -518,13 +518,14 @@ io.on('connection', (socket) => {
                 } else {
                     console.log(`Disconnected socket ${socket.id} not found in any game room.`);
                 }
-            }} catch (error) {
-                console.error('Error handling disconnect:', error);
-                if (error.name === 'ValidationError') {
-                    console.error('Validation error on disconnect:', error.errors);
-                }
+            }
+        } catch (error) {
+            console.error('Error handling disconnect:', error);
+            if (error.name === 'ValidationError') {
+                console.error('Validation error on disconnect:', error.errors);
             }
         }
+    }
     ); // Corrected: This is the end of socket.on('disconnect', async () => { ... });
 
 }); // This is the end of io.on('connection', (socket) => { ... });
