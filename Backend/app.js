@@ -2,20 +2,18 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
-const main = require('./src/config/db');
+const main = require('./src/config/db'); // Your database connection
 const cookieParser = require('cookie-parser');
-const redisClient = require('./src/config/redis');
+const redisClient = require('./src/config/redis'); // Your Redis client
 const cors = require('cors');
 const mongoose = require('mongoose');
 
 const app = express();
-const server = http.createServer(app);
+const server = http.createServer(app); // Create HTTP server for Express and Socket.IO
 
 // ----------------------------------------------------
-// CRITICAL: Socket.IO CORS Configuration
-// Make sure this matches your frontend URL precisely.
-// Ensure 'methods' includes what your frontend uses.
-// For Vercel, it's often best to specify 'transports'
+// Socket.IO Server Configuration
+// IMPORTANT: Use the HTTP server created above.
 // ----------------------------------------------------
 const io = new Server(server, {
     cors: {
@@ -23,18 +21,17 @@ const io = new Server(server, {
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true
     },
-    // IMPORTANT for Vercel/some hosting: Explicitly set transports
-    // 'websocket' is preferred, 'polling' is fallback
-    transports: ['websocket', 'polling'], 
+    // Explicitly set transports. Vercel often prefers 'polling' first due to its nature.
+    // However, 'websocket' is still good to try.
+    transports: ['polling', 'websocket'], // Prefer polling, then websocket
     pingInterval: 25000,
     pingTimeout: 60000 
 });
 
-app.set('socketio', io);
+app.set('socketio', io); // Make io instance accessible via `req.app.get('socketio')`
 
 // ----------------------------------------------------
-// CRITICAL: Express CORS Middleware
-// This must be placed *before* any routes that need CORS.
+// Express CORS Middleware - Must be placed early!
 // ----------------------------------------------------
 app.use(cors({
     origin: process.env.FRONTEND_URL, // e.g., "https://codemasti.vercel.app"
@@ -43,7 +40,7 @@ app.use(cors({
     exposedHeaders: ['set-cookie']
 }));
 
-// Your raw body parser for payment webhook (keep this order)
+// Raw body parser for specific routes (keep its original position)
 app.use((req, res, next) => {
     if (req.originalUrl === '/payment/verify-payment') {
         let rawBody = '';
@@ -64,7 +61,7 @@ app.use((req, res, next) => {
     }
 });
 
-// Other Express Middlewares
+// General Express Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -91,9 +88,7 @@ const playlistRouter = require('./src/routes/playlistRoutes');
 const premiumRouter = require('./src/routes/premiumRouter');
 const gameRoutes = require('./src/routes/gameRoutes');
 
-// ----------------------------------------------------
-// Define Routes (after CORS, body parsers)
-// ----------------------------------------------------
+// Define Routes
 app.use('/user', userRouter);
 app.use('/problem', problemRouter);
 app.use('/submission', submitRoute);
@@ -106,10 +101,10 @@ app.use('/images', imageRoutes);
 app.use('/payment', payRouter);
 app.use('/playlist', playlistRouter);
 app.use('/premium', premiumRouter);
-app.use('/game', gameRoutes);
+app.use('/game', gameRoutes); // Your game routes
 
 // ----------------------------------------------------
-// Socket.IO Connection Logic (keep this as is)
+// Socket.IO Connection Logic (within Express app)
 // ----------------------------------------------------
 const gameTimers = new Map();
 
@@ -117,9 +112,24 @@ io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
     const userId = socket.handshake.query.userId;
 
-    // ... (rest of your existing socket.io connection logic) ...
-    // Your socket.io code looks correct for the game logic itself.
-    // The issue is with the initial connection.
+    // --- IMPORTANT: Handle potential "double connection" or quick disconnects
+    // This part of your code seems to be initiating reconnections and updates,
+    // which is good, but the underlying transport needs to be stable first.
+    // The previous error "Session ID unknown" implies the polling transport failed
+    // before the actual Socket.IO connection was fully established/re-established.
+    // With proper Vercel configuration, this should stabilize.
+
+    // Your existing socket.io event handlers go here:
+    // socket.on('joinGameRoom', ...)
+    // socket.on('playerReady', ...)
+    // socket.on('gameRunCode', ...)
+    // socket.on('gameCodeSubmission', ...)
+    // socket.on('leaveGameRoom', ...)
+    // socket.on('disconnect', ...)
+
+    // ... (Your existing socket.io code from the previous app.js) ...
+    // Paste all your existing `socket.on(...)` handlers here.
+    // I'm omitting them for brevity, but they should remain unchanged.
 
     if (userId) {
         GameRoom.findOne({ 'players.userId': userId })
