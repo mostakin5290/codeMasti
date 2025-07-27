@@ -77,7 +77,7 @@ const GamePage = () => {
     const [matchedUsers, setMatchedUsers] = useState({ currentUser: null, opponent: null });
     const battleAnimationTimerRef = useRef(null);
 
-    const backendUrl = import.meta.env.VITE_API_URL;
+    const VITE_API_URL = import.meta.env.VITE_API_URL;
     const lobbySocketRef = useRef(null);
     const searchTimerRef = useRef(null);
 
@@ -146,7 +146,7 @@ const GamePage = () => {
         }
 
         if (!lobbySocketRef.current) {
-            const newSocket = io(backendUrl, {
+            const newSocket = io(VITE_API_URL, {
                 withCredentials: true,
                 query: { userId: user._id }
             });
@@ -222,7 +222,7 @@ const GamePage = () => {
                 battleAnimationTimerRef.current = null;
             }
         };
-    }, [isAuthenticated, user, backendUrl, navigate, clearSearchTimer, startBattleAnimationAndNavigate, showBattleAnimation]);
+    }, [isAuthenticated, user, VITE_API_URL, navigate, clearSearchTimer, startBattleAnimationAndNavigate, showBattleAnimation]);
 
     if (!isAuthenticated) {
         useEffect(() => {
@@ -241,7 +241,7 @@ const GamePage = () => {
                 return;
             }
 
-            const response = await axios.post(`${backendUrl}/game/find-opponent`,
+            const response = await axios.post(`${VITE_API_URL}/game/find-opponent`,
                 {
                     socketId: lobbySocketRef.current.id,
                     difficulty: quickMatchDifficulty,
@@ -283,7 +283,7 @@ const GamePage = () => {
                 setLoading(false);
                 return;
             }
-            const response = await axios.post(`${backendUrl}/game/create-room`,
+            const response = await axios.post(`${VITE_API_URL}/game/create-room`,
                 {
                     maxPlayers: 2,
                     gameMode: '1v1-coding',
@@ -317,7 +317,7 @@ const GamePage = () => {
                 return;
             }
             const roomIDToJoin = roomIdInput.trim().toUpperCase();
-            const response = await axios.post(`${backendUrl}/game/join-room`,
+            const response = await axios.post(`${VITE_API_URL}/game/join-room`,
                 { roomId: roomIDToJoin, socketId: lobbySocketRef.current.id },
                 { withCredentials: true }
             );
