@@ -1,6 +1,10 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
+const { Server } = require('socket.io')(http,{
+    cors:{
+        origin:"*"
+    }
+});
 require('dotenv').config();
 const main = require('./src/config/db'); // Your database connection
 const cookieParser = require('cookie-parser');
@@ -17,7 +21,7 @@ const server = http.createServer(app); // Create HTTP server for Express and Soc
 // ----------------------------------------------------
 const io = new Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL, // e.g., "https://codemasti.vercel.app"
+        origin: "*",
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true
     },
