@@ -78,7 +78,8 @@ authRouter.get('/check', userMiddleware, (req, res) => {
         _id: req.user._id,
         role: req.user.role,
         isPremium: req.user.isPremium,
-        provider: req.user.provider
+        provider: req.user.provider,
+        stats:req.user.stats
     };
 
     res.status(200).json({

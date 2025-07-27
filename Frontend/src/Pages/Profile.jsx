@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom'; // Import useNavigate for redirection
 import { useSelector } from 'react-redux';
@@ -133,8 +134,12 @@ function ProfilePage() {
                         console.log("Could not fetch user rank (may have no solved problems):", err.response?.data?.message || err.message);
                         // If user has 0 problems, backend returns N/A for rank, set it to 0 or leave null if N/A
                         if (err.response?.status === 404 && err.response?.data?.message === "User not found or has no solved problems.") {
-                             fetchedRank = 0; // Display 0 problems solved
-                             fetchedTotalUsers = (await axiosClient.get(`/user/rank/${userIdToFetch}`)).data.totalUsers; // Fetch total users explicitly
+                            fetchedRank = 0; // Display 0 problems solved
+                            // Fetch total users explicitly if the user has no rank
+                            const totalUsersResponse = await axiosClient.get(`/user/total-rank`);
+                            if (totalUsersResponse.data.success) {
+                                fetchedTotalUsers = totalUsersResponse.data.totalUsers;
+                            }
                         }
                     }
                 }
@@ -572,7 +577,7 @@ function ProfilePage() {
                                 {userRank !== null && (
                                     <Link to="/world-rank" className="flex items-center">
                                         <FaRankingStar className={`mr-2 ${appTheme.highlightTertiary}`} /> {/* Using highlightTertiary for rank icon */}
-                                        <span>Rank: #{userRank}</span>
+                                        <span>Rank: #{userRank} {totalUsersForRank > 0 ? `/ ${totalUsersForRank}` : ''}</span>
                                     </Link>
                                 )}
                             </motion.div>
@@ -779,11 +784,19 @@ function ProfilePage() {
                                             color={statColors[1]}
                                         />
                                         <StatCard
-                                            title="Solution Posts" /* Updated StatCard title */
-                                            value={totalPosts} /* Updated value to totalPosts */
+                                            title="Solution Posts"
+                                            value={totalPosts}
                                             icon={<FaStar />}
-                                            subtext={(<><Link to={`/discuss/new`} className="font-semibold">create Post</Link></>)} /* Updated subtext */
+                                            subtext={(<p><Link to={`/discuss/new`} className="font-semibold">create Post</Link></p>)}
                                             color={statColors[2]}
+                                        />
+
+                                        <StatCard
+                                            title="ELO Rating"
+                                            value={profile.stats?.eloRating || 1000} // Display ELO, default to 1000
+                                            icon={<FaTrophy />} // Use FaTrophy for ELO
+                                            subtext="Ranked Game Score"
+                                            color={{ iconBg: `${appTheme.highlightTertiary.replace('text-', 'bg-')}/20`, iconText: appTheme.highlightTertiary }} // Use highlightTertiary colors
                                         />
                                     </div>
 

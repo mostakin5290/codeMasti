@@ -1,4 +1,5 @@
-import { Navigate, Routes, Route, BrowserRouter, useLocation } from "react-router-dom"; // Import useLocation
+
+import { Navigate, Routes, Route, useLocation } from "react-router-dom"; // Import useLocation
 import { useEffect } from "react";
 import { useSelector, useDispatch } from 'react-redux';
 import { checkAuth } from './features/auth/authSlice';
@@ -16,7 +17,7 @@ import ContestsPage from "./Pages/ContestsPage";
 import DiscussPage from "./Pages/DiscussPage";
 import Setting from "./Pages/SettingPage";
 import ProfilePage from "./Pages/Profile";
-import Codefield from "./Pages/Codefield";
+import Codefield from "./Pages/Codefield"; // Existing Codefield
 import AboutPage from "./components/FooterPage/CodeCrack/AboutPage";
 import TermsPage from "./components/FooterPage/Legal/TermsPage";
 import PrivacyPolicyPage from "./components/FooterPage/Legal/PrivacyPolicyPage";
@@ -62,6 +63,9 @@ import { AnimationProvider } from "./context/AnimationContext";
 import PremiumWelcomePage from "./Pages/PremiumWelcomePage";
 import ComingSoonPage from "./components/common/ComingSoon";
 import RankPage from "./components/Profile/RankPage";
+import GamePage from "./Pages/GamePage"; 
+import GameCodefield from "./Pages/GameCodefield"; 
+import GameRoomDetailsPage from "./Pages/GameRoomDetailsPage"; 
 
 
 const AppRoutes = () => {
@@ -96,7 +100,7 @@ const AppRoutes = () => {
 
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPasswordPage/> } />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
 
 
                 <Route
@@ -147,9 +151,15 @@ const AppRoutes = () => {
                 <Route path="/contests/:id/leaderboard" element={<ContestLeaderboardPage />} />
                 <Route path="/contests/:id" element={<ContestPublicDetailsPage />} />
                 <Route path="/explore-premium" element={<ExplorePremium />} />
-                <Route path="/test" element={<PremiumWelcomePage/> } />
-                <Route path="/coming" element={<ComingSoonPage/> } />
-                <Route path="/world-rank" element={<RankPage/>}/>
+                <Route path="/test" element={<PremiumWelcomePage />} />
+                <Route path="/coming" element={<ComingSoonPage />} />
+                <Route path="/world-rank" element={<RankPage />} />
+
+                {/* NEW GAME ROUTES */}
+                <Route path="/game" element={isAuthenticated ? <GamePage /> : <Navigate to="/" />} />
+                <Route path="/game/room/:roomId" element={isAuthenticated ? <GameRoomDetailsPage /> : <Navigate to="/" />} />
+                <Route path="/game/room/:roomId/play" element={isAuthenticated ? <GameCodefield /> : <Navigate to="/" />} />
+
                 {/* --- Admin Routes --- */}
                 <Route element={<AdminRoute />}>
                     <Route path="/admin" element={<AdminLayout />}>
@@ -176,7 +186,7 @@ const App = () => {
     return (
         <ThemeProvider>
             <AnimationProvider>
-            <AppRoutes />
+                <AppRoutes />
             </AnimationProvider>
         </ThemeProvider>
     );

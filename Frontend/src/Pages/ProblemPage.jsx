@@ -647,7 +647,7 @@ const ProblemPage = () => {
                                                     } else if (dayData.isCurrentDay) {
                                                         // Today's challenge - always highlighted if it exists and is relevant
                                                         if (dayData.hasChallenge) {
-                                                            dayClasses += ` ${theme.successColor.replace('text-', 'bg-')} ${theme.buttonText} font-bold`;
+                                                            dayClasses += `  ${theme.buttonText} font-bold`;
                                                             isDayClickable = true;
                                                         } else {
                                                             // Today, but no challenge set by admin
@@ -662,9 +662,6 @@ const ProblemPage = () => {
                                                         dayClasses += ` text-red-600  hover:${theme.cardBg}`; // Default look, but clickable
                                                         isDayClickable = true;
                                                     } else {
-                                                        // Any other day: no special highlight, not clickable. This includes:
-                                                        // - Future dates (whether set by admin or not)
-                                                        // - Past/current dates with no challenge ever set
                                                         dayClasses += ` ${theme.cardBg}/30 ${theme.cardText} pointer-events-none opacity-50`;
                                                     }
 
@@ -681,18 +678,13 @@ const ProblemPage = () => {
                                                         >
                                                             {dayData ? (
                                                                 <>
-                                                                    {((dayData.isSolvedByUser && !dayData.isCurrentDay) || (dayData.isCurrentDay && dayData.hasChallenge && dayData.isSolvedByUser)) && (
-                                                                        <FaFire className={`absolute inset-0 m-auto text-4xl opacity-60 text-red-700`} />
+                                                                    {(dayData.isSolvedByUser || (dayData.isCurrentDay && dayData.hasChallenge && dayData.isSolvedByUser)) && (
+                                                                        <FaFire className={`absolute inset-0 m-auto text-4xl opacity-60 text-red-500`} />
                                                                     )}
 
                                                                     <span className="relative z-10 text-sm">{dayData.date.getDate()}</span>
 
-                                                                    {/* Small Checkmark for solved past challenges */}
-                                                                    {dayData.hasChallenge && dayData.isSolvedByUser && !dayData.isCurrentDay && (
-                                                                        <div className="absolute bottom-1 right-1 text-xs">
-                                                                            <FaCheck className={`${theme.successColor} text-xs`} title="Solved" />
-                                                                        </div>
-                                                                    )}
+                                                                    
                                     
                                                                     {dayData.hasChallenge && !dayData.isFuture && !dayData.isSolvedByUser && (
                                                                         <div className="absolute bottom-0 right-2.5 text-xs">

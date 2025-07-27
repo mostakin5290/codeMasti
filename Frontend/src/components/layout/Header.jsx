@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser, checkAuth } from '../../features/auth/authSlice';
-import { useTheme } from '../../context/ThemeContext'; // Import useTheme hook
-import { FiCode } from 'react-icons/fi'; // Import FiCode icon for logo
-import { FaCrown, FaUserShield, FaUserCog, FaUserAlt } from 'react-icons/fa'; // Import FaCrown, and new Fa icons for roles
-import { FaRankingStar } from 'react-icons/fa6';
+import { useTheme } from '../../context/ThemeContext';
+import { FiCode } from 'react-icons/fi';
+import { FaCrown, FaUserShield, FaUserCog, FaUserAlt } from 'react-icons/fa';
+import { FaRankingStar, FaGamepad } from 'react-icons/fa6'; // Import FaGamepad
+
 // Default theme to prevent errors if theme context fails or is incomplete
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
@@ -14,10 +16,8 @@ const defaultTheme = {
     buttonText: 'text-white', highlight: 'text-cyan-400', highlightSecondary: 'text-blue-400',
     highlightTertiary: 'text-purple-400', iconBg: 'bg-cyan-500/10',
     gradientFrom: 'from-gray-900', gradientTo: 'to-gray-800',
-    // NEW: Solid button colors for default fallback
     buttonPrimary: 'bg-blue-600',
     buttonPrimaryHover: 'bg-blue-700',
-    // For notification dot and specific icon colors
     successColor: 'text-emerald-500',
     errorColor: 'text-red-500',
 };
@@ -30,19 +30,15 @@ const Header = () => {
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
-    // Get theme from context, merge with default to ensure all properties exist
     const { theme: themeFromContext } = useTheme();
     const theme = { ...defaultTheme, ...themeFromContext };
 
-    // Helper for primary gradient (still used for logo icon box)
     const getPrimaryGradientClasses = () => `bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')}`;
 
-    // Check auth status on component mount
     useEffect(() => {
         dispatch(checkAuth());
     }, [dispatch]);
 
-    // Handle scroll effect for header
     useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 20);
@@ -75,38 +71,30 @@ const Header = () => {
         setIsProfileMenuOpen(false);
     };
 
-    // Header background is solid and responsive to scroll
     const headerBackground = scrolled
         ? `${theme.background} shadow-2xl border-b ${theme.border}`
         : `${theme.background} border-b ${theme.border}`;
 
-    // Enhanced navigation link styles (now solid background for active/hover)
     const navLinkBase = "relative px-5 py-2.5 text-sm font-semibold transition-all duration-300 group overflow-hidden rounded-xl";
-    // Inactive link hover: background will be a lighter shade of the main background
     const navLinkInactive = `${theme.cardText} hover:${theme.text} hover:${theme.background.replace('bg-', 'bg-')}/50`;
-    // Active state uses primary color as solid background
     const navLinkActive = `${theme.buttonText} ${theme.primary} shadow-lg`;
 
     const getNavLinkClass = ({ isActive }) =>
         `${navLinkBase} ${isActive ? navLinkActive : navLinkInactive}`;
 
-    // Mobile navigation with enhanced styling (solid colors)
     const mobileNavLinkBase = "block px-6 py-4 text-base font-medium transition-all duration-300 rounded-xl mx-2 my-1";
     const getMobileNavLinkClass = ({ isActive }) =>
         `${mobileNavLinkBase} ${isActive ? `${theme.text} ${theme.primary} border ${theme.primary.replace('bg-', 'border-')}/50` : `${theme.cardText} hover:${theme.text} hover:${theme.cardBg}/60`}`;
 
-    // Premium user menu styles (solid colors)
     const userMenuItem = `block px-4 py-3 text-sm transition-all duration-300 hover:${theme.cardBg}/50 rounded-lg mx-2 my-1`;
 
     return (
         <>
             <header className={`fixed w-full top-0 z-50 ${headerBackground} transition-all duration-700 ease-out`}>
-                {/* Subtle top accent line - now solid border */}
                 <div className={`absolute top-0 left-0 right-0 h-px border-t ${theme.border}`}></div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-20">
-                        {/* Logo and Desktop Navigation */}
                         <div className="flex items-center space-x-12">
                             <Link
                                 to="/home"
@@ -114,14 +102,12 @@ const Header = () => {
                                 onClick={closeAllMenus}
                             >
                                 <div className="flex items-center space-x-3">
-
                                     <h1 className={`text-3xl font-bold ${theme.text}`}>
                                         Code<span className={`${theme.highlight}`}>Masti</span>
                                     </h1>
                                 </div>
                             </Link>
 
-                            {/* Enhanced Desktop Navigation */}
                             <nav className="hidden lg:flex items-center space-x-2">
                                 <NavLink to="/home" className={getNavLinkClass} onClick={closeAllMenus}>
                                     <span className="relative z-10 flex items-center space-x-2">
@@ -155,17 +141,22 @@ const Header = () => {
                                         <span>Discuss</span>
                                     </span>
                                 </NavLink>
-                                {/* NEW: Rank Link */}
                                 <NavLink to="/world-rank" className={getNavLinkClass} onClick={closeAllMenus}>
                                     <span className="relative z-10 flex items-center space-x-2">
-                                        <FaRankingStar className="w-4 h-4" /> {/* FaRankingStar imported from 'fa' or 'fa6' */}
+                                        <FaRankingStar className="w-4 h-4" />
                                         <span>Ranks</span>
+                                    </span>
+                                </NavLink>
+                                {/* NEW: Game Link */}
+                                <NavLink to="/game" className={getNavLinkClass} onClick={closeAllMenus}>
+                                    <span className="relative z-10 flex items-center space-x-2">
+                                        <FaGamepad className="w-4 h-4" /> {/* Gamepad icon */}
+                                        <span>Game</span>
                                     </span>
                                 </NavLink>
                             </nav>
                         </div>
 
-                        {/* Premium User Actions */}
                         <div className="flex items-center space-x-4">
                             {isAuthenticated ? (
                                 <>
@@ -196,10 +187,8 @@ const Header = () => {
                                             </svg>
                                         </button>
 
-                                        {/* Ultra-modern Dropdown Menu (solid colors) */}
                                         {isProfileMenuOpen && (
                                             <div className={`origin-top-right absolute right-0 mt-3 w-72 rounded-3xl shadow-2xl ${theme.cardBg} border ${theme.border}/50 py-3 z-50 animate-in slide-in-from-top-2 duration-300`}>
-                                                {/* User Info Header */}
                                                 <div className={`px-6 py-4 border-b ${theme.border}/50`}>
                                                     <div className="flex items-center space-x-4">
                                                         <div className="relative">
@@ -230,7 +219,6 @@ const Header = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Menu Items */}
                                                 <div className="py-2">
                                                     <NavLink
                                                         to="/profile"
@@ -244,7 +232,7 @@ const Header = () => {
                                                             <span>Your Profile</span>
                                                         </div >
                                                     </NavLink>
-                                                    {(user.role === 'admin'||user.role === 'co-admin') && (
+                                                    {(user.role === 'admin' || user.role === 'co-admin') && (
                                                         <NavLink to="/admin" className={`${userMenuItem} ${theme.cardText} hover:${theme.text}`} onClick={closeAllMenus}>
                                                             <div className="flex items-center">
                                                                 <svg className={`mr-3 h-5 w-5 ${theme.highlightTertiary}`} xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
@@ -254,7 +242,7 @@ const Header = () => {
                                                             </div>
                                                         </NavLink>
                                                     )}
-                                                    
+
                                                     <NavLink
                                                         to="/settings"
                                                         className={`${userMenuItem} ${theme.cardText} hover:${theme.text}`}
@@ -305,7 +293,6 @@ const Header = () => {
                                 </div>
                             )}
 
-                            {/* Ultra-modern Mobile Menu Button */}
                             <button
                                 onClick={toggleMobileMenu}
                                 className={`lg:hidden p-3 rounded-2xl ${theme.cardBg} ${theme.text} hover:${theme.highlight} hover:${theme.cardBg}/80 transition-all duration-300 border ${theme.border} hover:${theme.primary.replace('bg-', 'border-')}/50`}
@@ -321,7 +308,6 @@ const Header = () => {
                     </div>
                 </div>
 
-                {/* Premium Mobile Menu */}
                 <div className={`lg:hidden ${theme.background} shadow-2xl transition-all duration-500 overflow-hidden border-t ${theme.border} ${isMobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="px-4 pt-4 pb-6 space-y-2">
                         <NavLink
@@ -372,11 +358,17 @@ const Header = () => {
                                 <span>Discuss</span>
                             </div>
                         </NavLink>
-                        {/* NEW: Rank Link in Mobile dropdown */}
                         <NavLink to="/world-rank" className={getMobileNavLinkClass} onClick={closeAllMenus}>
                             <div className="flex items-center space-x-3">
                                 <FaRankingStar className="w-5 h-5" />
                                 <span>Ranks</span>
+                            </div>
+                        </NavLink>
+                        {/* NEW: Game Link in Mobile dropdown */}
+                        <NavLink to="/game" className={getMobileNavLinkClass} onClick={closeAllMenus}>
+                            <div className="flex items-center space-x-3">
+                                <FaGamepad className="w-5 h-5" />
+                                <span>Game</span>
                             </div>
                         </NavLink>
                     </div>
@@ -395,7 +387,7 @@ const Header = () => {
                                     <span>Your Profile</span>
                                 </div>
                             </NavLink>
-                            {(user.role === 'admin'||user.role === 'co-admin') && (
+                            {(user.role === 'admin' || user.role === 'co-admin') && (
                                 <NavLink
                                     to="/admin"
                                     className={getMobileNavLinkClass}

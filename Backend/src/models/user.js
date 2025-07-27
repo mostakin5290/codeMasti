@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
@@ -81,6 +82,10 @@ const userSchema = new Schema({
             hard: { type: Number, default: 0 },
         },
         totalSubmissions: { type: Number, default: 0 },
+        eloRating: { type: Number, default: 1000 },
+        gamesPlayed: { type: Number, default: 0 },
+        wins: { type: Number, default: 0 },
+        losses: { type: Number, default: 0 },
     },
     preferences: {
         language: {
@@ -120,7 +125,8 @@ const userSchema = new Schema({
             type: Number,
             default: 0
         }
-    }
+    },
+    currentGameRoom: { type: Schema.Types.ObjectId, ref: 'GameRoom' }
 }, { timestamps: true });
 
 

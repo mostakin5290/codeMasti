@@ -1,9 +1,10 @@
-const Problem = require("../models/problem");
-const Submission = require("../models/submission");
-const User = require("../models/user"); // Make sure to import the User model
+// ... (your existing imports) ...
+const Problem = require("../models/problem"); // Ensure Problem model is imported
+const Submission = require("../models/submission"); // Ensure Submission model is imported
+const User = require("../models/user");
 const { getLanguageById, submitBatch, submitToken } = require("../utils/problemUtils");
 const Contest = require('../models/Contest');
-const ContestParticipation = require('../models/ ContestParticipation');
+const ContestParticipation = require('../models/ ContestParticipation'); // Corrected typo here
 
 const normalizeLanguage = (lang) => {
     const lowerLang = String(lang).toLowerCase();
@@ -15,117 +16,84 @@ const normalizeLanguage = (lang) => {
 
 const formatForComparison = (value) => {
     if (value === undefined || value === null) {
-        return ""; // Always return an empty string for null/undefined
+        return "";
     }
     let formattedString;
-    // If it's an object or array, stringify it
     if (typeof value === 'object') {
         try {
-            // Use JSON.stringify for objects/arrays.
-            // Sorting keys for objects might be considered for stricter equality, but usually not needed if outputs are consistent.
             formattedString = JSON.stringify(value);
         } catch (e) {
-            // Fallback for circular references or complex objects not meant for JSON.stringify
             console.warn("Could not JSON.stringify value for comparison:", value, e);
-            formattedString = String(value); // Fallback
+            formattedString = String(value);
         }
     } else {
-        // For primitives (numbers, booleans, strings)
         formattedString = String(value);
     }
-    // CRUCIAL CHANGE: Remove leading/trailing whitespace (including newlines) for robust comparison
     return formattedString.trim();
 };
 
-const submitCode = async (req, res) => {
+// Internal function to handle code submission logic
+// This function does NOT take req, res. It returns the result directly.
+const submitCodeInternal = async ({ userId, problemId, code, language, contestId = null }) => {
     try {
-        const userId = req.user._id;
-        const problemId = req.params.id; // Problem ID from URL param
-        let { code, language } = req.body;
-        const contestId = req.query.contestId; // <-- NEW: Get contestId from query parameter!
-
-        // 1. Basic Validation
         if (!userId || !code || !problemId || !language) {
-            return res.status(400).json({ message: "All fields are required." });
+            throw new Error("All fields are required for internal submission.");
         }
 
-        // Add contest-specific checks if contestId is provided
         let contest = null;
         let contestProblem = null;
         if (contestId) {
-            contest = await Contest.findById(contestId); // Ensure Contest model is imported
+            contest = await Contest.findById(contestId);
             if (!contest) {
-                return res.status(404).json({ error: 'Contest not found.' });
+                throw new Error('Contest not found.');
             }
-
-            // Check if contest is ongoing
             const now = new Date();
             if (now < contest.startTime || now > contest.endTime) {
-                return res.status(400).json({ error: 'Contest is not active.' });
+                throw new Error('Contest is not active.');
             }
-
-            // Check if this problem is part of this contest
             contestProblem = contest.problems.find(p => p.problemId.equals(problemId));
             if (!contestProblem) {
-                return res.status(404).json({ error: 'Problem not part of this contest.' });
+                throw new Error('Problem not part of this contest.');
             }
-
-            // For contest submissions, user MUST be registered
-            const participation = await ContestParticipation.findOne({
-                contestId,
-                userId
-            });
+            const participation = await ContestParticipation.findOne({ contestId, userId });
             if (!participation) {
-                return res.status(403).json({ error: 'Not registered for this contest.' });
+                throw new Error('Not registered for this contest.');
             }
         }
 
-
-        // 2. Fetch Problem
         const problem = await Problem.findById(problemId);
         if (!problem) {
-            return res.status(404).json({ message: "Problem not found." });
+            throw new Error("Problem not found.");
         }
         if (!problem.hiddenTestCases || problem.hiddenTestCases.length === 0) {
-            // For contests, you might allow problems without hidden test cases for practice,
-            // but for submission, it's typically required.
-            return res.status(400).json({ message: "Problem has no hidden test cases to submit against." });
+            throw new Error("Problem has no hidden test cases to submit against.");
         }
 
         const normalizedLang = normalizeLanguage(language);
-
-        // if (!problem.executionConfig || !problem.executionConfig.judge0LanguageIds) {
-        //     return res.status(500).json({ message: "Problem is missing its execution configuration." });
-        // }
-
         const languageId = getLanguageById(normalizedLang);
         if (!languageId) {
-            return res.status(400).json({ message: `Language '${language}' is not configured for this specific problem.` });
+            throw new Error(`Language '${language}' is not configured for this specific problem.`);
         }
 
-        // 3. Prepare Submissions for Judge0 (using problem.generateExecutableCode)
         const submissionsForJudge0 = problem.generateExecutableCode(code, language, problem.hiddenTestCases[0].input) ?
             problem.hiddenTestCases.map(testCase => ({
                 source_code: problem.generateExecutableCode(code, language, testCase.input),
                 language_id: languageId,
                 expected_output: formatForComparison(testCase.output)
-            })) : []; // Handle case where generateExecutableCode might fail or be undefined
+            })) : [];
 
         if (submissionsForJudge0.length === 0 && problem.hiddenTestCases.length > 0) {
-            return res.status(500).json({ message: "Failed to generate executable code for Judge0." });
+            throw new Error("Failed to generate executable code for Judge0.");
         }
 
-
-        // 4. Submit to Judge0
         const submitResult = await submitBatch(submissionsForJudge0);
         if (!submitResult || !Array.isArray(submitResult) || submitResult.length === 0) {
             console.error('Judge0 batch submission failed or returned empty:', submitResult);
-            return res.status(500).json({ message: 'Failed to submit code to Judge0 for testing.' });
+            throw new Error('Failed to submit code to Judge0 for testing.');
         }
         const resultTokens = submitResult.map(value => value.token);
         const testResultsFromJudge0 = await submitToken(resultTokens);
 
-        // 5. Process Judge0 Results (unchanged logic)
         let testCasesPassed = 0;
         const testCaseDetails = [];
         let maxRuntime = 0;
@@ -154,7 +122,7 @@ const submitCode = async (req, res) => {
                 currentTestCaseResult.actual = compilationErrorOutput;
                 currentTestCaseResult.error = "Compilation Error";
                 testCaseDetails.push(currentTestCaseResult);
-                break; // Stop processing further tests on compilation error
+                break;
             } else if (result.status.id !== 3) { // Any other non-accepted status
                 currentTestCaseResult.actual = result.stderr || result.stdout || "No specific output/error provided.";
                 currentTestCaseResult.passed = false;
@@ -176,7 +144,6 @@ const submitCode = async (req, res) => {
             }
         }
 
-        // 6. Determine Final Submission Status (unchanged logic)
         let finalStatus, errorMessage;
         if (compilationErrorOutput) {
             finalStatus = 'Compilation Error';
@@ -195,117 +162,99 @@ const submitCode = async (req, res) => {
             }
         }
 
-        // 7. Create Submission Record
         const submission = await Submission.create({
             userId, problemId, code, language, status: finalStatus,
             runtime: maxRuntime, memory: maxMemory, errorMessage,
             testCasesPassed, testCasesTotal: problem.hiddenTestCases.length,
             testCaseResults: testCaseDetails,
             isDailyChallenge: problem.isDailyChallenge,
-            contestId: contestId // <-- NEW: Store contestId in submission if present
+            contestId: contestId
         });
 
-        // 8. Update User's Solved Problems and Daily Challenge Streak (if Accepted)
-        // And for ContestParticipation if contestId is present
         let updatedUser = null;
         let isFirstAcceptedDailyChallengeToday = false;
 
         if (finalStatus === 'Accepted') {
-            // Update problemsSolved. Use $addToSet to prevent duplicates if user already solved it.
             await User.findByIdAndUpdate(userId, { $addToSet: { problemsSolved: problemId } }, { new: false });
 
-            // Re-fetch user to get the absolute latest state before daily challenge logic
             let userDoc = await User.findById(userId);
             if (!userDoc) {
-                return res.status(404).json({ message: "User not found after submission processing." });
-            }
+                console.warn("User not found after submission processing, potential data inconsistency.");
+                // Continue, as submission was recorded.
+            } else {
+                userDoc.dailyChallenges = userDoc.dailyChallenges || {
+                    completed: [],
+                    currentStreak: 0,
+                    longestStreak: 0
+                };
 
-            // Daily Challenge Tracking (unchanged logic)
-            userDoc.dailyChallenges = userDoc.dailyChallenges || {
-                completed: [],
-                currentStreak: 0,
-                longestStreak: 0
-            };
+                if (problem.isDailyChallenge) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
 
-            if (problem.isDailyChallenge) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                const alreadyCompletedThisChallengeToday = userDoc.dailyChallenges.completed.some(c =>
-                    c.challengeId.toString() === problemId.toString() &&
-                    new Date(c.date).getTime() === today.getTime()
-                );
-
-                isFirstAcceptedDailyChallengeToday = !alreadyCompletedThisChallengeToday;
-
-                if (!alreadyCompletedThisChallengeToday) {
-                    const lastCompletion = userDoc.dailyChallenges.completed.length > 0 ?
-                        userDoc.dailyChallenges.completed[userDoc.dailyChallenges.completed.length - 1] : null;
-                    const lastDate = lastCompletion?.date ? new Date(lastCompletion.date) : null;
-
-                    const yesterday = new Date(today);
-                    yesterday.setDate(today.getDate() - 1);
-                    yesterday.setHours(0, 0, 0, 0);
-
-                    const isConsecutive = lastDate && lastDate.getTime() === yesterday.getTime();
-
-                    const newStreak = isConsecutive ? (userDoc.dailyChallenges.currentStreak || 0) + 1 : 1;
-
-                    userDoc.dailyChallenges.completed.push({
-                        challengeId: problemId,
-                        date: today,
-                        streak: newStreak
-                    });
-                    userDoc.dailyChallenges.currentStreak = newStreak;
-                    userDoc.dailyChallenges.longestStreak = Math.max(
-                        userDoc.dailyChallenges.longestStreak,
-                        newStreak
-                    );
-                    await userDoc.save();
-                }
-            }
-
-            // --- NEW: Update ContestParticipation if this was a contest submission ---
-            if (contestId && contestProblem) {
-                const participation = await ContestParticipation.findOne({
-                    contestId,
-                    userId
-                });
-
-                if (participation) {
-                    // Check if this problem was already accepted in this contest by this user
-                    const existingAcceptedSubmission = participation.submissions.find(s =>
-                        s.problemId.equals(problemId) && s.points > 0
+                    const alreadyCompletedThisChallengeToday = userDoc.dailyChallenges.completed.some(c =>
+                        c.challengeId.toString() === problemId.toString() &&
+                        new Date(c.date).getTime() === today.getTime()
                     );
 
-                    if (!existingAcceptedSubmission) {
-                        // If it's the first Accepted submission for this problem in this contest
-                        participation.submissions.push({
-                            problemId,
-                            submissionId: submission._id,
-                            timestamp: new Date(), // Time of current submission
-                            points: contestProblem.points // Award points as defined in contest
+                    isFirstAcceptedDailyChallengeToday = !alreadyCompletedThisChallengeToday;
+
+                    if (!alreadyCompletedThisChallengeToday) {
+                        const lastCompletion = userDoc.dailyChallenges.completed.length > 0 ?
+                            userDoc.dailyChallenges.completed[userDoc.dailyChallenges.completed.length - 1] : null;
+                        const lastDate = lastCompletion?.date ? new Date(lastCompletion.date) : null;
+
+                        const yesterday = new Date(today);
+                        yesterday.setDate(today.getDate() - 1);
+                        yesterday.setHours(0, 0, 0, 0);
+
+                        const isConsecutive = lastDate && lastDate.getTime() === yesterday.getTime();
+
+                        const newStreak = isConsecutive ? (userDoc.dailyChallenges.currentStreak || 0) + 1 : 1;
+
+                        userDoc.dailyChallenges.completed.push({
+                            challengeId: problemId,
+                            date: today,
+                            streak: newStreak
                         });
-
-                        // Recalculate total points for the participation
-                        participation.totalPoints = participation.submissions.reduce(
-                            (sum, sub) => sum + sub.points, 0
+                        userDoc.dailyChallenges.currentStreak = newStreak;
+                        userDoc.dailyChallenges.longestStreak = Math.max(
+                            userDoc.dailyChallenges.longestStreak,
+                            newStreak
                         );
-
-                        // Update time taken (in minutes, from start of contest participation)
-                        // Assumes participation.startTime is when they registered or started the contest.
-                        participation.timeTaken = Math.floor(
-                            (new Date() - new Date(participation.startTime)) / (1000 * 60)
-                        );
-                        await participation.save();
-                    } else {
+                        await userDoc.save();
                     }
-                } else {
-                    console.warn(`ContestParticipation not found for user ${userId} in contest ${contestId} during submission. This should have been caught earlier.`);
+                }
+
+                if (contestId && contestProblem) {
+                    const participation = await ContestParticipation.findOne({ contestId, userId });
+
+                    if (participation) {
+                        const existingAcceptedSubmission = participation.submissions.find(s =>
+                            s.problemId.equals(problemId) && s.points > 0
+                        );
+
+                        if (!existingAcceptedSubmission) {
+                            participation.submissions.push({
+                                problemId,
+                                submissionId: submission._id,
+                                timestamp: new Date(),
+                                points: contestProblem.points
+                            });
+
+                            participation.totalPoints = participation.submissions.reduce(
+                                (sum, sub) => sum + sub.points, 0
+                            );
+
+                            participation.timeTaken = Math.floor(
+                                (new Date() - new Date(participation.startTime)) / (1000 * 60)
+                            );
+                            await participation.save();
+                        }
+                    }
                 }
             }
-
-            updatedUser = await User.findById(userId).select('dailyChallenges problemsSolved').lean();
+            updatedUser = userDoc ? userDoc.toObject() : null;
         }
 
         const responseData = {
@@ -313,7 +262,7 @@ const submitCode = async (req, res) => {
             runtime: `${maxRuntime.toFixed(3)}s`,
             memory: `${maxMemory} KB`,
             testCases: testCaseDetails,
-            code:code,
+            code: code,
             passed: testCasesPassed,
             total: problem.hiddenTestCases.length,
             errorMessage: errorMessage,
@@ -325,41 +274,30 @@ const submitCode = async (req, res) => {
             responseData.isFirstAcceptedDailyChallengeToday = isFirstAcceptedDailyChallengeToday;
         }
 
-        res.status(200).json(responseData);
-
+        return responseData; // Return the result
     } catch (err) {
-        console.error('Submission Error:', err);
-        res.status(500).json({
-            message: 'Failed to submit code',
-            error: err.message
-        });
+        console.error('Submission Error (Internal):', err);
+        throw new Error(`Failed to submit code internally: ${err.message}`);
     }
 };
 
-const runCode = async (req, res) => {
+// NEW: Internal function to handle code running logic
+// This function does NOT take req, res. It returns the result directly.
+const runCodeInternal = async ({ userId, problemId, code, language, customInput }) => {
     try {
-        const userId = req.user._id;
-        const problemId = req.params.id;
-        let { code, language, customInput } = req.body; 
-
         if (!userId || !code || !problemId || !language) {
-            return res.status(400).json({ message: "All fields are required." });
+            throw new Error("All fields are required for internal run.");
         }
 
         const problem = await Problem.findById(problemId);
         if (!problem) {
-            return res.status(404).json({ message: "Problem not found." });
+            throw new Error("Problem not found.");
         }
 
         const normalizedLang = normalizeLanguage(language);
-
-        // if (!problem.executionConfig || !problem.executionConfig.judge0LanguageIds) {
-        //     return res.status(500).json({ message: "Problem is missing its execution configuration." });
-        // }
-
         const languageId = getLanguageById(normalizedLang);
         if (!languageId) {
-            return res.status(400).json({ message: `Language '${language}' is not configured for this specific problem.` });
+            throw new Error(`Language '${language}' is not configured for this specific problem.`);
         }
 
         let testCasesToRun = [];
@@ -373,11 +311,10 @@ const runCode = async (req, res) => {
             testCasesToRun.push({ input: parsedCustomInput, output: null });
         } else {
             if (!problem.visibleTestCases || problem.visibleTestCases.length === 0) {
-                return res.status(400).json({ message: "No visible test cases or custom input provided to run against." });
+                throw new Error("No visible test cases or custom input provided to run against.");
             }
             testCasesToRun = problem.visibleTestCases;
         }
-
 
         const submissionsForJudge0 = testCasesToRun.map(testCase => {
             const executableCode = problem.generateExecutableCode(code, language, testCase.input);
@@ -386,14 +323,14 @@ const runCode = async (req, res) => {
             return {
                 source_code: executableCode,
                 language_id: languageId,
-                expected_output: formattedExpectedOutput 
+                expected_output: formattedExpectedOutput
             };
         });
 
         const submitResult = await submitBatch(submissionsForJudge0);
         if (!submitResult || !Array.isArray(submitResult) || submitResult.length === 0) {
             console.error('Judge0 batch submission failed or returned empty:', submitResult);
-            return res.status(500).json({ message: 'Failed to submit code to Judge0 for testing.' });
+            throw new Error('Failed to submit code to Judge0 for testing.');
         }
         const resultTokens = submitResult.map(value => value.token);
         const testResultsFromJudge0 = await submitToken(resultTokens);
@@ -406,7 +343,7 @@ const runCode = async (req, res) => {
 
         for (let i = 0; i < testResultsFromJudge0.length; i++) {
             const result = testResultsFromJudge0[i];
-            const testCase = testCasesToRun[i]; // Use testCasesToRun here
+            const testCase = testCasesToRun[i];
 
             maxRuntime = Math.max(maxRuntime, parseFloat(result.time || 0));
             maxMemory = Math.max(maxMemory, parseInt(result.memory || 0));
@@ -435,7 +372,6 @@ const runCode = async (req, res) => {
                 const actualOutputString = formatForComparison(result.stdout);
                 const expectedOutputString = testCase.output !== null ? formatForComparison(testCase.output) : null;
 
-                // Comparison logic: If expected output is null (e.g., for custom input), it's considered 'passed'
                 const passed = expectedOutputString === null || actualOutputString === expectedOutputString;
 
                 currentTestCaseResult.actual = result.stdout;
@@ -449,7 +385,6 @@ const runCode = async (req, res) => {
             }
         }
 
-        // 6. Determine Final Run Status
         let finalStatus, errorMessage;
         if (compilationErrorOutput) {
             finalStatus = 'Compilation Error';
@@ -464,20 +399,70 @@ const runCode = async (req, res) => {
                 errorMessage = firstFailedTest.stderr || firstFailedTest.stdout || 'Test failed.';
             } else {
                 finalStatus = 'Wrong Answer';
-                errorMessage = 'One or more tests failed.'; // Use generic message
+                errorMessage = 'One or more tests failed.';
             }
         }
 
-        // 7. Send Response to Frontend (no database saving for 'runCode')
-        res.status(200).json({
+        return {
             status: finalStatus,
             runtime: `${maxRuntime.toFixed(3)}s`,
             memory: `${maxMemory} KB`,
             testCases: testCaseDetails,
             passed: testCasesPassed,
-            total: testCasesToRun.length, // total based on what was run
+            total: testCasesToRun.length,
             errorMessage: errorMessage
+        };
+
+    } catch (err) {
+        console.error('Run Code Error (Internal):', err);
+        throw new Error(`Failed to run code internally: ${err.message}`);
+    }
+};
+
+
+const submitCode = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const problemId = req.params.id;
+        const { code, language } = req.body;
+        const contestId = req.query.contestId;
+
+        // Call the internal function
+        const submissionResult = await submitCodeInternal({
+            userId,
+            problemId,
+            code,
+            language,
+            contestId
         });
+
+        res.status(200).json(submissionResult);
+
+    } catch (err) {
+        console.error('Submission Error:', err);
+        res.status(500).json({
+            message: 'Failed to submit code',
+            error: err.message
+        });
+    }
+};
+
+const runCode = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const problemId = req.params.id;
+        const { code, language, customInput } = req.body;
+
+        // Call the internal function
+        const runResult = await runCodeInternal({
+            userId,
+            problemId,
+            code,
+            language,
+            customInput
+        });
+
+        res.status(200).json(runResult);
 
     } catch (err) {
         console.error('Run Code Error:', err);
@@ -601,20 +586,19 @@ const getDailyChallengeStats = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Get today's challenge to see if it's been completed
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         const todayChallenge = await Problem.findOne({
             isDailyChallenge: true,
-            dailyChallengeDate: { $gte: today }
+            dailyChallengeDate: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) } // Ensure it's for today
         });
 
         let todayCompleted = false;
         if (todayChallenge && user.dailyChallenges?.completed) {
             todayCompleted = user.dailyChallenges.completed.some(c =>
                 c.challengeId.equals(todayChallenge._id) &&
-                new Date(c.date).getTime() >= today.getTime()
+                new Date(c.date).getTime() === today.getTime()
             );
         }
 
@@ -640,4 +624,13 @@ const getDailyChallengeStats = async (req, res) => {
 };
 
 
-module.exports = { getSubmissionById, submitCode, runCode, getSubmissionHistory, getAllSubmission, getDailyChallengeStats };
+module.exports = {
+    getSubmissionById,
+    submitCode,
+    runCode,
+    getSubmissionHistory,
+    getAllSubmission,
+    getDailyChallengeStats,
+    submitCodeInternal, // Export the internal function for Socket.IO
+    runCodeInternal // NEW: Export the internal run code function for Socket.IO
+};
