@@ -21,7 +21,7 @@ const io = new Server(server, {
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true,
     },
-    // transports: ['polling', 'websocket'],
+    transports: ['polling', 'websocket'],
 });
 
 app.set('socketio', io);
