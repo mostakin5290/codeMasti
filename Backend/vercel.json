@@ -10,12 +10,10 @@
     {
       "src": "/socket.io/(.*)",
       "dest": "app.js",
+      "methods": ["GET", "POST"],
       "headers": {
         "Access-Control-Allow-Origin": "https://codemasti.vercel.app",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE",
-        "Connection": "Upgrade",
-        "Upgrade": "websocket"
+        "Access-Control-Allow-Credentials": "true"
       }
     },
     {
