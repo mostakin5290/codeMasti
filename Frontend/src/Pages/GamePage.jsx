@@ -5,7 +5,7 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-toastify';
-import LoadingSpinner from '../components/common/LoadingSpinner'; 
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import { FaTrophy, FaCalendarAlt, FaClock } from 'react-icons/fa'; // Import FaCalendarAlt, FaClock for consistency
 import Header from '../components/layout/Header'; // Assuming Header is in '../components/layout/Header'
 
@@ -82,7 +82,7 @@ const GamePage = () => {
     const searchTimerRef = useRef(null);
 
     // Safely get ELO rating, defaulting to a fallback if not available
-    const userEloRating = user?.stats?.eloRating || 1000; 
+    const userEloRating = user?.stats?.eloRating || 1000;
     const userFirstName = user?.firstName || 'Player';
 
     // Classes for main content sections, consistent with ProblemPage example
@@ -107,7 +107,7 @@ const GamePage = () => {
         setSearchTimer(0);
         setSearchingOpponent(true);
         setLoading(true); // Disable other buttons during search
-        
+
         searchTimerRef.current = setInterval(() => {
             setSearchTimer(prev => {
                 if (prev >= 19) { // 20 seconds total (0-19)
@@ -136,7 +136,7 @@ const GamePage = () => {
         battleAnimationTimerRef.current = setTimeout(() => {
             setShowBattleAnimation(false);
             setMatchedUsers({ currentUser: null, opponent: null });
-            navigate(`/game/room/${roomData.roomId}/play`); 
+            navigate(`/game/room/${roomData.roomId}/play`);
         }, 5000); // 5 seconds for the animation
     }, [clearSearchTimer, navigate]);
 
@@ -172,7 +172,7 @@ const GamePage = () => {
                 if (data.room && data.room.status === 'in-progress' && data.room.players.length === data.room.maxPlayers) {
                     const currentPlayerProfile = data.room.players.find(p => p.userId._id === user._id)?.userId;
                     const opponentPlayerProfile = data.room.players.find(p => p.userId._id !== user._id)?.userId;
-                    
+
                     if (currentPlayerProfile && opponentPlayerProfile) {
                         startBattleAnimationAndNavigate(data.room, currentPlayerProfile, opponentPlayerProfile);
                     } else {
@@ -397,221 +397,223 @@ const GamePage = () => {
                 </div>
             ) : (
                 // Original lobby content wrapped in new UI structure
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <Header /> {/* Ensure Header is present here */}
-                    <div className={`${sectionClasses} p-8 text-center mb-12`}>
-                        <h2 className={`text-5xl font-extrabold mb-4 ${theme.highlight} transform transition-all duration-500 hover:scale-105 animate-pulse-slow`}>
-                            Welcome to CodeMasti Games!
-                        </h2>
-                        <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full animate-shimmer"></div>
-                        
-                        {/* Display User's ELO Rating */}
-                        {isAuthenticated && user && (
-                            <div className={`mt-6 p-4 rounded-lg inline-flex items-center space-x-3 ${theme.iconBg} border ${theme.border}`}>
-                                <FaTrophy className={`text-2xl ${theme.highlightSecondary}`} />
-                                <p className={`text-xl font-semibold ${theme.text}`}>
-                                    Your ELO: <span className={`${theme.highlight}`}>{userEloRating}</span>
-                                </p>
+                <div className='w-screen'>
+                    <Header />
+                    <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <div className={`${sectionClasses} p-8 text-center mb-12`}>
+                            <h2 className={`text-5xl font-extrabold mb-4 ${theme.highlight} transform transition-all duration-500 hover:scale-105 animate-pulse-slow`}>
+                                Welcome to CodeMasti Games!
+                            </h2>
+                            <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full animate-shimmer"></div>
+
+                            {/* Display User's ELO Rating */}
+                            {isAuthenticated && user && (
+                                <div className={`mt-6 p-4 rounded-lg inline-flex items-center space-x-3 ${theme.iconBg} border ${theme.border}`}>
+                                    <FaTrophy className={`text-2xl ${theme.highlightSecondary}`} />
+                                    <p className={`text-xl font-semibold ${theme.text}`}>
+                                        Your ELO: <span className={`${theme.highlight}`}>{userEloRating}</span>
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Quick Match Card */}
+                            <div className={`${sectionClasses} p-8 flex flex-col transform transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-slide-in-left relative overflow-hidden group`}>
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center mb-6">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mr-4 animate-bounce-slow">
+                                            <span className="text-white font-bold text-xl">⚡</span>
+                                        </div>
+                                        <h3 className={`text-2xl font-bold ${theme.text}`}>Quick Match</h3>
+                                    </div>
+
+                                    <p className={`text-md ${theme.cardText} mb-6 flex-grow leading-relaxed`}>
+                                        Find a random opponent and start an epic coding battle!
+                                    </p>
+
+                                    {searchingOpponent && (
+                                        <div className="mb-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20 animate-pulse">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-blue-400 font-semibold">Searching for opponent...</span>
+                                                <span className="text-blue-400 font-mono">{20 - searchTimer}s</span>
+                                            </div>
+                                            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000 animate-shimmer"
+                                                    style={{ width: `${(searchTimer / 20) * 100}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-4 mb-6">
+                                        <div className="transform transition-all duration-300 hover:scale-105">
+                                            <label htmlFor="quickMatchDifficulty" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
+                                                Difficulty Level:
+                                            </label>
+                                            <select
+                                                id="quickMatchDifficulty"
+                                                value={quickMatchDifficulty}
+                                                onChange={(e) => setQuickMatchDifficulty(e.target.value)}
+                                                className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
+                                                disabled={searchingOpponent || loading || showBattleAnimation}
+                                            >
+                                                <option value="easy">🟢 Easy</option>
+                                                <option value="medium">🟡 Medium</option>
+                                                <option value="hard">🔴 Hard</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="transform transition-all duration-300 hover:scale-105">
+                                            <label htmlFor="quickMatchTime" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
+                                                Time Limit:
+                                            </label>
+                                            <select
+                                                id="quickMatchTime"
+                                                value={quickMatchTime}
+                                                onChange={(e) => setQuickMatchTime(parseInt(e.target.value))}
+                                                className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
+                                                disabled={searchingOpponent || loading || showBattleAnimation}
+                                            >
+                                                <option value={5}>⏰ 5 minutes</option>
+                                                <option value={10}>⏰ 10 minutes</option>
+                                                <option value={15}>⏰ 15 minutes</option>
+                                                <option value={20}>⏰ 20 minutes</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {!searchingOpponent ? (
+                                        <button
+                                            onClick={handleFindRandomOpponent}
+                                            disabled={loading || !isAuthenticated || showBattleAnimation}
+                                            className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed`}
+                                        >
+                                            <span className={`absolute inset-0 bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')}/80 ${theme.secondary.replace('bg-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
+                                            <span className="relative z-10 flex items-center justify-center">
+                                                {loading ? <LoadingSpinner size="sm" color="white" /> : '🚀 Find Random Opponent'}
+                                            </span>
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleCancelSearch}
+                                            className="w-full py-4 px-6 rounded-xl text-lg font-bold bg-red-500 hover:bg-red-600 text-white transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={loading || showBattleAnimation}
+                                        >
+                                            ❌ Cancel Search
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        )}
-                    </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Quick Match Card */}
-                        <div className={`${sectionClasses} p-8 flex flex-col transform transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-slide-in-left relative overflow-hidden group`}>
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <div className="relative z-10">
-                                <div className="flex items-center mb-6">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mr-4 animate-bounce-slow">
-                                        <span className="text-white font-bold text-xl">⚡</span>
-                                    </div>
-                                    <h3 className={`text-2xl font-bold ${theme.text}`}>Quick Match</h3>
-                                </div>
-                                
-                                <p className={`text-md ${theme.cardText} mb-6 flex-grow leading-relaxed`}>
-                                    Find a random opponent and start an epic coding battle!
-                                </p>
-
-                                {searchingOpponent && (
-                                    <div className="mb-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20 animate-pulse">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-blue-400 font-semibold">Searching for opponent...</span>
-                                            <span className="text-blue-400 font-mono">{20 - searchTimer}s</span>
+                            {/* Create Private Room Card */}
+                            <div className={`${sectionClasses} p-8 flex flex-col transform transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-slide-in-up relative overflow-hidden group`}>
+                                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center mb-6">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center mr-4 animate-bounce-slow">
+                                            <span className="text-white font-bold text-xl">🏠</span>
                                         </div>
-                                        <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                                            <div 
-                                                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000 animate-shimmer"
-                                                style={{ width: `${(searchTimer / 20) * 100}%` }}
-                                            ></div>
+                                        <h3 className={`text-2xl font-bold ${theme.text}`}>Create Private Room</h3>
+                                    </div>
+
+                                    <p className={`text-md ${theme.cardText} mb-6 flex-grow leading-relaxed`}>
+                                        Host a private coding arena for your friends to join!
+                                    </p>
+
+                                    <div className="space-y-4 mb-6">
+                                        <div className="transform transition-all duration-300 hover:scale-105">
+                                            <label htmlFor="createRoomDifficulty" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
+                                                Difficulty Level:
+                                            </label>
+                                            <select
+                                                id="createRoomDifficulty"
+                                                value={createRoomDifficulty}
+                                                onChange={(e) => setCreateRoomDifficulty(e.target.value)}
+                                                className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
+                                                disabled={loading || searchingOpponent || showBattleAnimation}
+                                            >
+                                                <option value="easy">🟢 Easy</option>
+                                                <option value="medium">🟡 Medium</option>
+                                                <option value="hard">🔴 Hard</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="transform transition-all duration-300 hover:scale-105">
+                                            <label htmlFor="createRoomTime" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
+                                                Time Limit:
+                                            </label>
+                                            <select
+                                                id="createRoomTime"
+                                                value={createRoomTime}
+                                                onChange={(e) => setCreateRoomTime(parseInt(e.target.value))}
+                                                className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
+                                                disabled={loading || searchingOpponent || showBattleAnimation}
+                                            >
+                                                <option value={5}>⏰ 5 minutes</option>
+                                                <option value={10}>⏰ 10 minutes</option>
+                                                <option value={15}>⏰ 15 minutes</option>
+                                                <option value={20}>⏰ 20 minutes</option>
+                                            </select>
                                         </div>
                                     </div>
-                                )}
 
-                                <div className="space-y-4 mb-6">
-                                    <div className="transform transition-all duration-300 hover:scale-105">
-                                        <label htmlFor="quickMatchDifficulty" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
-                                            Difficulty Level:
-                                        </label>
-                                        <select
-                                            id="quickMatchDifficulty"
-                                            value={quickMatchDifficulty}
-                                            onChange={(e) => setQuickMatchDifficulty(e.target.value)}
-                                            className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                            disabled={searchingOpponent || loading || showBattleAnimation}
-                                        >
-                                            <option value="easy">🟢 Easy</option>
-                                            <option value="medium">🟡 Medium</option>
-                                            <option value="hard">🔴 Hard</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div className="transform transition-all duration-300 hover:scale-105">
-                                        <label htmlFor="quickMatchTime" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
-                                            Time Limit:
-                                        </label>
-                                        <select
-                                            id="quickMatchTime"
-                                            value={quickMatchTime}
-                                            onChange={(e) => setQuickMatchTime(parseInt(e.target.value))}
-                                            className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                            disabled={searchingOpponent || loading || showBattleAnimation}
-                                        >
-                                            <option value={5}>⏰ 5 minutes</option>
-                                            <option value={10}>⏰ 10 minutes</option>
-                                            <option value={15}>⏰ 15 minutes</option>
-                                            <option value={20}>⏰ 20 minutes</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {!searchingOpponent ? (
                                     <button
-                                        onClick={handleFindRandomOpponent}
-                                        disabled={loading || !isAuthenticated || showBattleAnimation}
+                                        onClick={handleCreateRoom}
+                                        disabled={loading || !isAuthenticated || searchingOpponent || showBattleAnimation}
                                         className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed`}
                                     >
-                                        <span className={`absolute inset-0 bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')}/80 ${theme.secondary.replace('bg-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
+                                        <span className={`absolute inset-0 bg-gradient-to-r ${theme.successColor.replace('text-', 'from-')}/80 ${theme.infoColor.replace('text-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
                                         <span className="relative z-10 flex items-center justify-center">
-                                            {loading ? <LoadingSpinner size="sm" color="white" /> : '🚀 Find Random Opponent'}
+                                            {loading ? <LoadingSpinner size="sm" color="white" /> : '🏗️ Create Private Room'}
                                         </span>
                                     </button>
-                                ) : (
+                                </div>
+                            </div>
+
+                            {/* Join Room Card */}
+                            <div className={`${sectionClasses} p-8 flex flex-col transform transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-slide-in-right relative overflow-hidden group`}>
+                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center mb-6">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-4 animate-bounce-slow">
+                                            <span className="text-white font-bold text-xl">🚪</span>
+                                        </div>
+                                        <h3 className={`text-2xl font-bold ${theme.text}`}>Join Room</h3>
+                                    </div>
+
+                                    <p className={`text-md ${theme.cardText} mb-6 flex-grow leading-relaxed`}>
+                                        Enter a Room ID to join an existing coding battle!
+                                    </p>
+
+                                    <div className="mb-6 transform transition-all duration-300 hover:scale-105">
+                                        <label className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
+                                            Room ID:
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={roomIdInput}
+                                            onChange={(e) => setRoomIdInput(e.target.value.toUpperCase())}
+                                            placeholder="Enter Room ID (e.g., ABC123)"
+                                            className={`w-full p-4 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 font-mono text-center text-lg tracking-wider shadow-inner`}
+                                            maxLength={6}
+                                            disabled={loading || searchingOpponent || showBattleAnimation}
+                                        />
+                                    </div>
+
                                     <button
-                                        onClick={handleCancelSearch}
-                                        className="w-full py-4 px-6 rounded-xl text-lg font-bold bg-red-500 hover:bg-red-600 text-white transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        disabled={loading || showBattleAnimation}
+                                        onClick={handleJoinRoom}
+                                        disabled={loading || !roomIdInput.trim() || !isAuthenticated || searchingOpponent || showBattleAnimation}
+                                        className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group`}
                                     >
-                                        ❌ Cancel Search
+                                        <span className={`absolute inset-0 bg-gradient-to-r ${theme.highlightTertiary.replace('text-', 'from-')}/80 ${theme.primary.replace('bg-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
+                                        <span className="relative z-10 flex items-center justify-center">
+                                            {loading ? <LoadingSpinner size="sm" color="white" /> : '🎯 Join Room'}
+                                        </span>
                                     </button>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Create Private Room Card */}
-                        <div className={`${sectionClasses} p-8 flex flex-col transform transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-slide-in-up relative overflow-hidden group`}>
-                            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <div className="relative z-10">
-                                <div className="flex items-center mb-6">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center mr-4 animate-bounce-slow">
-                                        <span className="text-white font-bold text-xl">🏠</span>
-                                    </div>
-                                    <h3 className={`text-2xl font-bold ${theme.text}`}>Create Private Room</h3>
                                 </div>
-                                
-                                <p className={`text-md ${theme.cardText} mb-6 flex-grow leading-relaxed`}>
-                                    Host a private coding arena for your friends to join!
-                                </p>
-
-                                <div className="space-y-4 mb-6">
-                                    <div className="transform transition-all duration-300 hover:scale-105">
-                                        <label htmlFor="createRoomDifficulty" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
-                                            Difficulty Level:
-                                        </label>
-                                        <select
-                                            id="createRoomDifficulty"
-                                            value={createRoomDifficulty}
-                                            onChange={(e) => setCreateRoomDifficulty(e.target.value)}
-                                            className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                            disabled={loading || searchingOpponent || showBattleAnimation}
-                                        >
-                                            <option value="easy">🟢 Easy</option>
-                                            <option value="medium">🟡 Medium</option>
-                                            <option value="hard">🔴 Hard</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div className="transform transition-all duration-300 hover:scale-105">
-                                        <label htmlFor="createRoomTime" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
-                                            Time Limit:
-                                        </label>
-                                        <select
-                                            id="createRoomTime"
-                                            value={createRoomTime}
-                                            onChange={(e) => setCreateRoomTime(parseInt(e.target.value))}
-                                            className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                            disabled={loading || searchingOpponent || showBattleAnimation}
-                                        >
-                                            <option value={5}>⏰ 5 minutes</option>
-                                            <option value={10}>⏰ 10 minutes</option>
-                                            <option value={15}>⏰ 15 minutes</option>
-                                            <option value={20}>⏰ 20 minutes</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={handleCreateRoom}
-                                    disabled={loading || !isAuthenticated || searchingOpponent || showBattleAnimation}
-                                    className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed`}
-                                >
-                                    <span className={`absolute inset-0 bg-gradient-to-r ${theme.successColor.replace('text-', 'from-')}/80 ${theme.infoColor.replace('text-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
-                                    <span className="relative z-10 flex items-center justify-center">
-                                        {loading ? <LoadingSpinner size="sm" color="white" /> : '🏗️ Create Private Room'}
-                                    </span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Join Room Card */}
-                        <div className={`${sectionClasses} p-8 flex flex-col transform transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-slide-in-right relative overflow-hidden group`}>
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <div className="relative z-10">
-                                <div className="flex items-center mb-6">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-4 animate-bounce-slow">
-                                        <span className="text-white font-bold text-xl">🚪</span>
-                                    </div>
-                                    <h3 className={`text-2xl font-bold ${theme.text}`}>Join Room</h3>
-                                </div>
-                                
-                                <p className={`text-md ${theme.cardText} mb-6 flex-grow leading-relaxed`}>
-                                    Enter a Room ID to join an existing coding battle!
-                                </p>
-
-                                <div className="mb-6 transform transition-all duration-300 hover:scale-105">
-                                    <label className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
-                                        Room ID:
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={roomIdInput}
-                                        onChange={(e) => setRoomIdInput(e.target.value.toUpperCase())}
-                                        placeholder="Enter Room ID (e.g., ABC123)"
-                                        className={`w-full p-4 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 font-mono text-center text-lg tracking-wider shadow-inner`}
-                                        maxLength={6}
-                                        disabled={loading || searchingOpponent || showBattleAnimation}
-                                    />
-                                </div>
-
-                                <button
-                                    onClick={handleJoinRoom}
-                                    disabled={loading || !roomIdInput.trim() || !isAuthenticated || searchingOpponent || showBattleAnimation}
-                                    className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group`}
-                                >
-                                    <span className={`absolute inset-0 bg-gradient-to-r ${theme.highlightTertiary.replace('text-', 'from-')}/80 ${theme.primary.replace('bg-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
-                                    <span className="relative z-10 flex items-center justify-center">
-                                        {loading ? <LoadingSpinner size="sm" color="white" /> : '🎯 Join Room'}
-                                    </span>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -659,7 +661,7 @@ const GamePage = () => {
                 @keyframes shimmer {
                     0% { background-position: -200% 0; }
                     100% { background-position: 200% 0; }
-                }
+                } 
                 @keyframes fade-in {
                     from { opacity: 0; }
                     to { opacity: 1; }
