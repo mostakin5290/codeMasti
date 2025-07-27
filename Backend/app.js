@@ -11,25 +11,39 @@ const mongoose = require('mongoose');
 const app = express();
 const server = http.createServer(app);
 
+// ----------------------------------------------------
+// CRITICAL: Socket.IO CORS Configuration
+// Make sure this matches your frontend URL precisely.
+// Ensure 'methods' includes what your frontend uses.
+// For Vercel, it's often best to specify 'transports'
+// ----------------------------------------------------
 const io = new Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL,
+        origin: process.env.FRONTEND_URL, // e.g., "https://codemasti.vercel.app"
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true
     },
+    // IMPORTANT for Vercel/some hosting: Explicitly set transports
+    // 'websocket' is preferred, 'polling' is fallback
+    transports: ['websocket', 'polling'], 
     pingInterval: 25000,
     pingTimeout: 60000 
 });
 
 app.set('socketio', io);
 
+// ----------------------------------------------------
+// CRITICAL: Express CORS Middleware
+// This must be placed *before* any routes that need CORS.
+// ----------------------------------------------------
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL, // e.g., "https://codemasti.vercel.app"
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
     exposedHeaders: ['set-cookie']
 }));
 
+// Your raw body parser for payment webhook (keep this order)
 app.use((req, res, next) => {
     if (req.originalUrl === '/payment/verify-payment') {
         let rawBody = '';
@@ -50,16 +64,19 @@ app.use((req, res, next) => {
     }
 });
 
+// Other Express Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Database/Model Imports
 const GameRoom = require('./src/models/gameRoomSchema');
 const Problem = require('./src/models/problem');
 const User = require('./src/models/user');
 const { submitCodeInternal, runCodeInternal } = require('./src/controllers/submitControllers');
 const { endGame } = require('./src/controllers/gameController');
 
+// Router Imports
 const userRouter = require('./src/routes/userRoute');
 const problemRouter = require('./src/routes/problemRoute');
 const submitRoute = require('./src/routes/submitRoutes');
@@ -74,6 +91,9 @@ const playlistRouter = require('./src/routes/playlistRoutes');
 const premiumRouter = require('./src/routes/premiumRouter');
 const gameRoutes = require('./src/routes/gameRoutes');
 
+// ----------------------------------------------------
+// Define Routes (after CORS, body parsers)
+// ----------------------------------------------------
 app.use('/user', userRouter);
 app.use('/problem', problemRouter);
 app.use('/submission', submitRoute);
@@ -88,21 +108,26 @@ app.use('/playlist', playlistRouter);
 app.use('/premium', premiumRouter);
 app.use('/game', gameRoutes);
 
+// ----------------------------------------------------
+// Socket.IO Connection Logic (keep this as is)
+// ----------------------------------------------------
 const gameTimers = new Map();
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
     const userId = socket.handshake.query.userId;
 
+    // ... (rest of your existing socket.io connection logic) ...
+    // Your socket.io code looks correct for the game logic itself.
+    // The issue is with the initial connection.
+
     if (userId) {
         GameRoom.findOne({ 'players.userId': userId })
             .then(async (room) => {
                 if (room) {
-                    const player = room.players.find(p => p.userId && p.userId.toString() === userId); // Added p.userId check
+                    const player = room.players.find(p => p.userId && p.userId.toString() === userId);
                     if (player && player.socketId !== socket.id) {
                         player.socketId = socket.id;
-                        // No need to set player.status here if they are already in an in-progress game
-                        // as the reconnectedToGame will handle it if needed.
                         await room.save();
                         console.log(`Updated socketId for user ${userId} in room ${room.roomId}`);
 
@@ -119,7 +144,6 @@ io.on('connection', (socket) => {
             }).catch(err => console.error("Error updating user socket ID on reconnect:", err));
     }
 
-
     socket.on('joinGameRoom', async ({ roomId, userId }) => {
         try {
             const gameRoom = await GameRoom.findOne({ roomId });
@@ -129,17 +153,15 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            // Find player using optional chaining and explicit checks
             const player = gameRoom.players.find(p => p.userId?.toString() === userId);
             if (!player) {
                 socket.emit('gameError', { message: 'You are not a player in this room.' });
                 return;
             }
 
-            // Update socket ID if changed
             if (player.socketId !== socket.id) {
                 player.socketId = socket.id;
-                await gameRoom.save(); // Save updated socketId
+                await gameRoom.save();
             }
 
             socket.join(roomId);
@@ -176,7 +198,7 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            const player = gameRoom.players.find(p => p.userId?.toString() === userId); // Added p.userId check
+            const player = gameRoom.players.find(p => p.userId?.toString() === userId);
             if (!player) {
                 socket.emit('gameError', { message: 'You are not a player in this room.' });
                 return;
@@ -229,7 +251,7 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            const currentPlayer = gameRoom.players.find(p => p.userId?.toString() === userId); // Added p.userId check
+            const currentPlayer = gameRoom.players.find(p => p.userId?.toString() === userId);
             if (!currentPlayer) {
                 io.to(socket.id).emit('gameError', { message: 'You are not a player in this room.' });
                 return;
@@ -252,7 +274,6 @@ io.on('connection', (socket) => {
         }
     });
 
-
     socket.on('gameCodeSubmission', async ({ roomId, userId, problemId, code, language }) => {
         try {
             const gameRoom = await GameRoom.findOne({ roomId });
@@ -267,7 +288,7 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            const currentPlayer = gameRoom.players.find(p => p.userId?.toString() === userId); // Added p.userId check
+            const currentPlayer = gameRoom.players.find(p => p.userId?.toString() === userId);
             if (!currentPlayer) {
                 io.to(socket.id).emit('gameError', { message: 'You are not a player in this room.' });
                 return;
@@ -290,7 +311,7 @@ io.on('connection', (socket) => {
             io.to(socket.id).emit('codeResult', { ...submissionResult, userId });
 
             if (submissionResult.status === 'Accepted') {
-                const problemAlreadyCompleted = currentPlayer.problemsCompleted.some(pc => pc.problemId?.toString() === problemId.toString()); // Added pc.problemId check
+                const problemAlreadyCompleted = currentPlayer.problemsCompleted.some(pc => pc.problemId?.toString() === problemId.toString());
 
                 if (!problemAlreadyCompleted) {
                     currentPlayer.problemsCompleted.push({
@@ -313,7 +334,7 @@ io.on('connection', (socket) => {
                         userId,
                         problemId,
                         room: gameRoom,
-                        message: `${(await User.findById(userId))?.firstName || 'A player'} solved a problem!` // Optional chaining for firstName
+                        message: `${(await User.findById(userId))?.firstName || 'A player'} solved a problem!`
                     });
 
                     await gameRoom.save();
@@ -346,30 +367,24 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            const playerIndex = gameRoom.players.findIndex(p => p.userId?.toString() === userId); // Added p.userId check
+            const playerIndex = gameRoom.players.findIndex(p => p.userId?.toString() === userId);
             if (playerIndex === -1) {
                 console.warn(`User ${userId} not found in room ${roomId} to leave.`);
                 return;
             }
 
             const leftPlayer = gameRoom.players[playerIndex];
-            const leftUserName = (await User.findById(userId))?.firstName || 'A player'; // Optional chaining
+            const leftUserName = (await User.findById(userId))?.firstName || 'A player';
 
 
-            // Crucial Change: Instead of just marking status and saving,
-            // we will remove the player from the array. This avoids issues
-            // with Mongoose trying to validate an "empty" player slot.
-            // If the game mode requires a minimum number of players (e.g., 2 for 1v1),
-            // and a player leaves, it's better to remove them completely from the 'players' array.
-            gameRoom.players.splice(playerIndex, 1); // Remove player from array
-            await gameRoom.save(); // Save the modified array
+            gameRoom.players.splice(playerIndex, 1);
+            await gameRoom.save();
 
 
             console.log(`User ${userId} explicitly left room ${roomId}.`);
             io.to(roomId).emit('playerLeftRoom', { room: gameRoom, leftPlayerId: userId, message: `${leftUserName} left the room.` });
 
-            // Evaluate room state after a player "leaves"
-            const activePlayers = gameRoom.players.filter(p => p.status !== 'disconnected'); // Re-filter based on remaining players
+            const activePlayers = gameRoom.players.filter(p => p.status !== 'disconnected');
 
             if (gameRoom.status === 'in-progress') {
                 if (activePlayers.length === 1 && gameRoom.maxPlayers === 2) {
