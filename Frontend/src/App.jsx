@@ -63,9 +63,10 @@ import { AnimationProvider } from "./context/AnimationContext";
 import PremiumWelcomePage from "./Pages/PremiumWelcomePage";
 import ComingSoonPage from "./components/common/ComingSoon";
 import RankPage from "./components/Profile/RankPage";
-import GamePage from "./Pages/GamePage"; 
-import GameCodefield from "./Pages/GameCodefield"; 
-import GameRoomDetailsPage from "./Pages/GameRoomDetailsPage"; 
+import GamePage from "./Pages/GamePage";
+import GameCodefield from "./Pages/GameCodefield";
+import GameRoomDetailsPage from "./Pages/GameRoomDetailsPage";
+import VisualizerPage from "./Pages/VisualizerPage";
 
 
 const AppRoutes = () => {
@@ -160,6 +161,8 @@ const AppRoutes = () => {
                 <Route path="/game/room/:roomId" element={isAuthenticated ? <GameRoomDetailsPage /> : <Navigate to="/" />} />
                 <Route path="/game/room/:roomId/play" element={isAuthenticated ? <GameCodefield /> : <Navigate to="/" />} />
 
+
+                <Route path="/visualizer" element={<VisualizerPage/> } />
                 {/* --- Admin Routes --- */}
                 <Route element={<AdminRoute />}>
                     <Route path="/admin" element={<AdminLayout />}>

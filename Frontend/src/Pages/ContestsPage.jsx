@@ -1,18 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-    FaCalendarAlt, FaClock, FaUsers, FaUserPlus,
-    FaPlay, FaTrophy, FaEye, FaCheckCircle
-} from 'react-icons/fa';
+import React, { useState, useEffect } from 'react'; // Added useEffect for potential animations
+import { Link, useLocation } from 'react-router-dom'; // Added useLocation for page title
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import axiosClient from '../api/axiosClient';
+import ContestOverview from '../components/Contest/ContestOverview';
 import { useTheme } from '../context/ThemeContext';
-import { toast } from 'react-toastify';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import { useSelector } from 'react-redux';
+import { FaTrophy,FaPlay,FaEye, FaGamepad, FaMicrophoneAlt, FaBars, FaTimes, FaFire } from 'react-icons/fa'; // Added FaBars, FaTimes, FaFire for consistency
 
-// Default theme (unchanged)
+// Default theme (unchanged - ensure consistency if context is not fully loaded)
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white',
     accent: 'bg-indigo-600',
@@ -40,275 +34,209 @@ const defaultTheme = {
 const ContestsPage = () => {
     const { theme: appThemeFromContext } = useTheme();
     const appTheme = { ...defaultTheme, ...(appThemeFromContext) };
-    const navigate = useNavigate();
+    const location = useLocation(); // To dynamically set the page title
 
-    const { isAuthenticated } = useSelector(state => state.auth);
+    const [activeSection, setActiveSection] = useState('contests'); // 'contests', 'game', 'interview'
+    const [sidebarOpen, setSidebarOpen] = useState(false); // State for mobile sidebar
 
-    const [contests, setContests] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [filter, setFilter] = useState('upcoming');
+    // This function will generate the main background gradient
+    const getMainBackgroundGradient = () => `bg-gradient-to-br ${appTheme.gradientFrom} ${appTheme.gradientTo}`;
+    // This function will generate the primary gradient for active elements
+    const getPrimaryGradient = () => `bg-gradient-to-r ${appTheme.buttonPrimary.replace('bg-', 'from-')} ${appTheme.buttonSecondary.replace('bg-', 'to-')}`;
 
-    const getContestStatus = useCallback((startTime, endTime) => {
-        const now = new Date();
-        const start = new Date(startTime);
-        const end = new Date(endTime);
+    // Dynamic link classes for sidebar navigation
+    const getLinkClasses = (section) =>
+        `flex items-center w-full px-5 py-3 rounded-lg text-lg font-medium transition-all duration-300 ease-in-out group relative overflow-hidden`;
 
-        if (start > now) {
-            return 'upcoming';
-        } else if (end < now) {
-            return 'past';
-        } else {
-            return 'ongoing';
-        }
-    }, []);
+    const getNavLinkActiveClasses = (section) =>
+        `${getPrimaryGradient()} ${appTheme.buttonText} shadow-lg scale-[1.02]`;
 
-    const fetchContests = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { data } = await axiosClient.get(`/contests?filter=${filter}`);
-            setContests(data);
-            console.log(data)
-        } catch (err) {
-            console.error("Failed to fetch contests:", err);
-            setError(err.response?.data?.error || "Failed to load contests.");
-            toast.error(err.response?.data?.error || "Failed to load contests.");
-        } finally {
-            setLoading(false);
-        }
-    }, [filter]);
+    const getNavLinkInactiveClasses = (section) =>
+        `${appTheme.cardText} hover:${appTheme.cardBg.replace('bg-', 'bg-')}/70 hover:scale-[1.01]`;
 
-    useEffect(() => {
-        fetchContests();
-    }, [fetchContests]);
-
-    const handleRegister = async (contestId) => {
-        try {
-            await axiosClient.post(`/contests/${contestId}/register`);
-            toast.success('Successfully registered for the contest!');
-            fetchContests();
-        } catch (err) {
-            console.error("Registration failed:", err);
-            toast.error(err.response?.data?.error || 'Failed to register for contest. Please try again.');
-        }
-    };
-
-    const renderActionButtons = (contest) => {
-        const status = getContestStatus(contest.startTime, contest.endTime);
-
-        const buttonBaseClasses = `flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors w-full`;
-        const buttonPrimaryClasses = `${appTheme.buttonPrimary} ${appTheme.buttonText} hover:${appTheme.buttonPrimaryHover}`;
-        const buttonSecondaryClasses = `${appTheme.buttonSecondary} ${appTheme.buttonText} hover:${appTheme.buttonSecondaryHover}`;
-        const buttonTertiaryClasses = `${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText} hover:${appTheme.cardBg.replace('bg-', 'bg-')}/80`;
-
-        if (status === 'upcoming') {
-            if (isAuthenticated) {
-                if (contest.isRegistered) {
-                    return (
-                        <button
-                            disabled
-                            className={`${buttonBaseClasses} bg-gray-600 text-white opacity-70 cursor-not-allowed`}
-                        >
-                            <FaCheckCircle /> Registered
-                        </button>
-                    );
-                } else {
-                    return (
-                        <button
-                            onClick={() => handleRegister(contest._id)}
-                            className={`${buttonBaseClasses} ${buttonPrimaryClasses}`}
-                        >
-                            <FaUserPlus /> Register
-                        </button>
-                    );
-                }
-            } else {
-                return (
-                    <Link
-                        to="/login"
-                        className={`${buttonBaseClasses} ${buttonPrimaryClasses}`}
-                    >
-                        <FaUserPlus /> Login to Register
-                    </Link>
-                );
-            }
-        } else if (status === 'ongoing') {
-            if (isAuthenticated && contest.isRegistered) {
-                return (
-                    <div className="flex flex-col sm:flex-row gap-2 w-full">
-                        <Link
-                            to={`/contests/${contest._id}/participate`}
-                            className={`${buttonBaseClasses} ${buttonPrimaryClasses}`}
-                        >
-                            <FaPlay /> Participate
-                        </Link>
-                        <Link
-                            to={`/contests/${contest._id}/leaderboard`}
-                            className={`${buttonBaseClasses} ${buttonSecondaryClasses}`}
-                        >
-                            <FaTrophy /> Leaderboard
-                        </Link>
-                    </div>
-                );
-            } else {
-                return (
-                    <div className="flex flex-col sm:flex-row gap-2 w-full items-center">
-                        <span className={`block w-full text-center py-2 ${appTheme.warningColor} font-medium text-sm`}>Registration Closed</span>
-                        <Link
-                            to={`/contests/${contest._id}/leaderboard`}
-                            className={`${buttonBaseClasses} ${buttonSecondaryClasses}`}
-                        >
-                            <FaTrophy /> Leaderboard
-                        </Link>
-                        <Link
-                            to={`/contests/${contest._id}`}
-                            className={`${buttonBaseClasses} ${buttonTertiaryClasses}`}
-                        >
-                            <FaEye /> View Details
-                        </Link>
-                    </div>
-                );
-            }
-        } else if (status === 'past') {
-            return (
-                <div className="flex flex-col sm:flex-row gap-2 w-full">
-                    <Link
-                        to={`/contests/${contest._id}/leaderboard`}
-                        className={`${buttonBaseClasses} ${buttonSecondaryClasses}`}
-                    >
-                        <FaTrophy /> Leaderboard
-                    </Link>
-                    <Link
-                        to={`/contests/${contest._id}`}
-                        className={`${buttonBaseClasses} ${buttonTertiaryClasses}`}
-                    >
-                        <FaEye /> View Details
-                    </Link>
-                </div>
-            );
-        }
-        return null;
-    };
-
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'upcoming':
-                return `px-2 py-1 rounded-full text-xs ${appTheme.infoColor.replace('text-', 'bg-')} ${appTheme.buttonText}`;
-            case 'ongoing':
-                return `px-2 py-1 rounded-full text-xs ${appTheme.successColor.replace('text-', 'bg-')} ${appTheme.buttonText}`;
-            case 'past':
-                return `px-2 py-1 rounded-full text-xs ${appTheme.cardBg.replace('bg-', 'bg-')} ${appTheme.cardText}`;
+    // Function to get the current page title based on activeSection
+    const getPageTitle = () => {
+        switch (activeSection) {
+            case 'contests':
+                return "Competitive Contests";
+            case 'game':
+                return "Battle/Game Arena";
+            case 'interview':
+                return "Interview Preparation";
             default:
-                return '';
+                return "Contests & Challenges";
         }
     };
 
-    if (loading) {
-        return (
-            <div className={`min-h-screen ${appTheme.background}`}>
-                <Header />
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-                    <LoadingSpinner message="Loading contests..." />
-                </div>
-                <Footer />
-            </div>
-        );
-    }
+    // Function to get the current page icon
+    const getPageIcon = () => {
+        const iconClass = "mr-3 text-2xl";
+        switch (activeSection) {
+            case 'contests':
+                return <FaTrophy className={`${iconClass} ${appTheme.highlight}`} />;
+            case 'game':
+                return <FaGamepad className={`${iconClass} ${appTheme.highlightSecondary}`} />;
+            case 'interview':
+                return <FaMicrophoneAlt className={`${iconClass} ${appTheme.highlightTertiary}`} />;
+            default:
+                return <FaFire className={`${iconClass} ${appTheme.highlight}`} />; // Default icon
+        }
+    };
+
+
+    // Sidebar navigation items
+    const navItems = [
+        { id: 'contests', icon: FaTrophy, label: "Contests", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` },
+        { id: 'game', icon: FaGamepad, label: "Battle/Game", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlightSecondary.replace('text-', 'to-')}` },
+        { id: 'interview', icon: FaMicrophoneAlt, label: "Interview", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` },
+    ];
 
     return (
-        <div className={`min-h-screen flex flex-col ${appTheme.background}`}>
-            <Header />
+        <div className={`min-h-screen ${getMainBackgroundGradient()} ${appTheme.text} relative overflow-hidden`}>
+            {/* Animated background elements (themed) */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className={`absolute -top-40 -right-40 w-80 h-80 ${appTheme.primary.replace('bg-', 'bg-')} rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse-slow`}></div>
+                <div className={`absolute -bottom-40 -left-40 w-80 h-80 ${appTheme.highlightSecondary.replace('text-', 'bg-')} rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse-slow animation-delay-2000`}></div>
+                <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 ${appTheme.highlightTertiary.replace('text-', 'bg-')} rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse-slow animation-delay-4000`}></div>
+            </div>
 
-            <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <h1 className={`text-4xl font-extrabold mb-8 ${appTheme.text} text-center`}>
-                    Competitive Programming Contests
-                </h1>
+            {/* Floating particles (themed) */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {[...Array(20)].map((_, i) => (
+                    <div
+                        key={i}
+                        className={`absolute w-2 h-2 ${appTheme.text.replace('text-', 'bg-')} rounded-full opacity-10 animate-float-and-rotate`}
+                        style={{
+                            left: `${Math.random() * 100}%`,
+                            top: `${Math.random() * 100}%`,
+                            animationDelay: `${Math.random() * 5}s`,
+                            animationDuration: `${3 + Math.random() * 4}s`
+                        }}
+                    ></div>
+                ))}
+            </div>
 
-                {/* Filter Tabs (unchanged) */}
-                <div className={`flex justify-center mb-8 p-1 rounded-lg ${appTheme.cardBg}`}>
-                    <button
-                        onClick={() => setFilter('upcoming')}
-                        className={`px-6 py-3 rounded-md font-medium text-lg transition-colors duration-200
-                            ${filter === 'upcoming' ? `${appTheme.buttonPrimary} ${appTheme.buttonText}` : `${appTheme.cardText} hover:${appTheme.cardBg.replace('bg-', 'bg-')}/70`}`}
-                    >
-                        Upcoming
-                    </button>
-                    <button
-                        onClick={() => setFilter('ongoing')}
-                        className={`px-6 py-3 rounded-md font-medium text-lg transition-colors duration-200
-                            ${filter === 'ongoing' ? `${appTheme.buttonPrimary} ${appTheme.buttonText}` : `${appTheme.cardText} hover:${appTheme.cardBg.replace('bg-', 'bg-')}/70`}`}
-                    >
-                        Ongoing
-                    </button>
-                    <button
-                        onClick={() => setFilter('past')}
-                        className={`px-6 py-3 rounded-md font-medium text-lg transition-colors duration-200
-                            ${filter === 'past' ? `${appTheme.buttonPrimary} ${appTheme.buttonText}` : `${appTheme.cardText} hover:${appTheme.cardBg.replace('bg-', 'bg-')}/70`}`}
-                    >
-                        Past
-                    </button>
-                </div>
+            <div className='mb-20 relative z-10'> {/* Increased z-index to ensure header is on top */}
+                <Header />
+            </div>
 
-                {error && <p className={`text-center ${appTheme.errorColor} mb-4`}>{error}</p>}
+            {/* Mobile sidebar toggle (themed) */}
+            <button
+                className={`lg:hidden fixed top-24 left-4 z-50 p-3 ${getPrimaryGradient()} rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 ${appTheme.buttonText}`}
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+                {sidebarOpen ? <FaTimes /> : <FaBars />}
+            </button>
 
-                {contests.length === 0 && !loading && (
-                    <p className={`text-center text-xl ${appTheme.cardText}`}>
-                        No {filter} contests available at the moment.
-                    </p>
+            <div className="flex flex-col lg:flex-row max-w-7xl mx-auto px-4 py-8 gap-8 relative z-10">
+                {/* Sidebar (themed) */}
+                <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 w-72 lg:w-80 flex-shrink-0 transition-transform duration-300 ease-in-out lg:block`}>
+                    <div className={`p-8 ${appTheme.cardBg}/10 backdrop-blur-2xl rounded-2xl border ${appTheme.border}/20 h-full sticky top-24 shadow-2xl`}>
+                        {/* Sidebar header with gradient (themed) */}
+                        <div className="relative mb-8">
+                            <div className={`absolute inset-0 ${getPrimaryGradient()} rounded-xl blur opacity-20`}></div>
+                            <div className={`relative ${getPrimaryGradient().replace('bg-gradient-to-r', 'bg-gradient-to-r from-')}/20 ${appTheme.highlight.replace('text-', 'to-')}/20 p-4 rounded-xl border ${appTheme.border}/10`}>
+                                <h2 className={`text-2xl font-bold ${appTheme.text} flex items-center`}>
+                                    <span className={`mr-3 text-3xl ${appTheme.highlight}`}>✨</span> {/* Changed icon for a different feel */}
+                                    Challenges
+                                </h2>
+                                <p className={`${appTheme.cardText} text-sm mt-1`}>Explore coding disciplines</p>
+                            </div>
+                        </div>
+
+                        <nav className="space-y-3">
+                            {navItems.map((item, index) => {
+                                const Icon = item.icon;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => { setActiveSection(item.id); setSidebarOpen(false); }}
+                                        className={`${getLinkClasses(item.id)} ${activeSection === item.id ? getNavLinkActiveClasses(item.id) : getNavLinkInactiveClasses(item.id)}`}
+                                        style={{ animationDelay: `${index * 0.05}s` }}
+                                    >
+                                        {/* Dynamic background for hover/active state */}
+                                        <div className={`absolute inset-0 bg-gradient-to-r ${item.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg`}>
+                                        </div>
+                                        <Icon className={`mr-4 text-lg z-10 relative group-hover:animate-bounce ${activeSection === item.id ? appTheme.buttonText : item.color.includes('from-blue') ? appTheme.highlightSecondary : item.color.includes('from-green') ? appTheme.highlightTertiary : item.color.includes('from-purple') ? appTheme.highlight : appTheme.text}`} />
+                                        <span className="font-medium z-10 relative">{item.label}</span>
+                                        <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <div className={`w-2 h-2 ${appTheme.text.replace('text-', 'bg-')} rounded-full animate-pulse`}></div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </div>
+                </aside>
+
+                {/* Overlay for mobile (themed) */}
+                {sidebarOpen && (
+                    <div
+                        className={`lg:hidden fixed inset-0 ${appTheme.background}/50 backdrop-blur-sm z-30`}
+                        onClick={() => setSidebarOpen(false)}
+                    ></div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {contests.map((contest) => {
-                        const status = getContestStatus(contest.startTime, contest.endTime);
-                        return (
-                            <div
-                                key={contest._id}
-                                className={`p-6 rounded-xl border ${appTheme.border}/20 shadow-md transition-all duration-300 ${appTheme.cardBg} hover:shadow-lg`}
-                            >
-                                <div className="flex justify-between items-start mb-4">
-                                    <h2 className={`text-xl font-bold ${appTheme.highlight} flex items-center gap-2`}>
-                                        {contest.title}
-                                    </h2>
-                                    <span className={getStatusBadge(status)}>
-                                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                                    </span>
+                {/* Main Content (themed) */}
+                <main className="flex-1 lg:ml-0">
+                    {/* Page header with enhanced styling (themed) */}
+                    <div className="mb-8">
+                        <div className={`${appTheme.cardBg}/10 backdrop-blur-2xl p-6 rounded-2xl border ${appTheme.border}/20 shadow-2xl`}>
+                            <div className="flex items-center">
+                                <div className={`p-3 rounded-xl mr-4 shadow-lg ${getPrimaryGradient()} text-white`}> {/* Changed icon background for consistency */}
+                                    {getPageIcon()}
                                 </div>
-                                <p className={`mb-4 ${appTheme.cardText} text-sm line-clamp-3`}>{contest.description}</p>
-
-                                <div className={`grid grid-cols-2 gap-3 text-sm ${appTheme.cardText} mb-6`}>
-                                    <div className="flex items-center gap-2">
-                                        <FaCalendarAlt className={appTheme.highlight} />
-                                        <span>Starts: {new Date(contest.startTime).toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <FaClock className={appTheme.highlight} />
-                                        <span>Duration: {contest.duration} mins</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <FaCalendarAlt className={appTheme.highlight} />
-                                        <span>Ends: {new Date(contest.endTime).toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <FaUsers className={appTheme.highlight} />
-                                        {/* Display participants count here */}
-                                        <span>
-                                            Participants:{" "}
-                                            {contest.maxParticipants ? (
-                                                `${contest.participantCount}/${contest.maxParticipants}`
-                                            ) : (
-                                                contest.participantCount
-                                            )}
-                                        </span>
-                                    </div>
+                                <div>
+                                    <h1 className={`text-4xl font-bold bg-gradient-to-r ${appTheme.text.replace('text-', 'from-')} ${appTheme.cardText.replace('text-', 'to-')} bg-clip-text text-transparent`}> {/* Added text-transparent */}
+                                        {getPageTitle()}
+                                    </h1>
+                                    <p className={`${appTheme.cardText} mt-1`}>Explore different coding challenges</p>
                                 </div>
-
-                                {renderActionButtons(contest)}
                             </div>
-                        );
-                    })}
-                </div>
-            </main>
+                        </div>
+                    </div>
+
+                    {/* Main content area (themed) */}
+                    <div className={`${appTheme.cardBg}/10 backdrop-blur-2xl p-8 rounded-2xl border ${appTheme.border}/20 min-h-[75vh] shadow-2xl relative overflow-hidden`}>
+                        {/* Content background pattern (themed) */}
+                        <div className="absolute inset-0 opacity-5">
+                            <div className="absolute inset-0" style={{
+                                backgroundImage: `radial-gradient(circle at 1px 1px, ${appTheme.text.replace('text-', '#') /* Ensure hex color */ } 1px, transparent 0)`,
+                                backgroundSize: '20px 20px'
+                            }}></div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="relative z-10">
+                            {activeSection === 'contests' && <ContestOverview />}
+                            {activeSection === 'game' && (
+                                <div className={`p-10 rounded-2xl ${appTheme.cardBg} border ${appTheme.border}/30 shadow-xl text-center ${appTheme.text} animate-in fade-in-0 slide-in-from-bottom-4 duration-500`}>
+                                    <FaGamepad className={`mx-auto text-6xl mb-6 ${appTheme.highlightSecondary}`} />
+                                    <h2 className="text-4xl font-bold mb-4">Battle/Game Section</h2>
+                                    <p className="text-lg mb-6 max-w-2xl mx-auto">This section is currently under active development. Get ready to challenge your coding skills in exciting battles and interactive games!</p>
+                                    <Link to="/game" className={`inline-flex items-center gap-2 ${appTheme.buttonPrimary} hover:${appTheme.buttonPrimaryHover} ${appTheme.buttonText} px-8 py-3 rounded-lg mt-6 text-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300`}>
+                                        <FaPlay /> Explore Game Arena
+                                    </Link>
+                                </div>
+                            )}
+                            {activeSection === 'interview' && (
+                                <div className={`p-10 rounded-2xl ${appTheme.cardBg} border ${appTheme.border}/30 shadow-xl text-center ${appTheme.text} animate-in fade-in-0 slide-in-from-bottom-4 duration-500`}>
+                                    <FaMicrophoneAlt className={`mx-auto text-6xl mb-6 ${appTheme.highlightTertiary}`} />
+                                    <h2 className="text-4xl font-bold mb-4">Interview Preparation</h2>
+                                    <p className="text-lg mb-6 max-w-2xl mx-auto">Elevate your technical interview skills with a comprehensive collection of curated problems, essential concepts, and mock interview tools designed for success.</p>
+                                    <Link to="/interview-prep" className={`inline-flex items-center gap-2 ${appTheme.buttonPrimary} hover:${appTheme.buttonPrimaryHover} ${appTheme.buttonText} px-8 py-3 rounded-lg mt-6 text-lg font-semibold shadow-md hover:shadow-lg transition-all duration-300`}>
+                                        <FaEye /> Start Interview Prep
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Decorative elements (themed) */}
+                        <div className={`absolute top-4 right-4 w-20 h-20 ${appTheme.primary.replace('bg-', 'bg-gradient-to-r from-')}/20 ${appTheme.highlight.replace('text-', 'to-')}/20 rounded-full blur-xl`}></div>
+                        <div className={`absolute bottom-4 left-4 w-16 h-16 ${appTheme.highlightSecondary.replace('text-', 'bg-gradient-to-r from-')}/20 ${appTheme.highlightTertiary.replace('text-', 'to-')}/20 rounded-full blur-xl`}></div>
+                    </div>
+                </main>
+            </div>
 
             <Footer />
         </div>

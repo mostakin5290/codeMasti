@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser, checkAuth } from '../../features/auth/authSlice';
 import { useTheme } from '../../context/ThemeContext';
-import { FiCode } from 'react-icons/fi';
+import { FiCode } from 'react-icons/fi'; // Keep FiCode
 import { FaCrown, FaUserShield, FaUserCog, FaUserAlt } from 'react-icons/fa';
-import { FaRankingStar, FaGamepad } from 'react-icons/fa6'; // Import FaGamepad
+import { FaRankingStar } from 'react-icons/fa6';
 
 // Default theme to prevent errors if theme context fails or is incomplete
 const defaultTheme = {
@@ -32,8 +31,6 @@ const Header = () => {
 
     const { theme: themeFromContext } = useTheme();
     const theme = { ...defaultTheme, ...themeFromContext };
-
-    const getPrimaryGradientClasses = () => `bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')}`;
 
     useEffect(() => {
         dispatch(checkAuth());
@@ -147,11 +144,11 @@ const Header = () => {
                                         <span>Ranks</span>
                                     </span>
                                 </NavLink>
-                                {/* NEW: Game Link */}
-                                <NavLink to="/game" className={getNavLinkClass} onClick={closeAllMenus}>
+                                {/* NEW: Visualizer Link */}
+                                <NavLink to="/visualizer" className={getNavLinkClass} onClick={closeAllMenus}>
                                     <span className="relative z-10 flex items-center space-x-2">
-                                        <FaGamepad className="w-4 h-4" /> {/* Gamepad icon */}
-                                        <span>Game</span>
+                                        <FiCode className="w-4 h-4" /> {/* FiCode icon for visualizer */}
+                                        <span>Visualizer</span>
                                     </span>
                                 </NavLink>
                             </nav>
@@ -364,11 +361,15 @@ const Header = () => {
                                 <span>Ranks</span>
                             </div>
                         </NavLink>
-                        {/* NEW: Game Link in Mobile dropdown */}
-                        <NavLink to="/game" className={getMobileNavLinkClass} onClick={closeAllMenus}>
+                        {/* NEW: Visualizer Link in Mobile dropdown */}
+                        <NavLink
+                            to="/visualizer"
+                            className={getMobileNavLinkClass}
+                            onClick={closeAllMenus}
+                        >
                             <div className="flex items-center space-x-3">
-                                <FaGamepad className="w-5 h-5" />
-                                <span>Game</span>
+                                <FiCode className="w-5 h-5" /> {/* FiCode icon */}
+                                <span>Visualizer</span>
                             </div>
                         </NavLink>
                     </div>

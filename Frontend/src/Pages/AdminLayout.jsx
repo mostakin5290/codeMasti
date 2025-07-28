@@ -4,7 +4,7 @@ import { FaTachometerAlt, FaList, FaPlus, FaUsers, FaCog, FaBars, FaTimes } from
 import {FireOutlined} from '@ant-design/icons'
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import { useTheme } from '../context/ThemeContext'; // Import useTheme
+import { useTheme } from '../context/ThemeContext';
 
 // Default theme for fallback
 const defaultTheme = {
