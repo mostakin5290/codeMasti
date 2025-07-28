@@ -87,7 +87,7 @@ const ContestsPage = () => {
     // Sidebar navigation items
     const navItems = [
         { id: 'contests', icon: FaTrophy, label: "Contests", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` },
-        { id: 'game', icon: FaGamepad, label: "Battle/Game", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlightSecondary.replace('text-', 'to-')}` },
+        { id: 'game', icon: FaGamepad, label: "Battle/Game", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` },
         { id: 'interview', icon: FaMicrophoneAlt, label: "Interview", color: `${appTheme.highlightTertiary.replace('text-', 'from-')} ${appTheme.highlight.replace('text-', 'to-')}` },
     ];
 
@@ -187,7 +187,7 @@ const ContestsPage = () => {
                                     {getPageIcon()}
                                 </div>
                                 <div>
-                                    <h1 className={`text-4xl font-bold bg-gradient-to-r ${appTheme.text.replace('text-', 'from-')} ${appTheme.cardText.replace('text-', 'to-')} bg-clip-text text-transparent`}> {/* Added text-transparent */}
+                                    <h1 className={`text-4xl font-bold bg-gradient-to-r ${appTheme.text.replace('text-', 'from-')} ${appTheme.cardText.replace('text-', 'to-')} bg-clip-text `}> 
                                         {getPageTitle()}
                                     </h1>
                                     <p className={`${appTheme.cardText} mt-1`}>Explore different coding challenges</p>
