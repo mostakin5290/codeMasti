@@ -128,7 +128,7 @@ const ContestsPage = () => {
                 {sidebarOpen ? <FaTimes /> : <FaBars />}
             </button>
 
-            <div className="flex flex-col lg:flex-row max-w-7xl mx-auto px-4 py-8 gap-8 relative z-10">
+            <div className="flex flex-col lg:flex-row max-w-7xl mx-auto px-4 py-8 gap-8 relative z-9">
                 {/* Sidebar (themed) */}
                 <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 w-72 lg:w-80 flex-shrink-0 transition-transform duration-300 ease-in-out lg:block`}>
                     <div className={`p-8 ${appTheme.cardBg}/10 backdrop-blur-2xl rounded-2xl border ${appTheme.border}/20 h-full sticky top-24 shadow-2xl`}>
