@@ -7,20 +7,37 @@ const cookieParser = require('cookie-parser');
 const redisClient = require('./src/config/redis'); // Your Redis client
 const cors = require('cors');
 const mongoose = require('mongoose');
+const axios = require('axios');
 
 const app = express();
 const server = http.createServer(app);
 
-// Get the frontend URL from environment variables
 const frontendUrl = process.env.FRONTEND_URL;
 
-// Define allowed origins. For local development, you MUST include localhost.
-// In production, ensure process.env.FRONTEND_URL is set correctly.
 const allowedOrigins = [
     frontendUrl,
     "http://localhost:5173", // Add your local frontend development server
     // Add any other specific development origins if you have them, e.g., "http://127.0.0.1:5173"
 ];
+
+
+// Replace your current keepAlive() with:
+const keepAlive = async () => {
+  try {
+    // Ping Netlify first
+    await axios.get('https://keepalive404.netlify.app/.netlify/functions/keepalive');
+    
+    // Then ping yourself (Render)
+    await axios.get(`https://codemasti.onrender.com/keep-alive`);
+    
+    console.log('✅ Keep-alive cycle completed');
+  } catch (err) {
+    console.error('Keep-alive failed:', err.message);
+  }
+};
+
+// Run every 14 minutes
+setInterval(keepAlive, 14 * 60 * 1000);
 
 console.log('Allowed Origins for Socket.IO and Express CORS:', allowedOrigins);
 
@@ -35,7 +52,6 @@ const io = new Server(server, {
 
 app.set('socketio', io);
 
-// Configure CORS for Express API routes
 app.use(cors({
     origin: function (origin, callback) {
         console.log('Incoming Express API request origin:', origin);
@@ -54,21 +70,16 @@ app.use(cors({
     exposedHeaders: ['set-cookie']
 }));
 
-// ... (rest of your app.js code remains the same) ...
-
-// General Express Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Database/Model Imports
 const GameRoom = require('./src/models/gameRoomSchema');
 const Problem = require('./src/models/problem');
 const User = require('./src/models/user');
 const { submitCodeInternal, runCodeInternal } = require('./src/controllers/submitControllers');
 const { endGame } = require('./src/controllers/gameController');
 
-// Router Imports
 const userRouter = require('./src/routes/userRoute');
 const problemRouter = require('./src/routes/problemRoute');
 const submitRoute = require('./src/routes/submitRoutes');
