@@ -140,6 +140,7 @@ const RankPage = () => {
     if (loading) {
         return (
             <div className={`min-h-screen ${appTheme.background} flex justify-center items-center`}>
+                <Header/>
                 <LoadingSpinner message="Loading global ranks..." appTheme={appTheme} />
             </div>
         );
