@@ -66,7 +66,7 @@ import RankPage from "./components/Profile/RankPage";
 import GamePage from "./Pages/GamePage";
 import GameCodefield from "./Pages/GameCodefield";
 import GameRoomDetailsPage from "./Pages/GameRoomDetailsPage";
-import VisualizerPage from "./Pages/VisualizerPage";
+import Tools from "./Pages/Tools";
 
 
 const AppRoutes = () => {
@@ -162,7 +162,7 @@ const AppRoutes = () => {
                 <Route path="/game/room/:roomId/play" element={isAuthenticated ? <GameCodefield /> : <Navigate to="/" />} />
 
 
-                <Route path="/visualizer" element={<VisualizerPage/> } />
+                <Route path="/tools" element={<Tools/> } />
                 {/* --- Admin Routes --- */}
                 <Route element={<AdminRoute />}>
                     <Route path="/admin" element={<AdminLayout />}>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'; // Import useRef
 import { Link, NavLink } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axiosClient from '../api/axiosClient';
@@ -20,8 +20,7 @@ import {
 } from 'react-icons/fa';
 import { LuDot } from "react-icons/lu";
 
-// Corrected import path for DailyChallengeDetailsModal
-import DailyChallengeDetailsModal from '../components/ProblemPage/DailyChallengeDetailsModal'; // Corrected path
+import DailyChallengeDetailsModal from '../components/ProblemPage/DailyChallengeDetailsModal';
 
 const capitalizeFirstLetter = (string) => {
     if (!string) return '';
@@ -114,36 +113,48 @@ const ProblemPage = () => {
 
     const sectionClasses = `backdrop-blur-xl border ${theme.border}/20 shadow-xl rounded-xl`;
 
-    // Fetch all problems
-    useEffect(() => {
-        const fetchProblems = async () => {
-            setLoading(true);
-            try {
-                const { data } = await axiosClient.get('/problem/getAllProblem');
-                const enhancedData = (data || []).map(problem => ({
-                    ...problem
-                }));
-                setProblems(enhancedData);
-                const recent = localStorage.getItem('recentlyViewedProblems');
-                if (recent) {
-                    const parsedRecent = JSON.parse(recent);
-                    const validRecentProblems = parsedRecent.map(id => enhancedData.find(p => p._id === id)).filter(Boolean);
-                    setRecentlyViewed(validRecentProblems.slice(0, 3));
-                } else {
-                    setRecentlyViewed(enhancedData.slice(0, 3));
-                }
-            } catch (err) {
-                console.error("Error fetching problems:", err);
-                setProblems([]);
-                setRecentlyViewed([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchProblems();
-    }, [user]);
+    // Refs to track if data has been fetched for the current component instance or user
+    const problemsFetchedOnce = useRef(false);
+    const dailyChallengeFetchedForUser = useRef(null); // Stores user._id after fetch
+    const dailyCalendarFetchedForUser = useRef(null); // Stores user._id after fetch
+    const userPlaylistsFetchedForUser = useRef(null); // Stores user._id after fetch
 
-    // Update recently viewed when navigating to a problem
+
+    // Fetch all problems (global data - fetch only once on component mount)
+    useEffect(() => {
+        if (!problemsFetchedOnce.current) {
+            const fetchProblems = async () => {
+                setLoading(true);
+                try {
+                    const { data } = await axiosClient.get('/problem/getAllProblem');
+                    const enhancedData = (data || []).map(problem => ({
+                        ...problem
+                    }));
+                    setProblems(enhancedData);
+                    const recent = localStorage.getItem('recentlyViewedProblems');
+                    if (recent) {
+                        const parsedRecent = JSON.parse(recent);
+                        const validRecentProblems = parsedRecent.map(id => enhancedData.find(p => p._id === id)).filter(Boolean);
+                        setRecentlyViewed(validRecentProblems.slice(0, 3));
+                    } else {
+                        // If no recent, show first 3 problems as a fallback
+                        setRecentlyViewed(enhancedData.slice(0, 3));
+                    }
+                    problemsFetchedOnce.current = true; // Mark as fetched
+                } catch (err) {
+                    console.error("Error fetching problems:", err);
+                    setProblems([]);
+                    setRecentlyViewed([]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchProblems();
+        }
+    }, []); // Empty dependency array: runs only on component mount
+
+
+    // Update recently viewed when navigating to a problem (depends on `problems` state which is fetched)
     const updateRecentlyViewed = useCallback((problemId) => {
         const currentRecent = JSON.parse(localStorage.getItem('recentlyViewedProblems') || '[]');
         const newRecent = [problemId, ...currentRecent.filter(id => id !== problemId)].slice(0, 5);
@@ -154,60 +165,71 @@ const ProblemPage = () => {
             if (!problemToAdd) return prev;
             return [problemToAdd, ...prev.filter(p => p._id !== problemId)].slice(0, 3);
         });
-    }, [problems]);
+    }, [problems]); // Depends on 'problems' to find the problem details
 
 
-    // Fetch Daily Challenge (Current Day)
+    // Fetch Daily Challenge (Current Day) - user-specific
     useEffect(() => {
-        const fetchDailyChallenge = async () => {
-            if (!user) {
-                setIsDailyChallengeLoading(false);
-                return;
-            }
-            setIsDailyChallengeLoading(true);
-            try {
-                const res = await axiosClient.get('/problem/daily');
-                setDailyChallenge(res.data.challenge);
-                setAlreadySolvedToday(res.data.alreadySolved);
-                setUserCurrentStreak(res.data.streak);
-            } catch (err) {
-                console.error("Error fetching daily challenge:", err);
-                setDailyChallenge(null);
-                setAlreadySolvedToday(false);
-                setUserCurrentStreak(0);
-            } finally {
-                setIsDailyChallengeLoading(false);
-            }
-        };
-        fetchDailyChallenge();
-    }, [user]);
+        // Only fetch if user is defined AND either it's the first fetch for this user ID,
+        // or the user ID has changed.
+        if (user && dailyChallengeFetchedForUser.current !== user._id) {
+            const fetchDailyChallenge = async () => {
+                setIsDailyChallengeLoading(true);
+                try {
+                    const res = await axiosClient.get('/problem/daily');
+                    setDailyChallenge(res.data.challenge);
+                    setAlreadySolvedToday(res.data.alreadySolved);
+                    setUserCurrentStreak(res.data.streak);
+                    dailyChallengeFetchedForUser.current = user._id; // Mark as fetched for this user
+                } catch (err) {
+                    console.error("Error fetching daily challenge:", err);
+                    setDailyChallenge(null);
+                    setAlreadySolvedToday(false);
+                    setUserCurrentStreak(0);
+                } finally {
+                    setIsDailyChallengeLoading(false);
+                }
+            };
+            fetchDailyChallenge();
+        } else if (!user) {
+            // Reset state if user logs out
+            setDailyChallenge(null);
+            setAlreadySolvedToday(false);
+            setUserCurrentStreak(0);
+            dailyChallengeFetchedForUser.current = null; // Clear flag on logout
+            setIsDailyChallengeLoading(false);
+        }
+    }, [user]); // Keep user as dependency to react to login/logout
 
-    // NEW: Fetch all daily challenges for calendar (from the new endpoint)
+
+    // Fetch all daily challenges for calendar (user-specific)
     useEffect(() => {
-        const fetchDailyChallengeData = async () => {
-            if (!user) {
-                setIsLoadingDailyChallengeHistory(false);
-                setDailyChallengeCalendarData([]);
-                return;
-            }
-            setIsLoadingDailyChallengeHistory(true);
-            try {
-                const { data } = await axiosClient.get('/problem/daily/calendar'); // Call the new endpoint
-                setDailyChallengeCalendarData(data);
-            } catch (err) {
-                console.error("Error fetching daily challenge calendar data:", err);
-                setDailyChallengeCalendarData([]);
-            } finally {
-                setIsLoadingDailyChallengeHistory(false);
-            }
-        };
-        fetchDailyChallengeData();
+        if (user && dailyCalendarFetchedForUser.current !== user._id) {
+            const fetchDailyChallengeData = async () => {
+                setIsLoadingDailyChallengeHistory(true);
+                try {
+                    const { data } = await axiosClient.get('/problem/daily/calendar'); // Call the new endpoint
+                    setDailyChallengeCalendarData(data);
+                    dailyCalendarFetchedForUser.current = user._id; // Mark as fetched for this user
+                } catch (err) {
+                    console.error("Error fetching daily challenge calendar data:", err);
+                    setDailyChallengeCalendarData([]);
+                } finally {
+                    setIsLoadingDailyChallengeHistory(false);
+                }
+            };
+            fetchDailyChallengeData();
+        } else if (!user) {
+            setDailyChallengeCalendarData([]);
+            dailyCalendarFetchedForUser.current = null; // Clear flag on logout
+            setIsLoadingDailyChallengeHistory(false);
+        }
     }, [user]); // Rerun when user changes
 
 
-    // Fetch User Playlists
+    // Fetch User Playlists (user-specific)
     const fetchUserPlaylists = useCallback(async () => {
-        if (!user) {
+        if (!user) { // Ensure user exists before trying to fetch
             setUserPlaylists([]);
             setLoadingPlaylists(false);
             return;
@@ -223,11 +245,20 @@ const ProblemPage = () => {
         } finally {
             setLoadingPlaylists(false);
         }
-    }, [user]);
+    }, [user]); // Keep user as dependency here as the fetch logic itself depends on user
+
 
     useEffect(() => {
-        fetchUserPlaylists();
-    }, [fetchUserPlaylists]);
+        // Only fetch if user is defined AND either it's the first fetch for this user ID,
+        // or the user ID has changed.
+        if (user && userPlaylistsFetchedForUser.current !== user._id) {
+            fetchUserPlaylists();
+            userPlaylistsFetchedForUser.current = user._id; // Mark as fetched for this user
+        } else if (!user) {
+            setUserPlaylists([]);
+            userPlaylistsFetchedForUser.current = null; // Clear flag on logout
+        }
+    }, [user, fetchUserPlaylists]); // `fetchUserPlaylists` is stable due to useCallback, `user` triggers it.
 
 
     // Handle Create Playlist
@@ -235,7 +266,7 @@ const ProblemPage = () => {
         try {
             await axiosClient.post('/playlist', { name, description });
             toast.success('Playlist created successfully!');
-            fetchUserPlaylists();
+            fetchUserPlaylists(); // Re-fetch to update list
             return true;
         } catch (err) {
             console.error('Error creating playlist:', err);
@@ -248,7 +279,7 @@ const ProblemPage = () => {
         try {
             await axiosClient.post(`/playlist/${playlistId}/add/${problemId}`);
             toast.success('Problem added to playlist!');
-            fetchUserPlaylists();
+            fetchUserPlaylists(); // Re-fetch to update list
         } catch (err) {
             console.error('Error adding problem to playlist:', err);
             toast.error(err.response?.data?.message || 'Failed to add problem to playlist.');
@@ -256,12 +287,12 @@ const ProblemPage = () => {
         }
     };
 
-    // NEW: Handle Update Playlist
+    // Handle Update Playlist
     const handleUpdatePlaylist = async (playlistId, { name, description }) => {
         try {
             await axiosClient.put(`/playlist/${playlistId}`, { name, description });
             toast.success('Playlist updated successfully!');
-            fetchUserPlaylists();
+            fetchUserPlaylists(); // Re-fetch to update list
             return true;
         } catch (err) {
             console.error('Error updating playlist:', err);
@@ -279,7 +310,7 @@ const ProblemPage = () => {
         try {
             await axiosClient.delete(`/playlist/${playlistToDeleteId}`);
             toast.success('Playlist deleted successfully!');
-            fetchUserPlaylists();
+            fetchUserPlaylists(); // Re-fetch to update list
             setShowConfirmDeleteModal(false);
             setPlaylistToDeleteId(null);
         } catch (err) {
@@ -647,7 +678,7 @@ const ProblemPage = () => {
                                                     } else if (dayData.isCurrentDay) {
                                                         // Today's challenge - always highlighted if it exists and is relevant
                                                         if (dayData.hasChallenge) {
-                                                            dayClasses += `  ${theme.buttonText} font-bold`;
+                                                            dayClasses += ` ${theme.buttonPrimary} ${theme.buttonText} font-bold`; // Use primary button styles for today's challenge
                                                             isDayClickable = true;
                                                         } else {
                                                             // Today, but no challenge set by admin
@@ -655,13 +686,14 @@ const ProblemPage = () => {
                                                         }
                                                     } else if (dayData.hasChallenge && dayData.isSolvedByUser) {
                                                         // Past challenge solved by the user
-                                                        dayClasses += ` border-orange-500/50 ${theme.text}`;
+                                                        dayClasses += ` bg-orange-500/50 ${theme.text}`; // Use orange for solved
                                                         isDayClickable = true;
                                                     } else if (dayData.hasChallenge && !dayData.isFuture) {
                                                         // Past challenge NOT solved by user (display with red dot, clickable)
-                                                        dayClasses += ` text-red-600  hover:${theme.cardBg}`; // Default look, but clickable
+                                                        dayClasses += ` ${theme.cardBg}/80 ${theme.text} hover:${theme.cardBg}`; // Default look, but clickable
                                                         isDayClickable = true;
                                                     } else {
+                                                        // Future challenges or days without a set challenge
                                                         dayClasses += ` ${theme.cardBg}/30 ${theme.cardText} pointer-events-none opacity-50`;
                                                     }
 
@@ -678,20 +710,17 @@ const ProblemPage = () => {
                                                         >
                                                             {dayData ? (
                                                                 <>
-                                                                    {(dayData.isSolvedByUser || (dayData.isCurrentDay && dayData.hasChallenge && dayData.isSolvedByUser)) && (
+                                                                    {dayData.hasChallenge && dayData.isSolvedByUser && (
                                                                         <FaFire className={`absolute inset-0 m-auto text-4xl opacity-60 text-red-500`} />
                                                                     )}
 
                                                                     <span className="relative z-10 text-sm">{dayData.date.getDate()}</span>
 
-                                                                    
-                                    
                                                                     {dayData.hasChallenge && !dayData.isFuture && !dayData.isSolvedByUser && (
                                                                         <div className="absolute bottom-0 right-2.5 text-xs">
-                                                                            <LuDot className={`${theme.errorColor} text-xl`} title="Solved" />
+                                                                            <LuDot className={`${theme.errorColor} text-xl`} title="Not Solved" />
                                                                         </div>
                                                                     )}
-                                                                    
                                                                 </>
                                                             ) : (
                                                                 ''
@@ -1160,7 +1189,7 @@ const ProblemPage = () => {
 
             <ConfirmationModal
                 isOpen={showConfirmDeleteModal}
-                onClose={() => setShowConfirmModal(false)}
+                onClose={() => setShowConfirmDeleteModal(false)}
                 onConfirm={confirmDeletePlaylist}
                 title="Confirm Playlist Deletion"
                 confirmText="Delete"

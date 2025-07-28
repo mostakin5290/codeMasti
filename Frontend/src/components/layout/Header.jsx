@@ -3,9 +3,8 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser, checkAuth } from '../../features/auth/authSlice';
 import { useTheme } from '../../context/ThemeContext';
-import { FiCode } from 'react-icons/fi'; // Keep FiCode
+import { Lightbulb } from 'lucide-react'; // Changed import from FiCode to Lightbulb
 import { FaCrown, FaUserShield, FaUserCog, FaUserAlt } from 'react-icons/fa';
-import { FaRankingStar } from 'react-icons/fa6';
 
 // Default theme to prevent errors if theme context fails or is incomplete
 const defaultTheme = {
@@ -138,17 +137,11 @@ const Header = () => {
                                         <span>Discuss</span>
                                     </span>
                                 </NavLink>
-                                <NavLink to="/world-rank" className={getNavLinkClass} onClick={closeAllMenus}>
+                                {/* Changed Visualizer to Tools and icon to Lightbulb */}
+                                <NavLink to="/tools" className={getNavLinkClass} onClick={closeAllMenus}>
                                     <span className="relative z-10 flex items-center space-x-2">
-                                        <FaRankingStar className="w-4 h-4" />
-                                        <span>Ranks</span>
-                                    </span>
-                                </NavLink>
-                                {/* NEW: Visualizer Link */}
-                                <NavLink to="/visualizer" className={getNavLinkClass} onClick={closeAllMenus}>
-                                    <span className="relative z-10 flex items-center space-x-2">
-                                        <FiCode className="w-4 h-4" /> {/* FiCode icon for visualizer */}
-                                        <span>Visualizer</span>
+                                        <Lightbulb className="w-4 h-4" /> {/* Lightbulb icon for Tools */}
+                                        <span>Tools</span>
                                     </span>
                                 </NavLink>
                             </nav>
@@ -355,21 +348,15 @@ const Header = () => {
                                 <span>Discuss</span>
                             </div>
                         </NavLink>
-                        <NavLink to="/world-rank" className={getMobileNavLinkClass} onClick={closeAllMenus}>
-                            <div className="flex items-center space-x-3">
-                                <FaRankingStar className="w-5 h-5" />
-                                <span>Ranks</span>
-                            </div>
-                        </NavLink>
-                        {/* NEW: Visualizer Link in Mobile dropdown */}
+                        {/* Changed Visualizer to Tools and icon to Lightbulb for mobile */}
                         <NavLink
-                            to="/visualizer"
+                            to="/tools"
                             className={getMobileNavLinkClass}
                             onClick={closeAllMenus}
                         >
                             <div className="flex items-center space-x-3">
-                                <FiCode className="w-5 h-5" /> {/* FiCode icon */}
-                                <span>Visualizer</span>
+                                <Lightbulb className="w-5 h-5" /> {/* Lightbulb icon */}
+                                <span>Tools</span>
                             </div>
                         </NavLink>
                     </div>

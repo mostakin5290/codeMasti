@@ -1,13 +1,18 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FiStar } from 'react-icons/fi';
-import { fetchUser } from '../features/auth/authSlice'; // IMPORTANT: Make sure this is correctly imported
-
+import { FiStar, FiArrowRight } from 'react-icons/fi';
+import { fetchUser } from '../features/auth/authSlice';
 import { useTheme } from '../context/ThemeContext';
+import Lottie from 'lottie-react';
+import animationData from '../assets/lotties/coding-animation.json';
+import celebrationAnimation from '../assets/lotties/celebration.json';
+import codingAnimation from '../assets/lotties/coding.json';
+import ideaAnimation from '../assets/lotties/Idea.json';
+import successAnimation from '../assets/lotties/success.json';
 
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
@@ -31,13 +36,17 @@ const Home = () => {
     const dispatch = useDispatch();
     const location = useLocation();
     const navigate = useNavigate();
+    const celebrationRef = useRef(null);
 
     useEffect(() => {
         const queryParams = new URLSearchParams(location.search);
-        console.log(queryParams)
         const status = queryParams.get('status');
-        console.log(status)
+        
         if (status === 'premium-activated') {
+            if (celebrationRef.current) {
+                celebrationRef.current.play();
+            }
+            
             toast.success('🎉 Congratulations! Your Premium subscription is now active!', {
                 position: "top-center",
                 autoClose: 5000,
@@ -56,31 +65,60 @@ const Home = () => {
             });
 
             dispatch(fetchUser());
-
             navigate(location.pathname, { replace: true });
         }
     }, [location, theme, dispatch, navigate]);
 
-    const getPrimaryGradient = () => `bg-gradient-to-r ${theme.buttonPrimary}`;
-    const getPrimaryGradientHover = () => `hover:${theme.buttonPrimaryHover.replace('bg-', 'from-')} hover:${theme.buttonPrimaryHover.replace('bg-', 'to-')}`;
+    const getPrimaryGradient = () => `bg-gradient-to-r ${theme.primary} ${theme.secondary}`;
+    const getPrimaryGradientHover = () => `hover:bg-gradient-to-r hover:${theme.primaryHover} hover:${theme.secondaryHover}`;
 
     const getSolidPrimaryButtonClasses = () => `
-        ${theme.buttonPrimary}
-        hover:${theme.buttonPrimaryHover}
+        ${getPrimaryGradient()}
+        ${getPrimaryGradientHover()}
         transition-all duration-300
         font-semibold shadow-lg hover:shadow-xl
         ${theme.buttonText}
-        transform hover:scale-105
+        transform hover:scale-105 active:scale-95
         focus:outline-none focus:ring-4 focus:ring-opacity-50
         ${theme.buttonPrimary.replace('bg-', 'focus:ring-')}
     `;
 
     const isUserPremium = user && user.isPremium;
 
+    // 3D Card component
+    const Card3D = ({ children, className = '' }) => {
+        return (
+            <div className={`${className} transition-all duration-500 transform hover:-translate-y-2 hover:shadow-2xl`}>
+                <div className="group perspective">
+                    <div className="relative preserve-3d group-hover:rotate-x-10 transition-all duration-500">
+                        {children}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
-        <div className={`min-h-screen ${theme.background} ${theme.text} font-sans overflow-x-hidden`}>
+        <div className={`min-h-screen ${theme.background} ${theme.text} font-sans scroll-smooth overflow-x-hidden`}>
+            {/* Celebration animation (hidden until triggered) */}
+            <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
+                <Lottie 
+                    lottieRef={celebrationRef}
+                    animationData={celebrationAnimation}
+                    loop={false}
+                    style={{ width: '100%', height: '100%', opacity: 0 }}
+                    className="transition-opacity duration-1000"
+                    onDOMLoaded={() => {
+                        if (celebrationRef.current) {
+                            celebrationRef.current.setSpeed(0.8);
+                        }
+                    }}
+                />
+            </div>
+
             <Header />
 
+            {/* Hero Section with Lottie Animation */}
             <section className="relative overflow-hidden py-20 md:py-32 lg:py-40 flex items-center justify-center">
                 <div className="absolute inset-0 z-1">
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('https://images.unsplash.com/photo-1639762681057-408e52192e55?q=80&w=2232&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')] bg-cover bg-center opacity-30 mix-blend-overlay"></div>
@@ -91,45 +129,60 @@ const Home = () => {
                     <div className={`absolute bottom-1/4 right-1/3 w-20 h-20 rounded-full ${theme.highlight.replace('text-', 'bg-')}/20 blur-xl animate-float-and-rotate animation-delay-4000`}></div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight animate-fade-in-up">
-                        <span className="block">Master Modern</span>
-                        <span className={`block ${getPrimaryGradient()} bg-clip-text   mt-2`}>
-                            Coding Challenges
-                        </span>
-                    </h1>
-                    <p className={`mt-6 max-w-3xl mx-auto text-lg md:text-xl ${theme.cardText} animate-fade-in-up delay-200`}>
-                        Join our platform where developers sharpen their skills through interactive coding exercises,
-                        real-world projects, and competitive programming.
-                    </p>
-                    <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in-up delay-400">
-                        <Link
-                            to="/problems"
-                            className={`px-8 py-3 rounded-lg ${getSolidPrimaryButtonClasses()}`}
-                        >
-                            Start Coding Now
-                        </Link>
-                        {isUserPremium ? (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div className="text-center lg:text-left animate-fade-in-up">
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight">
+                            <span className="block">Master Modern</span>
+                            <span className={`block ${getPrimaryGradient()} bg-clip-text text-transparent mt-2`}>
+                                Coding Challenges
+                            </span>
+                        </h1>
+                        <p className={`mt-6 max-w-3xl mx-auto lg:mx-0 text-lg md:text-xl ${theme.cardText} animate-fade-in-up delay-200`}>
+                            Join our platform where developers sharpen their skills through interactive coding exercises,
+                            real-world projects, and competitive programming.
+                        </p>
+                        <div className="mt-10 flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-4 animate-fade-in-up delay-400">
                             <Link
-                                to="/profile" 
-                                className={`px-8 py-3 rounded-lg border-2 ${theme.border} hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-all duration-300 font-semibold bg-transparent transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${theme.highlight.replace('text-', 'focus:ring-')}`}
+                                to="/problems"
+                                className={`px-8 py-3 rounded-lg ${getSolidPrimaryButtonClasses()}`}
                             >
-                                Manage Premium
+                                Start Coding Now
                             </Link>
-                        ) : (
-                            <Link
-                                to="/contests"
-                                className={`px-8 py-3 rounded-lg border-2 ${theme.border} hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-all duration-300 font-semibold bg-transparent transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${theme.highlight.replace('text-', 'focus:ring-')}`}
-                            >
-                                Join a Contest
-                            </Link>
-                        )}
+                            {isUserPremium ? (
+                                <Link
+                                    to="/profile" 
+                                    className={`px-8 py-3 rounded-lg border-2 ${theme.border} hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-all duration-300 font-semibold bg-transparent transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${theme.highlight.replace('text-', 'focus:ring-')}`}
+                                >
+                                    Manage Premium
+                                </Link>
+                            ) : (
+                                <Link
+                                    to="/contests"
+                                    className={`px-8 py-3 rounded-lg border-2 ${theme.border} hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-all duration-300 font-semibold bg-transparent transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${theme.highlight.replace('text-', 'focus:ring-')}`}
+                                >
+                                    Join a Contest
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                    <div className="hidden lg:block animate-fade-in-up delay-300">
+                        <Lottie 
+                            animationData={codingAnimation}
+                            loop={true}
+                            className="w-full h-full max-w-xl mx-auto transform hover:scale-105 transition-transform duration-500"
+                        />
                     </div>
                 </div>
             </section>
 
-            <section className={`py-16 ${theme.cardBg}/50 backdrop-blur-md`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Stats Section with Floating Animation */}
+            <section className={`py-16 ${theme.cardBg}/50 backdrop-blur-md relative overflow-hidden`}>
+                <div className="absolute inset-0">
+                    <div className={`absolute top-0 left-0 w-32 h-32 rounded-full ${theme.highlight.replace('text-', 'bg-')}/10 blur-xl animate-float-slow`}></div>
+                    <div className={`absolute bottom-0 right-0 w-40 h-40 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/10 blur-xl animate-float-slow animation-delay-3000`}></div>
+                </div>
+                
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                         {[
                             { value: '15,000+', label: 'Active Developers', color: theme.highlight },
@@ -137,17 +190,25 @@ const Home = () => {
                             { value: '80+', label: 'Weekly Contests', color: theme.highlightTertiary },
                             { value: '150+', label: 'Tech Companies', color: theme.highlight }
                         ].map((stat, i) => (
-                            <div key={i} className={`p-6 rounded-xl ${theme.cardBg} border ${theme.border} transform transition-all duration-500 hover:scale-105 hover:shadow-lg group`}>
-                                <div className={`text-3xl font-bold ${stat.color} group-hover:animate-pulse`}>{stat.value}</div>
-                                <div className={`mt-2 ${theme.cardText}`}>{stat.label}</div>
-                            </div>
+                            <Card3D key={i} className={`p-6 rounded-xl ${theme.cardBg} border ${theme.border} hover:shadow-lg group`}>
+                                <div className="relative">
+                                    <div className={`text-3xl font-bold ${stat.color} group-hover:animate-pulse`}>{stat.value}</div>
+                                    <div className={`mt-2 ${theme.cardText}`}>{stat.label}</div>
+                                    <div className={`absolute -bottom-4 left-0 right-0 h-1 bg-gradient-to-r ${stat.color.replace('text-', 'from-')} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                                </div>
+                            </Card3D>
                         ))}
                     </div>
                 </div>
             </section>
 
-            <section className="py-20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Features Section with Interactive Cards */}
+            <section className="py-20 relative">
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className={`absolute top-0 right-0 w-64 h-64 rounded-full ${theme.highlightSecondary.replace('text-', 'bg-')}/10 blur-3xl -mr-32 -mt-32`}></div>
+                </div>
+                
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold">
                             Why <span className={theme.highlight}>Choose Us</span>
@@ -167,7 +228,8 @@ const Home = () => {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                                     </svg>
                                 ),
-                                iconColor: theme.highlight
+                                iconColor: theme.highlight,
+                                animation: ideaAnimation
                             },
                             {
                                 title: "Real-World Projects",
@@ -177,7 +239,8 @@ const Home = () => {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                     </svg>
                                 ),
-                                iconColor: theme.highlightSecondary
+                                iconColor: theme.highlightSecondary,
+                                animation: animationData
                             },
                             {
                                 title: "Personalized Learning Paths",
@@ -187,23 +250,44 @@ const Home = () => {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                     </svg>
                                 ),
-                                iconColor: theme.highlightTertiary
+                                iconColor: theme.highlightTertiary,
+                                animation: successAnimation
                             }
                         ].map((feature, i) => (
-                            <div key={i} className={`${theme.cardBg} p-8 rounded-xl border ${theme.border} transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl`}>
-                                <div className={`w-16 h-16 mx-auto ${theme.iconBg} rounded-full flex items-center justify-center ${feature.iconColor} mb-6`}>
-                                    {feature.icon}
+                            <Card3D key={i} className={`${theme.cardBg} p-8 rounded-xl border ${theme.border} hover:shadow-xl`}>
+                                <div className="flex flex-col h-full">
+                                    <div className="h-48 mb-6 overflow-hidden rounded-lg">
+                                        <Lottie 
+                                            animationData={feature.animation}
+                                            loop={true}
+                                            className="w-full h-full"
+                                        />
+                                    </div>
+                                    <div className={`w-16 h-16 mx-auto ${theme.iconBg} rounded-full flex items-center justify-center ${feature.iconColor} mb-6`}>
+                                        {feature.icon}
+                                    </div>
+                                    <h3 className="mt-4 text-xl font-semibold text-center">{feature.title}</h3>
+                                    <p className={`mt-2 ${theme.cardText} text-center flex-grow`}>{feature.description}</p>
+                                    <div className="mt-6 text-center">
+                                        <span className={`inline-flex items-center ${theme.highlight} group`}>
+                                            Learn more
+                                            <FiArrowRight className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
+                                        </span>
+                                    </div>
                                 </div>
-                                <h3 className="mt-4 text-xl font-semibold text-center">{feature.title}</h3>
-                                <p className={`mt-2 ${theme.cardText} text-center`}>{feature.description}</p>
-                            </div>
+                            </Card3D>
                         ))}
                     </div>
                 </div>
             </section>
 
-            <section className={`py-20 ${theme.cardBg}/30`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* IDE Showcase Section */}
+            <section className={`py-20 ${theme.cardBg}/30 relative`}>
+                <div className="absolute inset-0">
+                    <div className={`absolute top-1/3 left-1/4 w-32 h-32 rounded-full ${theme.highlight.replace('text-', 'bg-')}/10 blur-xl animate-pulse`}></div>
+                </div>
+                
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold">
                             <span className={theme.highlight}>Modern</span> Development Environment
@@ -213,7 +297,7 @@ const Home = () => {
                         </p>
                     </div>
 
-                    <div className={`rounded-xl overflow-hidden border ${theme.border} shadow-2xl `}>
+                    <Card3D className="rounded-xl overflow-hidden shadow-2xl">
                         <div className={`${theme.cardBg} p-4 flex items-center justify-between border-b ${theme.border}`}>
                             <div className="flex items-center space-x-4">
                                 <div className="flex space-x-2">
@@ -293,12 +377,17 @@ const Home = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </Card3D>
                 </div>
             </section>
 
-            <section className="py-20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Learning Paths Section */}
+            <section className="py-20 relative">
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/10 blur-3xl -ml-32 -mb-32`}></div>
+                </div>
+                
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold">
                             Structured <span className={theme.highlightSecondary}>Learning Paths</span>
@@ -344,7 +433,7 @@ const Home = () => {
                                 )
                             }
                         ].map((path, i) => (
-                            <div key={i} className={`${theme.cardBg} rounded-xl border ${theme.border} overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl`}>
+                            <Card3D key={i} className={`${theme.cardBg} rounded-xl border ${theme.border} overflow-hidden hover:shadow-xl`}>
                                 <div className={`h-2 bg-gradient-to-r ${path.color}`}></div>
                                 <div className="p-6">
                                     <div className={`w-12 h-12 ${theme.iconBg} rounded-lg flex items-center justify-center ${theme.highlight} mb-4`}>
@@ -366,77 +455,27 @@ const Home = () => {
                                     </div>
                                     <Link
                                         to={`/paths/${path.title.toLowerCase().replace(' ', '-')}`}
-                                        className={`mt-6 inline-flex items-center justify-center w-full px-4 py-2 border-2 ${theme.border} rounded-lg hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-colors duration-300`}
+                                        className={`mt-6 inline-flex items-center justify-center w-full px-4 py-2 border-2 ${theme.border} rounded-lg hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-colors duration-300 group`}
                                     >
                                         Explore Path
+                                        <FiArrowRight className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
                                     </Link>
                                 </div>
-                            </div>
+                            </Card3D>
                         ))}
                     </div>
                 </div>
             </section>
 
-            <section className={`py-20 ${theme.cardBg}/30`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold">
-                            Success <span className={theme.highlightTertiary}>Stories</span>
-                        </h2>
-                        <p className={`mt-4 max-w-2xl mx-auto ${theme.cardText}`}>
-                            Hear from developers who transformed their careers with our platform
-                        </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {[
-                            {
-                                name: "Sarah Johnson",
-                                role: "Frontend Developer @ Google",
-                                quote: "This platform helped me land my dream job at Google. The interview preparation resources were invaluable.",
-                                avatar: "https://randomuser.me/api/portraits/women/44.jpg"
-                            },
-                            {
-                                name: "Michael Chen",
-                                role: "Software Engineer @ Amazon",
-                                quote: "The system design challenges perfectly prepared me for my Amazon interviews. Highly recommended!",
-                                avatar: "https://randomuser.me/api/portraits/men/32.jpg"
-                            },
-                            {
-                                name: "David Rodriguez",
-                                role: "Backend Engineer @ Stripe",
-                                quote: "I went from beginner to professional thanks to the structured learning paths and mentorship.",
-                                avatar: "https://randomuser.me/api/portraits/men/75.jpg"
-                            }
-                        ].map((testimonial, i) => (
-                            <div key={i} className={`${theme.cardBg} p-8 rounded-xl border ${theme.border} transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl`}>
-                                <div className="flex items-center">
-                                    <img
-                                        src={testimonial.avatar}
-                                        alt={testimonial.name}
-                                        className={`w-12 h-12 rounded-full object-cover border-2 ${theme.highlightSecondary.replace('text-', 'border-')}/50`}
-                                    />
-                                    <div className="ml-4">
-                                        <h4 className="font-semibold">{testimonial.name}</h4>
-                                        <p className={`text-sm ${theme.cardText}`}>{testimonial.role}</p>
-                                    </div>
-                                </div>
-                                <p className={`mt-6 italic ${theme.cardText}`}>"{testimonial.quote}"</p>
-                                <div className="mt-6 flex ${theme.warningColor}">
-                                    {[...Array(5)].map((_, i) => (
-                                        <svg key={i} xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                        </svg>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+            {/* CTA Section */}
+            <section className={`py-20 bg-gradient-to-r ${theme.gradientFrom} ${theme.gradientTo} relative overflow-hidden`}>
+                <div className="absolute inset-0">
+                    <div className={`absolute top-0 left-0 w-full h-full ${theme.highlight.replace('text-', 'bg-')}/5`}></div>
+                    <div className={`absolute top-1/4 left-1/4 w-32 h-32 rounded-full ${theme.highlight.replace('text-', 'bg-')}/10 blur-xl animate-float-slow`}></div>
+                    <div className={`absolute bottom-1/4 right-1/4 w-40 h-40 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/10 blur-xl animate-float-slow animation-delay-3000`}></div>
                 </div>
-            </section>
-
-            <section className={`py-20 bg-gradient-to-r ${theme.gradientFrom} ${theme.gradientTo}`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
                     <h2 className="text-3xl md:text-4xl font-bold mb-6">
                         Ready to <span className={theme.highlight}>Transform</span> Your Career?
                     </h2>
@@ -444,26 +483,28 @@ const Home = () => {
                         Join thousands of developers who've accelerated their careers with our platform.
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-4">
-
                         {user?.isPremium ? (
                             <Link
                                 to="/explore-premium"
-                                className={`inline-flex items-center justify-center px-8 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${theme.buttonText} transform hover:scale-105`}
+                                className={`inline-flex items-center justify-center px-8 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${theme.buttonText} transform hover:scale-105 active:scale-95`}
                             >
                                 Explore Premium <FiStar className="ml-2 text-yellow-400" />
                             </Link>
                         ) : (
-                            <Link to="/premium" className={`inline-flex items-center justify-center px-8 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${theme.buttonText} transform hover:scale-105`}>
-                                Update to Premium
+                            <Link 
+                                to="/premium" 
+                                className={`inline-flex items-center justify-center px-8 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${theme.buttonText} transform hover:scale-105 active:scale-95`}
+                            >
+                                Upgrade to Premium
                             </Link>
                         )}
-
                         <Link
                             to="https://youtu.be/mc6xfVDaLeE?si=yyaNJR4XFEQCEw_V"
                             target='_blank'
-                            className={`inline-flex items-center justify-center px-8 py-4 border-2 ${theme.border} rounded-lg hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-colors duration-300 font-semibold text-lg bg-transparent`}
+                            className={`inline-flex items-center justify-center px-8 py-4 border-2 ${theme.border} rounded-lg hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-colors duration-300 font-semibold text-lg bg-transparent transform hover:scale-105 active:scale-95 group`}
                         >
                             Watch Demo
+                            <FiArrowRight className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
                         </Link>
                     </div>
                 </div>
