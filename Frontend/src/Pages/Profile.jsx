@@ -1,15 +1,15 @@
-
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useParams } from 'react-router-dom'; // Import useNavigate for redirection
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
     FaUser, FaMapMarkerAlt, FaGithub, FaLinkedin, FaTwitter, FaGlobe,
-    FaTrophy, FaCode, FaClipboardList, FaCheck, FaCalendarAlt, FaStar,
-    FaChevronRight, FaMedal, FaChartLine, FaLayerGroup, FaAward, FaCrown,
-    FaArrowLeft, FaArrowRight, FaCommentAlt, FaArrowUp, FaRegUser,
-    FaFire // FaFire is typically in 'react-icons/fa'
+    FaTrophy, FaCode, FaClipboardList, FaCheck, FaStar,
+    FaChevronRight, FaMedal, FaChartLine, FaCrown,
+    FaArrowLeft, FaArrowRight,
+    FaFire
 } from 'react-icons/fa';
-import { FaRankingStar } from 'react-icons/fa6'; // Correct import for FaRankingStar
+import { BsGraphUpArrow } from "react-icons/bs";
+import { FaRankingStar } from 'react-icons/fa6';
 import { RiSwordFill, RiGitRepositoryLine } from 'react-icons/ri';
 import { SiLeetcode } from 'react-icons/si';
 import Header from '../components/layout/Header';
@@ -267,15 +267,25 @@ function ProfilePage() {
                         No activity found for {displayYear}.
                     </div>
                 )}
-                <div className="flex gap-x-3 overflow-x-auto pb-4 custom-scrollbar">
+                <div className="flex gap-x-1 justify-center"> {/* Adjusted gap-x and added justify-center */}
                     {Object.entries(daysGroupedByMonth).map(([month, daysInMonth]) => {
                         const firstDayOfMonth = daysInMonth[0];
-                        const firstDayOffset = getDay(firstDayOfMonth);
+                        const firstDayOffset = getDay(firstDayOfMonth); // 0 = Sunday, 1 = Monday, etc.
+
+                        // Get the number of weeks in the month (approx)
+                        const numWeeks = Math.ceil((daysInMonth.length + firstDayOffset) / 7);
 
                         return (
-                            <div key={month} className="flex flex-col">
-                                <div className={`text-xs ${appTheme.cardText}/80 mb-2 h-4 text-center w-12`}>{month.split(' ')[0]}</div>
-                                <div className="grid grid-flow-col grid-rows-7 gap-1" style={{ minWidth: '12px' }}>
+                            <div key={month} className="flex flex-col items-center">
+                                <div className={`text-xs ${appTheme.cardText}/80 mb-2 h-4 text-center w-full`}>{month.split(' ')[0]}</div>
+                                <div
+                                    className="grid grid-flow-col gap-0.5" // Smaller gap
+                                    style={{
+                                        gridTemplateRows: 'repeat(7, minmax(0, 1fr))', // 7 rows for days of week
+                                        gridTemplateColumns: `repeat(${numWeeks}, minmax(0, 1fr))` // Dynamic columns for weeks
+                                    }}
+                                >
+                                    {/* Fill leading empty days */}
                                     {Array.from({ length: firstDayOffset }).map((_, index) => (
                                         <div key={`empty-${month}-${index}`} className="w-3 h-3 rounded-sm" />
                                     ))}
@@ -436,26 +446,26 @@ function ProfilePage() {
     const longestStreak = profile.dailyChallenges?.longestStreak || 0;
 
 
-    // Badges data with themed color schemes
+    // Badges data with themed color schemes (kept for Badge component, but badges array will be empty)
     const badges = [
-        {
-            icon: <FaMedal />,
-            title: "First Problem Solved",
-            description: "Solved your first coding problem",
-            color: { bg: `${appTheme.infoColor.replace('text-', 'bg-')}/20`, text: appTheme.infoColor }
-        },
-        {
-            icon: <RiSwordFill />,
-            title: "5-Day Streak",
-            description: "Solved problems for 5 consecutive days",
-            color: { bg: `${appTheme.highlightTertiary.replace('text-', 'bg-')}/20`, text: appTheme.highlightTertiary }
-        },
-        {
-            icon: <FaStar />,
-            title: "Advanced Solver",
-            description: "Solved 10+ medium difficulty problems",
-            color: { bg: `${appTheme.warningColor.replace('text-', 'bg-')}/20`, text: appTheme.warningColor }
-        },
+        // {
+        //     icon: <FaMedal />,
+        //     title: "First Problem Solved",
+        //     description: "Solved your first coding problem",
+        //     color: { bg: `${appTheme.infoColor.replace('text-', 'bg-')}/20`, text: appTheme.infoColor }
+        // },
+        // {
+        //     icon: <RiSwordFill />,
+        //     title: "5-Day Streak",
+        //     description: "Solved problems for 5 consecutive days",
+        //     color: { bg: `${appTheme.highlightTertiary.replace('text-', 'bg-')}/20`, text: appTheme.highlightTertiary }
+        // },
+        // {
+        //     icon: <FaStar />,
+        //     title: "Advanced Solver",
+        //     description: "Solved 10+ medium difficulty problems",
+        //     color: { bg: `${appTheme.warningColor.replace('text-', 'bg-')}/20`, text: appTheme.warningColor }
+        // },
     ];
 
 
@@ -681,29 +691,23 @@ function ProfilePage() {
                             )}
                         </motion.div>
 
-                        {/* Badges */}
-                        <motion.div
-                            className={`p-6 rounded-2xl ${appTheme.cardBg}/50 ${appTheme.cardText} border ${appTheme.border}/50 shadow-lg backdrop-blur-sm`}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.5 }}
-                        >
-                            <h3 className={`text-lg font-semibold ${appTheme.text} mb-4 flex items-center`}>
-                                <FaMedal className={`mr-2 ${appTheme.warningColor}`} />
-                                Achievements
-                            </h3>
-                            <div className="space-y-3">
-                                {badges.map((badge, index) => (
-                                    <Badge
-                                        key={index}
-                                        icon={badge.icon}
-                                        title={badge.title}
-                                        description={badge.description}
-                                        color={badge.color}
-                                    />
-                                ))}
-                            </div>
-                        </motion.div>
+                        {/* Problems Solved Card - Moved here */}
+
+                        <StatCard
+                            title="ELO Point"
+                            value={profile.stats?.eloRating || 1000} // Display ELO, default to 1000
+                            icon={<FaTrophy />} // Use FaTrophy for ELO
+                            subtext="Ranked Game Score"
+                            color={{ iconBg: `${appTheme.highlightTertiary.replace('text-', 'bg-')}/20`, iconText: appTheme.highlightTertiary }} // Use highlightTertiary colors
+                        />
+                        <StatCard
+                            title="Game Accuracy"
+                            value={(((profile.stats?.wins) / (profile.stats?.gamesPlayed)) * 100).toFixed(2) || 0} // Display ELO, default to 1000
+                            icon={<BsGraphUpArrow />} // Use FaTrophy for ELO
+                            subtext={`Win:${profile?.stats?.wins || 0} Loss:${profile?.stats?.losses || 0}`}
+                            color={{ iconBg: `${appTheme.highlightTertiary.replace('text-', 'bg-')}/20`, iconText: appTheme.highlightTertiary }} // Use highlightTertiary colors
+                        />
+
                     </div>
 
                     {/* Main Content Area */}
@@ -768,14 +772,15 @@ function ProfilePage() {
                                 >
                                     {/* Stats Cards */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                                        {/* UPDATED: Daily Challenge Streak StatCard */}
                                         <StatCard
                                             title="Problems Solved"
                                             value={uniqueAcceptedProblems}
                                             icon={<FaCheck />}
-                                            subtext={`${acceptedSubmissions.length} submissions`}
-                                            color={statColors[0]}
+                                            subtext={`${acceptedSubmissions.length} total submissions`}
+                                            color={{ iconBg: `${appTheme.successColor.replace('text-', 'bg-')}/20`, iconText: appTheme.successColor }}
                                         />
-                                        {/* UPDATED: Daily Challenge Streak StatCard */}
                                         <StatCard
                                             title="Current Streak"
                                             value={currentStreak}
@@ -783,20 +788,16 @@ function ProfilePage() {
                                             subtext={`Max Streak: ${longestStreak} days`}
                                             color={statColors[1]}
                                         />
+
+
+
+
                                         <StatCard
                                             title="Solution Posts"
                                             value={totalPosts}
                                             icon={<FaStar />}
                                             subtext={(<p><Link to={`/discuss/new`} className="font-semibold">create Post</Link></p>)}
                                             color={statColors[2]}
-                                        />
-
-                                        <StatCard
-                                            title="ELO Rating"
-                                            value={profile.stats?.eloRating || 1000} // Display ELO, default to 1000
-                                            icon={<FaTrophy />} // Use FaTrophy for ELO
-                                            subtext="Ranked Game Score"
-                                            color={{ iconBg: `${appTheme.highlightTertiary.replace('text-', 'bg-')}/20`, iconText: appTheme.highlightTertiary }} // Use highlightTertiary colors
                                         />
                                     </div>
 

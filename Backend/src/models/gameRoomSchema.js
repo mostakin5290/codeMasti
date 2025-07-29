@@ -25,32 +25,32 @@ const gameRoomSchema = new Schema({
         },
         status: {
             type: String,
-            enum: ['pending', 'ready', 'playing', 'disconnected', 'solved', 'finished'], // 'solved' for problem, 'finished' for game
+            enum: ['pending', 'ready', 'playing', 'disconnected', 'solved', 'finished'],
             default: 'pending'
         },
-        gameStats: { 
+        gameStats: {
             problemsSolvedCount: { type: Number, default: 0 },
             totalSubmissions: { type: Number, default: 0 },
             timeTakenToSolve: { type: Number, default: null },
             firstAcceptedSubmissionId: { type: Schema.Types.ObjectId, ref: 'Submission', default: null }
         },
-        problemsCompleted: [{ 
+        problemsCompleted: [{
             problemId: { type: Schema.Types.ObjectId, ref: 'Problem' },
             acceptedAt: { type: Date, default: Date.now },
-            timeTaken: Number, 
-            submissionsCount: Number, 
+            timeTaken: Number,
+            submissionsCount: Number,
             isAccepted: { type: Boolean, default: false }
         }]
     }],
-    problemIds: [{ 
+    problemIds: [{
         type: Schema.Types.ObjectId,
         ref: 'Problem'
     }],
-    currentProblemIndex: { 
+    currentProblemIndex: {
         type: Number,
         default: 0
     },
-    status: { 
+    status: {
         type: String,
         enum: ['waiting', 'in-progress', 'completed', 'cancelled'],
         default: 'waiting'
@@ -75,13 +75,13 @@ const gameRoomSchema = new Schema({
         max: 60,
         default: 10
     },
-    startTime: { 
+    startTime: {
         type: Date
     },
-    endTime: { 
+    endTime: {
         type: Date
     },
-    gameData: { 
+    gameData: {
         type: Schema.Types.Mixed
     },
     gameResults: {
@@ -93,23 +93,33 @@ const gameRoomSchema = new Schema({
                 'Time Expired',
                 'Opponent Left',
                 'All Solved',
-                'All Players Disconnected' 
+                'All Players Disconnected'
             ],
             default: null
         },
-        solvedOrder: [{ 
+        solvedOrder: [{
             userId: { type: Schema.Types.ObjectId, ref: 'User' },
-            timeTaken: Number, 
-            problemsSolvedCount: Number, 
+            timeTaken: Number,
+            problemsSolvedCount: Number,
             eloBeforeGame: { type: Number, default: null },
             eloChange: { type: Number, default: null },
             eloAfterGame: { type: Number, default: null },
-            outcome: { type: String, enum: ['win', 'loss', 'draw/incomplete'], default: null } // Store outcome for clarity
+            outcome: { type: String, enum: ['win', 'loss', 'draw/incomplete'], default: null }
         }]
     }
 }, { timestamps: true });
 
-gameRoomSchema.index({ createdAt: 1 }, { expireAfterSeconds: 3600, partialFilterExpression: { status: 'waiting' } });
+gameRoomSchema.index({ createdAt: 1 }, { expireAfterSeconds: 3600, partialFilterExpression: { status: 'waiting' } }); // 1 hour for waiting rooms
+
+gameRoomSchema.index(
+    { 'endTime': 1 },
+    {
+        expireAfterSeconds: 24 * 60 * 60, 
+        partialFilterExpression: {
+            status: { $in: ['completed', 'cancelled'] } 
+        }
+    }
+);
 
 const GameRoom = mongoose.model('GameRoom', gameRoomSchema);
 module.exports = GameRoom;

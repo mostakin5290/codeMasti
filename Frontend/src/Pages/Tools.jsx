@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FaBug, FaCodeBranch, FaPlay, FaProjectDiagram } from 'react-icons/fa';
 import { GiCircuitry } from 'react-icons/gi';
-import AlgoVisualiser from '../components/visulizer/AlgoVisualiser';
+import AlgoVisualiser from '../components/Tools/AlgoVisualiser';
 
 const defaultTheme = {
     background: 'bg-gray-900', 

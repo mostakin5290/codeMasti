@@ -6,10 +6,9 @@ import io from 'socket.io-client';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { FaTrophy, FaCalendarAlt, FaClock } from 'react-icons/fa'; // Import FaCalendarAlt, FaClock for consistency
-import Header from '../components/layout/Header'; // Assuming Header is in '../components/layout/Header'
+import { FaTrophy, FaCalendarAlt, FaClock } from 'react-icons/fa';
+import Header from '../components/layout/Header';
 
-// Default theme and Loader (from your GamePage's start)
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
     primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
@@ -23,10 +22,10 @@ const defaultTheme = {
     errorColor: 'text-red-500',
     warningColor: 'text-amber-500',
     infoColor: 'text-blue-500',
-    accent: 'bg-cyan-500', // Added for consistency with ProblemPage
+    accent: 'bg-cyan-500',
 };
 
-// Re-using the Loader component
+// Re-using the Loader component (no changes needed here)
 const Loader = ({ message = "Loading...", size = "md", appTheme }) => {
     const theme = { ...defaultTheme, ...appTheme };
     return (
@@ -61,7 +60,11 @@ const GamePage = () => {
     const { theme: appThemeFromContext } = useTheme();
     const theme = { ...defaultTheme, ...appThemeFromContext };
 
-    const [loading, setLoading] = useState(false);
+    // Old global 'loading' state removed, replaced with granular ones
+    const [quickMatchLoading, setQuickMatchLoading] = useState(false); // NEW
+    const [createRoomLoading, setCreateRoomLoading] = useState(false); // NEW
+    const [joinRoomLoading, setJoinRoomLoading] = useState(false);     // NEW
+
     const [searchingOpponent, setSearchingOpponent] = useState(false);
     const [searchTimer, setSearchTimer] = useState(0);
     const [showNoPlayerModal, setShowNoPlayerModal] = useState(false);
@@ -81,14 +84,12 @@ const GamePage = () => {
     const lobbySocketRef = useRef(null);
     const searchTimerRef = useRef(null);
 
-    // Safely get ELO rating, defaulting to a fallback if not available
     const userEloRating = user?.stats?.eloRating || 1000;
     const userFirstName = user?.firstName || 'Player';
 
-    // Classes for main content sections, consistent with ProblemPage example
     const sectionClasses = `backdrop-blur-xl border ${theme.border}/20 shadow-xl rounded-2xl`;
 
-    const getAccentColorBase = () => { // Helper for dynamic accent colors, similar to ProblemPage
+    const getAccentColorBase = () => {
         const accentColorClass = theme.accent || theme.buttonPrimary;
         const match = accentColorClass.match(/bg-(\w+)-\d+/);
         return match ? match[1] : 'blue';
@@ -106,14 +107,17 @@ const GamePage = () => {
     const startSearchTimer = useCallback(() => {
         setSearchTimer(0);
         setSearchingOpponent(true);
-        setLoading(true); // Disable other buttons during search
+        setQuickMatchLoading(true); // Only quick match related button should be disabled
+        // Other loading states should remain false
+        // setLoading(true); // REMOVED GLOBAL LOADING
 
         searchTimerRef.current = setInterval(() => {
             setSearchTimer(prev => {
-                if (prev >= 19) { // 20 seconds total (0-19)
+                if (prev >= 19) {
                     clearSearchTimer();
                     setSearchingOpponent(false);
-                    setLoading(false); // Re-enable other buttons
+                    setQuickMatchLoading(false); // Re-enable quick match button
+                    // setLoading(false); // REMOVED GLOBAL LOADING
                     setShowNoPlayerModal(true);
                     return 0;
                 }
@@ -122,11 +126,11 @@ const GamePage = () => {
         }, 1000);
     }, [clearSearchTimer]);
 
-    // Function to handle battle animation and direct navigation for quick match
     const startBattleAnimationAndNavigate = useCallback((roomData, currentUserProfile, opponentUserProfile) => {
         clearSearchTimer();
         setSearchingOpponent(false);
-        setLoading(false);
+        setQuickMatchLoading(false); // Ensure quick match button is re-enabled
+        // setLoading(false); // REMOVED GLOBAL LOADING
         setShowNoPlayerModal(false);
 
         setMatchedUsers({ currentUser: currentUserProfile, opponent: opponentUserProfile });
@@ -137,7 +141,7 @@ const GamePage = () => {
             setShowBattleAnimation(false);
             setMatchedUsers({ currentUser: null, opponent: null });
             navigate(`/game/room/${roomData.roomId}/play`);
-        }, 5000); // 5 seconds for the animation
+        }, 5000);
     }, [clearSearchTimer, navigate]);
 
     useEffect(() => {
@@ -159,16 +163,22 @@ const GamePage = () => {
             newSocket.on('connect_error', (err) => {
                 console.error("Socket.IO connection error (Lobby):", err);
                 toast.error("Failed to connect to game server. Please try again.");
+                // Ensure all loading states are reset on error
+                setQuickMatchLoading(false);
+                setCreateRoomLoading(false);
+                setJoinRoomLoading(false);
             });
 
             newSocket.on('disconnect', (reason) => {
                 console.log('Disconnected from Socket.IO (Lobby):', reason);
+                // Ensure all loading states are reset on disconnect
+                setQuickMatchLoading(false);
+                setCreateRoomLoading(false);
+                setJoinRoomLoading(false);
             });
 
-            // THIS IS THE NEW 'gameStart' event for queued quick matches
             newSocket.on('gameStart', (data) => {
                 console.log('Game started via socket (queued quick match player):', data);
-                // Ensure this event means the game is actually ready to start for this user
                 if (data.room && data.room.status === 'in-progress' && data.room.players.length === data.room.maxPlayers) {
                     const currentPlayerProfile = data.room.players.find(p => p.userId._id === user._id)?.userId;
                     const opponentPlayerProfile = data.room.players.find(p => p.userId._id !== user._id)?.userId;
@@ -177,20 +187,19 @@ const GamePage = () => {
                         startBattleAnimationAndNavigate(data.room, currentPlayerProfile, opponentPlayerProfile);
                     } else {
                         toast.success(data.message + " Redirecting...");
-                        navigate(`/game/room/${data.room.roomId}/play`); // Direct navigation as fallback
+                        navigate(`/game/room/${data.room.roomId}/play`);
                     }
                 } else {
                     toast.info("Match found, but room state is not yet ready. Waiting for room details...");
-                    // Potentially navigate to GameRoomDetailsPage if the state is not fully in-progress
-                    // This is a fallback if backend doesn't send full gameStart for some reason
                     navigate(`/game/room/${data.room.roomId}`);
                 }
+                setQuickMatchLoading(false); // Ensure quick match button is reset
             });
 
             newSocket.on('roomCreated', (data) => {
                 toast.success(data.message);
-                setLoading(false);
-                navigate(`/game/room/${data.room.roomId}`); // Created rooms still go to GameRoomDetailsPage
+                setCreateRoomLoading(false); // Reset only create room loading
+                navigate(`/game/room/${data.room.roomId}`);
             });
 
             newSocket.on('gameError', (data) => {
@@ -198,8 +207,11 @@ const GamePage = () => {
                 console.error('Game Error (Lobby):', data.message);
                 clearSearchTimer();
                 setSearchingOpponent(false);
-                setLoading(false);
-                if (showBattleAnimation) { // Clear animation if an error occurs during it
+                setQuickMatchLoading(false); // Reset quick match loading
+                setCreateRoomLoading(false); // Reset create room loading
+                setJoinRoomLoading(false);    // Reset join room loading
+
+                if (showBattleAnimation) {
                     setShowBattleAnimation(false);
                     setMatchedUsers({ currentUser: null, opponent: null });
                     if (battleAnimationTimerRef.current) {
@@ -233,11 +245,13 @@ const GamePage = () => {
     }
 
     const handleFindRandomOpponent = async () => {
-        setLoading(true);
+        setQuickMatchLoading(true); // Use specific loading state
+        setSearchingOpponent(true); // Indicate searching for opponent
         try {
             if (!lobbySocketRef.current || !lobbySocketRef.current.connected) {
                 toast.error("Not connected to game server. Please wait or refresh the page.");
-                setLoading(false);
+                setQuickMatchLoading(false); // Reset specific loading state
+                setSearchingOpponent(false);
                 return;
             }
 
@@ -250,37 +264,36 @@ const GamePage = () => {
                 { withCredentials: true }
             );
 
-            if (response.status === 200) { // Match found immediately (gameStart already emitted by backend)
+            if (response.status === 200) {
                 const roomData = response.data.room;
                 const currentPlayerProfile = roomData.players.find(p => p.userId._id === user._id)?.userId;
                 const opponentPlayerProfile = roomData.players.find(p => p.userId._id !== user._id)?.userId;
 
-                // Trigger battle animation and direct navigation for immediate quick match
                 if (currentPlayerProfile && opponentPlayerProfile) {
                     startBattleAnimationAndNavigate(roomData, currentPlayerProfile, opponentPlayerProfile);
                 } else {
                     toast.success(response.data.message + " Redirecting...");
-                    navigate(`/game/room/${roomData.roomId}/play`); // Direct navigation as fallback
+                    navigate(`/game/room/${roomData.roomId}/play`);
                 }
-            } else if (response.status === 202) { // Added to queue, wait for socket.on('gameStart')
+            } else if (response.status === 202) {
                 toast.info(response.data.message);
-                startSearchTimer(); // Start the 20-second timer/UI
+                startSearchTimer(); // This also sets quickMatchLoading(true) internally
             }
         } catch (error) {
             console.error('Error finding random opponent:', error);
             toast.error(error.response?.data?.message || 'Failed to find random opponent.');
-            setLoading(false);
+            setQuickMatchLoading(false); // Reset specific loading state
             setSearchingOpponent(false);
             clearSearchTimer();
         }
     };
 
     const handleCreateRoom = async () => {
-        setLoading(true);
+        setCreateRoomLoading(true); // Use specific loading state
         try {
             if (!lobbySocketRef.current || !lobbySocketRef.current.connected) {
                 toast.error("Not connected to game server. Please wait or refresh the page.");
-                setLoading(false);
+                setCreateRoomLoading(false); // Reset specific loading state
                 return;
             }
             const response = await axios.post(`${VITE_API_URL}/game/create-room`,
@@ -294,26 +307,27 @@ const GamePage = () => {
                 { withCredentials: true }
             );
             toast.success(response.data.message);
-            navigate(`/game/room/${response.data.room.roomId}`); // Created rooms still go to GameRoomDetailsPage
+            // setCreateRoomLoading(false) will be handled by the roomCreated socket event now.
+            navigate(`/game/room/${response.data.room.roomId}`);
         } catch (error) {
             console.error('Error creating room:', error);
             toast.error(error.response?.data?.message || 'Failed to create room.');
         } finally {
-            setLoading(false);
+            setCreateRoomLoading(false); // Ensure it's always reset, even on error
         }
     };
 
     const handleJoinRoom = async () => {
-        setLoading(true);
+        setJoinRoomLoading(true); // Use specific loading state
         try {
             if (!lobbySocketRef.current || !lobbySocketRef.current.connected) {
                 toast.error("Not connected to game server. Please wait or refresh the page.");
-                setLoading(false);
+                setJoinRoomLoading(false); // Reset specific loading state
                 return;
             }
             if (!roomIdInput.trim()) {
                 toast.error("Please enter a valid Room ID.");
-                setLoading(false);
+                setJoinRoomLoading(false); // Reset specific loading state
                 return;
             }
             const roomIDToJoin = roomIdInput.trim().toUpperCase();
@@ -322,7 +336,8 @@ const GamePage = () => {
                 { withCredentials: true }
             );
             toast.success(response.data.message);
-            navigate(`/game/room/${roomIDToJoin}`); // Navigate to GameRoomDetailsPage for joining private rooms
+            // setJoinRoomLoading(false) will be handled by the roomUpdate socket event or direct navigation if match already started.
+            navigate(`/game/room/${roomIDToJoin}`);
         } catch (error) {
             console.error('Error joining room:', error);
             toast.error(error.response?.data?.message || 'Failed to join room.');
@@ -332,16 +347,16 @@ const GamePage = () => {
                 toast.info(error.response.data.message);
             }
         } finally {
-            setLoading(false);
+            setJoinRoomLoading(false); // Ensure it's always reset, even on error
         }
     };
 
     const handleCancelSearch = () => {
         clearSearchTimer();
         setSearchingOpponent(false);
-        setLoading(false);
+        setQuickMatchLoading(false); // Ensure quick match button is reset
         toast.info("Search cancelled.");
-        if (showBattleAnimation) { // Also clear battle animation if it was somehow active
+        if (showBattleAnimation) {
             setShowBattleAnimation(false);
             setMatchedUsers({ currentUser: null, opponent: null });
             if (battleAnimationTimerRef.current) {
@@ -356,9 +371,12 @@ const GamePage = () => {
         handleFindRandomOpponent();
     };
 
+    // Consolidated disabled check for all inputs/buttons
+    const anyOperationInProgress = searchingOpponent || showBattleAnimation || quickMatchLoading || createRoomLoading || joinRoomLoading;
+
     return (
         <div className={`min-h-screen relative overflow-hidden ${theme.text} bg-gradient-to-br ${theme.gradientFrom} ${theme.gradientTo}`}>
-            {/* Animated Background Elements - using similar pattern as ProblemPage */}
+            {/* Animated Background Elements - no change */}
             <div className={`absolute top-0 left-0 w-80 h-80 ${theme.primary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[-20%] translate-y-[-20%] animate-blob`}></div>
             <div className={`absolute bottom-0 right-0 w-96 h-96 ${theme.secondary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[20%] translate-y-[20%] animate-blob animation-delay-2000`}></div>
             <div className={`absolute top-1/2 left-1/2 w-60 h-60 ${theme.highlight.replace('text-', 'bg-')}/5 rounded-full blur-3xl -translate-x-1/2 -translate-x-1/2 animate-blob animation-delay-4000`}></div>
@@ -366,6 +384,7 @@ const GamePage = () => {
 
             {/* Conditional rendering for Battle Animation vs Lobby Content */}
             {showBattleAnimation && matchedUsers.currentUser && matchedUsers.opponent ? (
+                // Battle Animation JSX - no change
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-50 animate-fade-in-fast">
                     <div className="text-center text-white space-y-8 relative">
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -458,7 +477,7 @@ const GamePage = () => {
                                                 value={quickMatchDifficulty}
                                                 onChange={(e) => setQuickMatchDifficulty(e.target.value)}
                                                 className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                                disabled={searchingOpponent || loading || showBattleAnimation}
+                                                disabled={anyOperationInProgress}
                                             >
                                                 <option value="easy">🟢 Easy</option>
                                                 <option value="medium">🟡 Medium</option>
@@ -475,7 +494,7 @@ const GamePage = () => {
                                                 value={quickMatchTime}
                                                 onChange={(e) => setQuickMatchTime(parseInt(e.target.value))}
                                                 className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                                disabled={searchingOpponent || loading || showBattleAnimation}
+                                                disabled={anyOperationInProgress} 
                                             >
                                                 <option value={5}>⏰ 5 minutes</option>
                                                 <option value={10}>⏰ 10 minutes</option>
@@ -488,19 +507,19 @@ const GamePage = () => {
                                     {!searchingOpponent ? (
                                         <button
                                             onClick={handleFindRandomOpponent}
-                                            disabled={loading || !isAuthenticated || showBattleAnimation}
+                                            disabled={anyOperationInProgress || !isAuthenticated} 
                                             className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed`}
                                         >
                                             <span className={`absolute inset-0 bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')}/80 ${theme.secondary.replace('bg-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
                                             <span className="relative z-10 flex items-center justify-center">
-                                                {loading ? <LoadingSpinner size="sm" color="white" /> : '🚀 Find Random Opponent'}
+                                                {quickMatchLoading ? <LoadingSpinner size="sm" color="white" /> : '🚀 Find Random Opponent'} {/* Use specific loading spinner */}
                                             </span>
                                         </button>
                                     ) : (
                                         <button
                                             onClick={handleCancelSearch}
+                                            disabled={showBattleAnimation} 
                                             className="w-full py-4 px-6 rounded-xl text-lg font-bold bg-red-500 hover:bg-red-600 text-white transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            disabled={loading || showBattleAnimation}
                                         >
                                             ❌ Cancel Search
                                         </button>
@@ -533,7 +552,7 @@ const GamePage = () => {
                                                 value={createRoomDifficulty}
                                                 onChange={(e) => setCreateRoomDifficulty(e.target.value)}
                                                 className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                                disabled={loading || searchingOpponent || showBattleAnimation}
+                                                disabled={anyOperationInProgress} 
                                             >
                                                 <option value="easy">🟢 Easy</option>
                                                 <option value="medium">🟡 Medium</option>
@@ -550,7 +569,7 @@ const GamePage = () => {
                                                 value={createRoomTime}
                                                 onChange={(e) => setCreateRoomTime(parseInt(e.target.value))}
                                                 className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                                disabled={loading || searchingOpponent || showBattleAnimation}
+                                                disabled={anyOperationInProgress} 
                                             >
                                                 <option value={5}>⏰ 5 minutes</option>
                                                 <option value={10}>⏰ 10 minutes</option>
@@ -562,12 +581,12 @@ const GamePage = () => {
 
                                     <button
                                         onClick={handleCreateRoom}
-                                        disabled={loading || !isAuthenticated || searchingOpponent || showBattleAnimation}
+                                        disabled={anyOperationInProgress || !isAuthenticated} 
                                         className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed`}
                                     >
                                         <span className={`absolute inset-0 bg-gradient-to-r ${theme.successColor.replace('text-', 'from-')}/80 ${theme.infoColor.replace('text-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
                                         <span className="relative z-10 flex items-center justify-center">
-                                            {loading ? <LoadingSpinner size="sm" color="white" /> : '🏗️ Create Private Room'}
+                                            {createRoomLoading ? <LoadingSpinner size="sm" color="white" /> : '🏗️ Create Private Room'} {/* Use specific loading spinner */}
                                         </span>
                                     </button>
                                 </div>
@@ -599,19 +618,18 @@ const GamePage = () => {
                                             placeholder="Enter Room ID (e.g., ABC123)"
                                             className={`w-full p-4 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 font-mono text-center text-lg tracking-wider shadow-inner`}
                                             maxLength={6}
-                                            disabled={loading || searchingOpponent || showBattleAnimation}
+                                            disabled={anyOperationInProgress} 
                                         />
                                     </div>
 
                                     <button
                                         onClick={handleJoinRoom}
-                                        disabled={loading || !roomIdInput.trim() || !isAuthenticated || searchingOpponent || showBattleAnimation}
+                                        disabled={anyOperationInProgress || !roomIdInput.trim() || !isAuthenticated}
                                         className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group`}
                                     >
                                         <span className={`absolute inset-0 bg-gradient-to-r ${theme.highlightTertiary.replace('text-', 'from-')}/80 ${theme.primary.replace('bg-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
                                         <span className="relative z-10 flex items-center justify-center">
-                                            {loading ? <LoadingSpinner size="sm" color="white" /> : '🎯 Join Room'}
-                                        </span>
+                                            {joinRoomLoading ? <LoadingSpinner size="sm" color="white" /> : '🎯 Join Room'}                                         </span>
                                     </button>
                                 </div>
                             </div>
@@ -661,7 +679,7 @@ const GamePage = () => {
                 @keyframes shimmer {
                     0% { background-position: -200% 0; }
                     100% { background-position: 200% 0; }
-                } 
+                }
                 @keyframes fade-in {
                     from { opacity: 0; }
                     to { opacity: 1; }
@@ -690,9 +708,9 @@ const GamePage = () => {
                     0%, 100% { transform: scale(1); opacity: 1; }
                     50% { transform: scale(1.02); opacity: 0.95; }
                 }
-                
+
                 .animate-blob { animation: blob 7s infinite; }
-                .animate-shimmer { 
+                .animate-shimmer {
                     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
                     background-size: 200% 100%;
                     animation: shimmer 2s infinite;
@@ -704,7 +722,7 @@ const GamePage = () => {
                 .animate-scale-in { animation: scale-in 0.3s ease-out; }
                 .animate-bounce-slow { animation: bounce-slow 3s infinite; }
                 .animate-pulse-slow { animation: pulse-slow 3s infinite; }
-                
+
                 .animation-delay-2000 { animation-delay: 2s; }
                 .animation-delay-4000 { animation-delay: 4s; }
 
@@ -716,7 +734,7 @@ const GamePage = () => {
                 @keyframes text-pop-in { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
                 @keyframes vs-zoom { 0% { transform: scale(0.5) rotate(-10deg); opacity: 0; } 50% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
                 @keyframes pulse-border { 0% { border-color: rgba(168, 85, 247, 0.7); transform: scale(1); } 50% { border-color: rgba(236, 72, 153, 0.9); transform: scale(1.05); } 100% { border-color: rgba(168, 85, 247, 0.7); transform: scale(1); } }
-                
+
                 .animate-fade-in-fast { animation: fade-in-fast 0.5s ease-out forwards; }
                 .animate-slide-in-left-fast { animation: slide-in-left-fast 0.6s ease-out forwards; animation-delay: 0.2s; }
                 .animate-slide-in-right-fast { animation: slide-in-right-fast 0.6s ease-out forwards; animation-delay: 0.2s; }
