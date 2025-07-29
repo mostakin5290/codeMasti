@@ -1,0 +1,7 @@
+--> payment email fix 
+--> profile layout fix 
+--> ui change 
+--> Visualizer cretate 
+--> pre sheet define 
+--> video player improve 
+--> interview section create 

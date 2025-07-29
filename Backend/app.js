@@ -61,6 +61,28 @@ app.use(cors({
     exposedHeaders: ['set-cookie']
 }));
 
+// Raw body capture for webhook verification ONLY
+app.use((req, res, next) => {
+    if (req.originalUrl === '/payment/verify-payment') {
+        let rawBody = '';
+        req.setEncoding('utf8');
+        req.on('data', (chunk) => { rawBody += chunk; });
+        req.on('end', () => {
+            req.rawBody = rawBody;
+            // Manually parse JSON body since we're bypassing body-parser
+            try {
+                req.body = JSON.parse(rawBody);
+            } catch (e) {
+                console.error('Error parsing webhook JSON:', e);
+                return res.status(400).send('Invalid JSON');
+            }
+            next();
+        });
+    } else {
+        next();
+    }
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

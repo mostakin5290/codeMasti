@@ -3,10 +3,8 @@ const createRazorpayInstance = require('../utils/razorpay');
 const Subscription = require('../models/subscription');
 const User = require('../models/user');
 const schedule = require('node-schedule');
-const sendEmail = require('../utils/emailSender'); // Import the email utility
+const sendEmail = require('../utils/emailSender'); 
 
-// Ensure dotenv is loaded if this file runs independently for the schedule job
-require('dotenv').config();
 
 schedule.scheduleJob('*/5 * * * *', async () => {
     try {
@@ -59,7 +57,7 @@ const createOrder = async (req, res) => {
         const receiptId = `sub_${userId}_${Math.floor(Date.now() / 1000)}`;
 
         const options = {
-            amount: amount * 100, // amount in smallest currency unit (paise)
+            amount: amount * 100, 
             currency: "INR",
             receipt: receiptId,
             notes: {
