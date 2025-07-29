@@ -227,6 +227,9 @@ module.exports = {
   ],
   safelist: [
     {
+      pattern: /delay-(0|100|200|300|400|500|600|700|800|900|1000|1100|1200|1300|1400|1500|1600|1700|1800|1900|2000)/, // Adjust range based on max index * 100
+    },
+    {
       pattern: /(bg|from|to)-(slate|gray|zinc|emerald|lime|orange|blue|cyan|teal|indigo|purple|fuchsia|pink|red|amber|yellow|neutral)-(50|100|200|300|400|500|600|700|800|900|950)(\/(10|20|30|40|50|60|70|80|90|95))?/,
       variants: ['hover', 'focus', 'active', 'group-hover']
     },

@@ -13,7 +13,7 @@ import celebrationAnimation from '../assets/lotties/celebration.json';
 import codingAnimation from '../assets/lotties/coding.json';
 import ideaAnimation from '../assets/lotties/Idea.json';
 import successAnimation from '../assets/lotties/success.json';
-
+import Aurora from '../components/ui/Aurora'
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
     primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
@@ -29,6 +29,46 @@ const defaultTheme = {
     infoColor: 'text-blue-400',
 };
 
+// Define tailwindColorMap here, outside the component for reusability
+const tailwindColorMap = {
+    // Grays/Zincs/Slates/Neutrals/Stones
+    'gray-50': '#F9FAFB', 'gray-100': '#F3F4F6', 'gray-200': '#E5E7EB', 'gray-300': '#D1D5DB', 'gray-400': '#9CA3AF', 'gray-500': '#6B7280', 'gray-600': '#4B5563', 'gray-700': '#374151', 'gray-800': '#1F2937', 'gray-900': '#111827', 'gray-950': '#0A0A0A',
+    'zinc-50': '#FAFAFA', 'zinc-100': '#F4F4F5', 'zinc-200': '#E4E4E7', 'zinc-300': '#D4D4D8', 'zinc-400': '#A1A1AA', 'zinc-500': '#71717A', 'zinc-600': '#52525B', 'zinc-700': '#3F3F46', 'zinc-800': '#27272A', 'zinc-900': '#18181B', 'zinc-950': '#09090B',
+    'slate-50': '#F8FAFC', 'slate-100': '#F1F5F9', 'slate-200': '#E2E8F0', 'slate-300': '#CBD5E1', 'slate-400': '#94A3B8', 'slate-500': '#64748B', 'slate-600': '#475569', 'slate-700': '#334155', 'slate-800': '#1E293B', 'slate-900': '#0F172A', 'slate-950': '#020617',
+    'neutral-50': '#FAFAFA', 'neutral-100': '#F5F5F5', 'neutral-200': '#E5E5E5', 'neutral-300': '#D4D4D4', 'neutral-400': '#A3A3A3', 'neutral-500': '#737373', 'neutral-600': '#525252', 'neutral-700': '#404040', 'neutral-800': '#262626', 'neutral-900': '#171717', 'neutral-950': '#0A0A0A',
+    'stone-50': '#FAFAF9', 'stone-100': '#F5F5EE', 'stone-200': '#E7E5E4', 'stone-300': '#D6D3D1', 'stone-400': '#A8A29E', 'stone-500': '#78716C', 'stone-600': '#57534E', 'stone-700': '#44403C', 'stone-800': '#292524', 'stone-900': '#1C1917', 'stone-950': '#0C0A09',
+
+    // Reds/Roses/Pinks/Fuchsias
+    'red-50': '#FEF2F2', 'red-100': '#FEE2E2', 'red-200': '#FECACA', 'red-300': '#FCA5A5', 'red-400': '#F87171', 'red-500': '#EF4444', 'red-600': '#DC2626', 'red-700': '#B91C1C', 'red-800': '#991B1B', 'red-900': '#7F1D1D', 'red-950': '#450A0A',
+    'rose-50': '#FFF1F2', 'rose-100': '#FFE4E6', 'rose-200': '#FECDD3', 'rose-300': '#FDA4AF', 'rose-400': '#FB7185', 'rose-500': '#F43F5E', 'rose-600': '#E11D48', 'rose-700': '#BE123C', 'rose-800': '#9F1239', 'rose-900': '#881337', 'rose-950': '#450A0A',
+    'pink-50': '#FFF1F2', 'pink-100': '#FCE7F3', 'pink-200': '#FBCFE8', 'pink-300': '#F9A8D4', 'pink-400': '#F472B6', 'pink-500': '#EC4899', 'pink-600': '#DB2777', 'pink-700': '#BE185D', 'pink-800': '#9D174D', 'pink-900': '#831843', 'pink-950': '#450A0A',
+    'fuchsia-50': '#FCF5FF', 'fuchsia-100': '#FBF0FE', 'fuchsia-200': '#F7E6FE', 'fuchsia-300': '#F0ABFC', 'fuchsia-400': '#E879F9', 'fuchsia-500': '#D946EF', 'fuchsia-600': '#C026D3', 'fuchsia-700': '#A21CAF', 'fuchsia-800': '#86198F', 'fuchsia-900': '#701A7B', 'fuchsia-950': '#3A0F48',
+
+    // Oranges/Ambers/Yellows
+    'orange-50': '#FFF7ED', 'orange-100': '#FFEDD5', 'orange-200': '#FDBA74', 'orange-300': '#FDBA74', 'orange-400': '#FB923C', 'orange-500': '#F97316', 'orange-600': '#EA580C', 'orange-700': '#C2410C', 'orange-800': '#9A3412', 'orange-900': '#7C2D12', 'orange-950': '#431407',
+    'amber-50': '#FFFBEB', 'amber-100': '#FEF3C7', 'amber-200': '#FDE68A', 'amber-300': '#FCD34D', 'amber-400': '#FBBF24', 'amber-500': '#F59E0B', 'amber-600': '#D97706', 'amber-700': '#B45309', 'amber-800': '#92400E', 'amber-900': '#78350F', 'amber-950': '#451A03',
+    'yellow-50': '#FFFDEB', 'yellow-100': '#FEF9C3', 'yellow-200': '#FEF08A', 'yellow-300': '#FDE047', 'yellow-400': '#FACC15', 'yellow-500': '#EAB308', 'yellow-600': '#CA8A04', 'yellow-700': '#A16207', 'yellow-800': '#854D09', 'yellow-900': '#713F12', 'yellow-950': '#422006',
+
+    // Greens/Emeralds/Teals/Limes
+    'green-50': '#F0FDF4', 'green-100': '#DCFCE7', 'green-200': '#BBF7D0', 'green-300': '#86EFAC', 'green-400': '#4ADE80', 'green-500': '#22C55E', 'green-600': '#16A34A', 'green-700': '#15803D', 'green-800': '#166534', 'green-900': '#14532D', 'green-950': '#052E16',
+    'emerald-50': '#ECFDF5', 'emerald-100': '#D1FAE5', 'emerald-200': '#A7F3D0', 'emerald-300': '#6EE7B7', 'emerald-400': '#34D399', 'emerald-500': '#10B981', 'emerald-600': '#059669', 'emerald-700': '#047857', 'emerald-800': '#065F46', 'emerald-900': '#064E3B', 'emerald-950': '#022C22',
+    'teal-50': '#F0FDFB', 'teal-100': '#CCFBF1', 'teal-200': '#99F6E4', 'teal-300': '#5EEAD4', 'teal-400': '#2DD4BF', 'teal-500': '#14B8A6', 'teal-600': '#0D9488', 'teal-700': '#0F766E', 'teal-800': '#115E59', 'teal-900': '#134E4A', 'teal-950': '#042F2E',
+    'lime-50': '#F7FEE7', 'lime-100': '#EEFFDE', 'lime-200': '#E3FFB5', 'lime-300': '#CCF38F', 'lime-400': '#A3E635', 'lime-500': '#84CC16', 'lime-600': '#65A30D', 'lime-700': '#4D7C0F', 'lime-800': '#3F6212', 'lime-900': '#365314', 'lime-950': '#1A2E05',
+
+    // Blues/Cyans/Skys/Indigos/Violets/Purples
+    'blue-50': '#EFF6FF', 'blue-100': '#DBEAFE', 'blue-200': '#BFDBFE', 'blue-300': '#93C5FD', 'blue-400': '#60A5FA', 'blue-500': '#3B82F6', 'blue-600': '#2563EB', 'blue-700': '#1D4ED8', 'blue-800': '#1E40AF', 'blue-900': '#1E3A8A', 'blue-950': '#172554',
+    'cyan-50': '#ECFEFF', 'cyan-100': '#CFFAFE', 'cyan-200': '#A7F3D0', 'cyan-300': '#67E8F9', 'cyan-400': '#22D3EE', 'cyan-500': '#06B6D4', 'cyan-600': '#0891B2', 'cyan-700': '#067482', 'cyan-800': '#0A7B90', 'cyan-900': '#0E7490', 'cyan-950': '#014A60',
+    'sky-50': '#F0F9FF', 'sky-100': '#E0F2FE', 'sky-200': '#BAE6FD', 'sky-300': '#7DD3FC', 'sky-400': '#38BDF8', 'sky-500': '#0EA5E9', 'sky-600': '#0284C7', 'sky-700': '#0369A1', 'sky-800': '#075985', 'sky-900': '#0C4A6E', 'sky-950': '#082F49',
+    'indigo-50': '#EEF2FF', 'indigo-100': '#E0E7FF', 'indigo-200': '#C7D2FE', 'indigo-300': '#A5B4FC', 'indigo-400': '#818CF8', 'indigo-500': '#6366F1', 'indigo-600': '#4F46E5', 'indigo-700': '#4338CA', 'indigo-800': '#3730A3', 'indigo-900': '#312E81', 'indigo-950': '#1E1B4B',
+    'violet-50': '#F5F3FF', 'violet-100': '#EDE9FE', 'violet-200': '#DDD6FE', 'violet-300': '#C4B5FD', 'violet-400': '#A78BFA', 'violet-500': '#8B5CF6', 'violet-600': '#7C3AED', 'violet-700': '#6D28D9', 'violet-800': '#5B21B6', 'violet-900': '#4C1D95', 'violet-950': '#2E1065',
+    'purple-50': '#FAFAFF', 'purple-100': '#F3E8FF', 'purple-200': '#E9D5FF', 'purple-300': '#DDAAFF', 'purple-400': '#C084FC', 'purple-500': '#A855F7', 'purple-600': '#9333EA', 'purple-700': '#7E22CE', 'purple-800': '#6B21A8', 'purple-900': '#581C87', 'purple-950': '#3B0764',
+
+    // Special/Utility
+    'black': '#000000',
+    'white': '#FFFFFF',
+};
+
+
 const Home = () => {
     const { theme: themeFromContext } = useTheme();
     const theme = { ...defaultTheme, ...themeFromContext };
@@ -38,15 +78,31 @@ const Home = () => {
     const navigate = useNavigate();
     const celebrationRef = useRef(null);
 
+    // Helper to get hex color from Tailwind class string
+    const getHexColor = (tailwindClass) => {
+        // Extracts "color-shade" from "bg-color-shade" or "text-color-shade"
+        const parts = tailwindClass.split('-');
+        if (parts.length < 2) return null;
+        const colorKey = parts.slice(1).join('-');
+        return tailwindColorMap[colorKey] || null;
+    };
+
+    // Determine color stops for Aurora based on theme
+    const auroraColorStops = [
+        getHexColor(theme.primary),
+        getHexColor(theme.highlightSecondary),
+        getHexColor(theme.highlight)
+    ].filter(Boolean); // Filter out any null values
+
     useEffect(() => {
         const queryParams = new URLSearchParams(location.search);
         const status = queryParams.get('status');
-        
+
         if (status === 'premium-activated') {
             if (celebrationRef.current) {
                 celebrationRef.current.play();
             }
-            
+
             toast.success('🎉 Congratulations! Your Premium subscription is now active!', {
                 position: "top-center",
                 autoClose: 5000,
@@ -102,7 +158,7 @@ const Home = () => {
         <div className={`min-h-screen ${theme.background} ${theme.text} font-sans scroll-smooth overflow-x-hidden`}>
             {/* Celebration animation (hidden until triggered) */}
             <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-                <Lottie 
+                <Lottie
                     lottieRef={celebrationRef}
                     animationData={celebrationAnimation}
                     loop={false}
@@ -118,15 +174,24 @@ const Home = () => {
 
             <Header />
 
-            {/* Hero Section with Lottie Animation */}
+            {/* Hero Section with Aurora Background and Lottie Animation */}
             <section className="relative overflow-hidden py-20 md:py-32 lg:py-40 flex items-center justify-center">
-                <div className="absolute inset-0 z-1">
-                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://images.unsplash.com/photo-1639762681057-408e52192e55?q=80&w=2232&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')] bg-cover bg-center opacity-30 mix-blend-overlay"></div>
-                    <div className={`absolute inset-0 bg-gradient-to-t ${theme.gradientFrom} via-transparent ${theme.gradientTo}`}></div>
+                <div className="absolute inset-0 z-0"> {/* Changed z-1 to z-0 to put Aurora behind content */}
+                    {/* Removed static background image and gradient to allow Aurora to be the primary background */}
 
+                    {/* Floating circles (kept for additional visual depth) */}
                     <div className={`absolute top-1/4 left-1/4 w-16 h-16 rounded-full ${theme.highlightSecondary.replace('text-', 'bg-')}/20 blur-xl animate-float-and-rotate`}></div>
                     <div className={`absolute top-1/3 right-1/4 w-24 h-24 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/20 blur-xl animate-float-and-rotate animation-delay-2000`}></div>
                     <div className={`absolute bottom-1/4 right-1/3 w-20 h-20 rounded-full ${theme.highlight.replace('text-', 'bg-')}/20 blur-xl animate-float-and-rotate animation-delay-4000`}></div>
+
+                    {/* Aurora Background Component */}
+                    {auroraColorStops.length >= 3 && ( // Ensure at least 3 colors for the gradient
+                        <Aurora
+                            colorStops={auroraColorStops}
+                            amplitude={12}
+                            blend={.1}
+                        />
+                    )}
                 </div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -150,7 +215,7 @@ const Home = () => {
                             </Link>
                             {isUserPremium ? (
                                 <Link
-                                    to="/profile" 
+                                    to="/profile"
                                     className={`px-8 py-3 rounded-lg border-2 ${theme.border} hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-all duration-300 font-semibold bg-transparent transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${theme.highlight.replace('text-', 'focus:ring-')}`}
                                 >
                                     Manage Premium
@@ -166,38 +231,11 @@ const Home = () => {
                         </div>
                     </div>
                     <div className="hidden lg:block animate-fade-in-up delay-300">
-                        <Lottie 
+                        <Lottie
                             animationData={codingAnimation}
                             loop={true}
                             className="w-full h-full max-w-xl mx-auto transform hover:scale-105 transition-transform duration-500"
                         />
-                    </div>
-                </div>
-            </section>
-
-            {/* Stats Section with Floating Animation */}
-            <section className={`py-16 ${theme.cardBg}/50 backdrop-blur-md relative overflow-hidden`}>
-                <div className="absolute inset-0">
-                    <div className={`absolute top-0 left-0 w-32 h-32 rounded-full ${theme.highlight.replace('text-', 'bg-')}/10 blur-xl animate-float-slow`}></div>
-                    <div className={`absolute bottom-0 right-0 w-40 h-40 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/10 blur-xl animate-float-slow animation-delay-3000`}></div>
-                </div>
-                
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                        {[
-                            { value: '15,000+', label: 'Active Developers', color: theme.highlight },
-                            { value: '1,200+', label: 'Coding Problems', color: theme.highlightSecondary },
-                            { value: '80+', label: 'Weekly Contests', color: theme.highlightTertiary },
-                            { value: '150+', label: 'Tech Companies', color: theme.highlight }
-                        ].map((stat, i) => (
-                            <Card3D key={i} className={`p-6 rounded-xl ${theme.cardBg} border ${theme.border} hover:shadow-lg group`}>
-                                <div className="relative">
-                                    <div className={`text-3xl font-bold ${stat.color} group-hover:animate-pulse`}>{stat.value}</div>
-                                    <div className={`mt-2 ${theme.cardText}`}>{stat.label}</div>
-                                    <div className={`absolute -bottom-4 left-0 right-0 h-1 bg-gradient-to-r ${stat.color.replace('text-', 'from-')} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                                </div>
-                            </Card3D>
-                        ))}
                     </div>
                 </div>
             </section>
@@ -207,7 +245,7 @@ const Home = () => {
                 <div className="absolute inset-0 overflow-hidden">
                     <div className={`absolute top-0 right-0 w-64 h-64 rounded-full ${theme.highlightSecondary.replace('text-', 'bg-')}/10 blur-3xl -mr-32 -mt-32`}></div>
                 </div>
-                
+
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold">
@@ -257,7 +295,7 @@ const Home = () => {
                             <Card3D key={i} className={`${theme.cardBg} p-8 rounded-xl border ${theme.border} hover:shadow-xl`}>
                                 <div className="flex flex-col h-full">
                                     <div className="h-48 mb-6 overflow-hidden rounded-lg">
-                                        <Lottie 
+                                        <Lottie
                                             animationData={feature.animation}
                                             loop={true}
                                             className="w-full h-full"
@@ -286,7 +324,7 @@ const Home = () => {
                 <div className="absolute inset-0">
                     <div className={`absolute top-1/3 left-1/4 w-32 h-32 rounded-full ${theme.highlight.replace('text-', 'bg-')}/10 blur-xl animate-pulse`}></div>
                 </div>
-                
+
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold">
@@ -386,7 +424,7 @@ const Home = () => {
                 <div className="absolute inset-0 overflow-hidden">
                     <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/10 blur-3xl -ml-32 -mb-32`}></div>
                 </div>
-                
+
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold">
@@ -474,7 +512,7 @@ const Home = () => {
                     <div className={`absolute top-1/4 left-1/4 w-32 h-32 rounded-full ${theme.highlight.replace('text-', 'bg-')}/10 blur-xl animate-float-slow`}></div>
                     <div className={`absolute bottom-1/4 right-1/4 w-40 h-40 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/10 blur-xl animate-float-slow animation-delay-3000`}></div>
                 </div>
-                
+
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
                     <h2 className="text-3xl md:text-4xl font-bold mb-6">
                         Ready to <span className={theme.highlight}>Transform</span> Your Career?
@@ -491,8 +529,8 @@ const Home = () => {
                                 Explore Premium <FiStar className="ml-2 text-yellow-400" />
                             </Link>
                         ) : (
-                            <Link 
-                                to="/premium" 
+                            <Link
+                                to="/premium"
                                 className={`inline-flex items-center justify-center px-8 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${theme.buttonText} transform hover:scale-105 active:scale-95`}
                             >
                                 Upgrade to Premium

@@ -69,7 +69,6 @@ app.use((req, res, next) => {
         req.on('data', (chunk) => { rawBody += chunk; });
         req.on('end', () => {
             req.rawBody = rawBody;
-            // Manually parse JSON body since we're bypassing body-parser
             try {
                 req.body = JSON.parse(rawBody);
             } catch (e) {
@@ -521,6 +520,7 @@ const InitalizeConnection = async () => {
             redisClient.connect()
         ]);
         server.listen(process.env.PORT, () => {
+            console.log("server start")
         });
     } catch (err) {
         console.error("Error during server initialization:", err);
