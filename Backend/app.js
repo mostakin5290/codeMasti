@@ -97,7 +97,7 @@ app.use('/images', imageRoutes);
 app.use('/payment', payRouter);
 app.use('/playlist', playlistRouter);
 app.use('/premium', premiumRouter);
-app.use('/game', gameRoutes); // Your game routes
+app.use('/game', gameRoutes); 
 
 const gameTimers = new Map();
 

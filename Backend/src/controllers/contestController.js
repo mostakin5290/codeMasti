@@ -8,7 +8,6 @@ const Createnewcontest = async (req, res) => {
     try {
         const { title, description, startTime, endTime, duration, isPublic, maxParticipants, problems } = req.body;
 
-        // Validate contest data
         if (new Date(startTime) < new Date()) {
             return res.status(400).json({ error: 'Start time must be in the future' });
         }
@@ -60,7 +59,6 @@ const UpdateContest = async (req, res) => {
             return res.status(404).json({ error: 'Contest not found' });
         }
 
-        // Prevent updating if contest has already started
         if (new Date(contest.startTime) < new Date()) {
             return res.status(400).json({ error: 'Cannot update a contest that has already started' });
         }
@@ -99,31 +97,25 @@ const ListAllContests = async (req, res) => {
             .sort({ startTime: 1 })
             .populate('problems.problemId', 'title difficulty');
 
-        // Prepare an array of contest IDs for efficient participant counting
         const contestIds = contests.map(c => c._id);
 
-        // Fetch all participation counts for these contests in one query
         const participantCounts = await ContestParticipation.aggregate([
             { $match: { contestId: { $in: contestIds } } },
             { $group: { _id: "$contestId", count: { $sum: 1 } } }
         ]);
 
-        // Convert the aggregate result into a map for easy lookup
         const participantCountsMap = new Map(
             participantCounts.map(item => [item._id.toString(), item.count])
         );
 
-        // If a user is logged in (req.user exists due to userMiddleware),
-        // determine their registration status for each contest.
         let userRegisteredContestIds = new Set();
         if (req.user && req.user._id) {
             const userParticipations = await ContestParticipation.find({ userId: req.user._id, contestId: { $in: contestIds } });
             userRegisteredContestIds = new Set(userParticipations.map(p => p.contestId.toString()));
         }
 
-        // Map over contests to add participantCount and isRegistered flag
         contests = contests.map(contest => {
-            const contestObj = contest.toObject(); // Convert Mongoose document to plain object
+            const contestObj = contest.toObject(); 
             contestObj.participantCount = participantCountsMap.get(contestObj._id.toString()) || 0;
             contestObj.isRegistered = userRegisteredContestIds.has(contestObj._id.toString());
             return contestObj;
@@ -131,7 +123,7 @@ const ListAllContests = async (req, res) => {
 
         res.json(contests);
     } catch (error) {
-        console.error("Error in ListAllContests:", error); // Added for better debugging
+        console.error("Error in ListAllContests:", error); 
         res.status(500).json({ error: error.message });
     }
 };
@@ -171,7 +163,6 @@ const DeleteContest = async (req, res) => {
             return res.status(404).json({ error: 'Contest not found' });
         }
 
-        // Also delete all participations
         await ContestParticipation.deleteMany({ contestId: req.params.id });
 
         res.json({ message: 'Contest deleted successfully' });
@@ -187,7 +178,6 @@ const RemoveProblemFromContest = async (req, res) => {
             return res.status(404).json({ error: 'Contest not found' });
         }
 
-        // Check if contest has started
         if (new Date(contest.startTime) < new Date()) {
             return res.status(400).json({ error: 'Cannot remove problems from a contest that has started' });
         }
@@ -325,8 +315,6 @@ const SubmitSolutionDuringContest = async (req, res) => {
             submittedAt: now
         });
 
-        // Process submission (this would be your existing submission logic)
-        // For simplicity, we'll assume it returns a status and possibly points
         const submissionResult = await processSubmission(submission);
 
         // Add to participation
@@ -373,10 +361,7 @@ const GetContestLeaderboard = async (req, res) => {
     }
 };
 
-// Helper function (this would be your existing submission processing logic)
 async function processSubmission(submission) {
-    // This would contain your actual submission processing logic
-    // For now, we'll just return a mock result
     return {
         status: 'Accepted',
         runtime: 100, // ms

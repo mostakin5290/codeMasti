@@ -1,4 +1,3 @@
-// models/Subscription.js
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
@@ -33,19 +32,19 @@ const subscriptionSchema = new Schema({
     razorpayOrderId: {
         type: String,
         required: false,
-        unique: true,  // <--- UNCOMMENT AND ADD THIS
-        sparse: true   // <--- UNCOMMENT AND ADD THIS (Crucial for allowing multiple nulls)
+        unique: true,
+        sparse: true 
     },
     razorpayPaymentId: {
         type: String,
         required: false,
-        unique: true,  // <--- UNCOMMENT AND ADD THIS (Same logic as razorpayOrderId)
-        sparse: true   // <--- UNCOMMENT AND ADD THIS
+        unique: true, 
+        sparse: true 
     },
     razorpaySignature: {
         type: String,
         required: false,
-        // sparse: true // Generally no need for unique here, so no unique or sparse
+        
     },
     status: {
         type: String,

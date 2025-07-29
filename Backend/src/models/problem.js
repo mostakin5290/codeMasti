@@ -113,8 +113,6 @@ function generateJavascriptMethodCall(ioConfig) {
     const parameters = ioConfig.parameters;
 
     let code = '';
-    // `parsedInput` is already available from the template's `JSON.parse(rawTestInput)`
-    // The code generated here assumes `parsedInput` exists.
 
     let functionCallArgs = [];
 
@@ -162,16 +160,8 @@ problemSchema.methods.generateExecutableCode = function (userCode, language, tes
     let embeddedTestInput;
     const inputForStringify = testInput === undefined ? null : testInput;
     try {
-        // Step 1: Convert the actual test input value into its JSON string representation.
-        // Example: [2,3] -> "[2,3]"
-        // Example: "hello" -> "\"hello\""
-        // Example: 10 -> "10"
         const jsonStringRepresentation = JSON.stringify(inputForStringify);
 
-        // Step 2: Now, embed this JSON string representation safely into a JavaScript string literal.
-        // JSON.stringify will add outer quotes and escape any internal quotes for a JS string literal.
-        // Example: "[2,3]" becomes "\"\[2,3]\""
-        // Example: "\"hello\"" becomes "\"\\\"hello\\\"\""
         embeddedTestInput = JSON.stringify(jsonStringRepresentation);
 
     } catch (e) {

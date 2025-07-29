@@ -1,4 +1,3 @@
-// utils/invoiceGenerator.js
 
 /**
  * Generates the HTML content for a subscription invoice.
@@ -18,7 +17,7 @@ const generateInvoiceHtml = (subscription, user) => {
         year: 'numeric', month: 'long', day: 'numeric'
     });
 
-    const invoiceNumber = `INV-${subscription._id.toString().substring(0, 8)}-${new Date(subscription.paymentDate).getTime()}`; // Simple unique invoice number
+    const invoiceNumber = `INV-${subscription._id.toString().substring(0, 8)}-${new Date(subscription.paymentDate).getTime()}`;
 
     return `
         <!DOCTYPE html>

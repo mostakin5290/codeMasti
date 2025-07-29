@@ -1,5 +1,3 @@
-// Backend/routes/AuthRoutes.js
-
 const express = require('express');
 const authRouter = express.Router();
 const {
@@ -39,9 +37,9 @@ authRouter.put('/password', userMiddleware, changePassword);
 authRouter.post('/send-otp', sendOTP);
 authRouter.post('/verify-otp', verifyOTP);
 
-// NEW: Forgot Password / Reset Password Routes
-authRouter.post('/forgot-password', forgotPassword); // Route to send OTP for password reset
-authRouter.post('/reset-password', resetPassword);   // Route to reset password with OTP
+// Forgot Password / Reset Password Routes
+authRouter.post('/forgot-password', forgotPassword);
+authRouter.post('/reset-password', resetPassword);   
 
 // Google OAuth routes
 authRouter.get('/google', googleLogin);
@@ -61,10 +59,10 @@ authRouter.delete('/account', userMiddleware, deleteUserAccount);
 authRouter.get('/allDetails/:userId', getFullUserProfile);
 
 // Admin routes (require coAdminMiddleware or adminMiddleware)
-authRouter.get('/', coAdminMiddleware, getAllUsersForAdmin);         // Get all users for admin
-authRouter.put('/:userId/role', coAdminMiddleware, updateUserRole);  // Update user role
-authRouter.delete('/:userId', adminMiddleware, adminDeleteUser);     // Admin delete user
-authRouter.put('/:userId/premium', coAdminMiddleware, toggleUserPremiumStatus); // Toggle premium status
+authRouter.get('/', coAdminMiddleware, getAllUsersForAdmin);         
+authRouter.put('/:userId/role', coAdminMiddleware, updateUserRole); 
+authRouter.delete('/:userId', adminMiddleware, adminDeleteUser);    
+authRouter.put('/:userId/premium', coAdminMiddleware, toggleUserPremiumStatus); 
 // Route to get user rank
 authRouter.get('/rank/:userId', userMiddleware, getUserRank);
 authRouter.get('/total-rank',userMiddleware,getTotalRank);

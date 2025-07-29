@@ -18,19 +18,17 @@ const { forgotPasswordEmailTemplate, RegisterEmailTemplate, PremiumGiftEmailTemp
 
 const register = async (req, res) => {
     try {
-        // Validate request body
         try {
             validUser(req.body);
         } catch (error) {
             return res.status(400).json({
                 success: false,
-                message: error.message  // Changed from error.details[0].message
+                message: error.message 
             });
         }
 
         const { emailId, password, firstName, lastName } = req.body;
 
-        // Check if user already exists
         const existingUser = await User.findOne({ emailId });
         if (existingUser) {
             return res.status(409).json({
@@ -39,10 +37,8 @@ const register = async (req, res) => {
             });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create new user
         const newUser = await User.create({
             firstName,
             lastName,
@@ -51,7 +47,6 @@ const register = async (req, res) => {
             role: 'user'
         });
 
-        // Generate JWT token
         const token = jwt.sign(
             {
                 _id: newUser._id,
@@ -62,16 +57,14 @@ const register = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        // Set secure HTTP-only cookie
         res.cookie('token', token, {
-            maxAge: 3600 * 1000,   // 1 hour
+            maxAge: 3600 * 1000,  
             httpOnly: true,
-            secure: true,          // ✅ Must be true for SameSite=None
+            secure: true,        
             sameSite: 'None',
-            path: '/'              // ✅ Good practice
+            path: '/'             
         });
 
-        // Omit sensitive data from response
         const userResponse = {
             _id: newUser._id,
             firstName: newUser.firstName,
@@ -89,7 +82,6 @@ const register = async (req, res) => {
     } catch (err) {
         console.error('Registration error:', err);
 
-        // Handle duplicate key errors (MongoDB)
         if (err.code === 11000) {
             return res.status(409).json({
                 success: false,
@@ -108,7 +100,6 @@ const login = async (req, res) => {
     try {
         const { emailId, password } = req.body;
 
-        // Validate input
         if (!emailId || !password) {
             return res.status(400).json({
                 success: false,
@@ -116,7 +107,6 @@ const login = async (req, res) => {
             });
         }
 
-        // Check if user exists
         const user = await User.findOne({ emailId });
         if (!user) {
             return res.status(401).json({
@@ -125,7 +115,6 @@ const login = async (req, res) => {
             });
         }
 
-        // Verify password
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({
@@ -134,7 +123,6 @@ const login = async (req, res) => {
             });
         }
 
-        // Generate JWT token
         const token = jwt.sign(
             {
                 _id: user._id,
@@ -159,7 +147,6 @@ const login = async (req, res) => {
             lastName: user.lastName,
             emailId: user.emailId,
             role: user.role
-            // Add other non-sensitive fields as needed
         };
 
         res.status(200).json({
@@ -221,9 +208,6 @@ const changePassword = async (req, res) => {
         user.password = await bcrypt.hash(newPassword, 10);
         await user.save();
 
-        // Optionally, re-issue a new token or clear existing ones.
-        // For simplicity, we'll just send success.
-        // The token already has a maxAge so it will expire naturally.
 
         res.status(200).json({
             success: true,
@@ -387,7 +371,7 @@ const verifyOTP = async (req, res) => {
             });
         }
 
-        // Check if user already exists (additional safety check)
+        // Check if user already exists
         const existingUser = await User.findOne({ emailId });
         if (existingUser) {
             // Clean up OTP record
@@ -403,7 +387,7 @@ const verifyOTP = async (req, res) => {
             firstName: otpRecord.firstName,
             lastName: otpRecord.lastName,
             emailId: otpRecord.emailId,
-            password: otpRecord.password, // Already hashed
+            password: otpRecord.password,
             role: 'user'
         });
 
@@ -421,16 +405,14 @@ const verifyOTP = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        // Set secure HTTP-only cookie
         res.cookie('token', token, {
-            maxAge: 3600 * 1000, // 1 hour
+            maxAge: 3600 * 1000, 
             httpOnly: true,
             secure: true,
             sameSite: 'None',
             path: '/'
         });
 
-        // Omit sensitive data from response
         const userResponse = {
             _id: newUser._id,
             firstName: newUser.firstName,
@@ -448,7 +430,7 @@ const verifyOTP = async (req, res) => {
     } catch (error) {
         console.error('OTP Verification Error:', error);
 
-        // Handle duplicate key errors (MongoDB)
+        // Handle duplicxate key errors 
         if (error.code === 11000) {
             // Clean up OTP record
             await OTP.deleteOne({ emailId: req.body.emailId }).catch(console.error);
@@ -469,7 +451,6 @@ const verifyOTP = async (req, res) => {
 const forgotPassword = async (req, res) => {
     try {
         const { emailId } = req.body;
-
         // Input validation
         if (!emailId) {
             return res.status(400).json({
@@ -561,7 +542,6 @@ const resetPassword = async (req, res) => {
     try {
         const { emailId, otp, newPassword, confirmNewPassword } = req.body;
 
-        // Input validation
         if (!emailId || !otp || !newPassword || !confirmNewPassword) {
             return res.status(400).json({
                 success: false,
@@ -590,7 +570,6 @@ const resetPassword = async (req, res) => {
             });
         }
 
-        // Find OTP record
         const otpRecord = await OTP.findOne({ emailId });
         if (!otpRecord) {
             return res.status(400).json({
@@ -599,20 +578,18 @@ const resetPassword = async (req, res) => {
             });
         }
 
-        // Check if OTP is expired (5 minutes)
         const currentTime = new Date();
         const otpTime = new Date(otpRecord.createdAt);
         const timeDifference = (currentTime - otpTime) / (1000 * 60); // in minutes
 
         if (timeDifference > 5) {
-            await OTP.deleteOne({ emailId }); // Clean up expired OTP
+            await OTP.deleteOne({ emailId }); 
             return res.status(400).json({
                 success: false,
                 message: "OTP has expired. Please request a new password reset."
             });
         }
 
-        // Verify OTP
         const isOTPValid = await bcrypt.compare(otp, otpRecord.otp);
         if (!isOTPValid) {
             return res.status(400).json({
@@ -621,27 +598,22 @@ const resetPassword = async (req, res) => {
             });
         }
 
-        // Find user
         const user = await User.findOne({ emailId });
         if (!user) {
-            await OTP.deleteOne({ emailId }); // Clean up OTP
+            await OTP.deleteOne({ emailId });
             return res.status(404).json({
                 success: false,
                 message: "User not found."
             });
         }
 
-        // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Update user password
         user.password = hashedPassword;
         await user.save();
 
-        // Clean up OTP record
         await OTP.deleteOne({ emailId });
 
-        // Generate new JWT token
         const token = jwt.sign(
             {
                 _id: user._id,
@@ -652,16 +624,14 @@ const resetPassword = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        // Set secure HTTP-only cookie
         res.cookie('token', token, {
-            maxAge: 3600 * 1000, // 1 hour
+            maxAge: 3600 * 1000,
             httpOnly: true,
             secure: true,
             sameSite: 'None',
             path: '/'
         });
 
-        // Omit sensitive data from response
         const userResponse = {
             _id: user._id,
             firstName: user.firstName,
@@ -689,7 +659,6 @@ const logout = async (req, res) => {
     try {
         const { token } = req.cookies;
 
-        // Check if token exists
         if (!token) {
             return res.status(400).json({
                 success: false,
@@ -697,12 +666,10 @@ const logout = async (req, res) => {
             });
         }
 
-        // Verify and decode token
         let payload;
         try {
             payload = jwt.verify(token, process.env.JWT_KEY);
         } catch (err) {
-            // If token is invalid, still clear the cookie
             res.clearCookie('token');
             return res.status(401).json({
                 success: false,
@@ -710,7 +677,6 @@ const logout = async (req, res) => {
             });
         }
 
-        // Add token to Redis blocklist with TTL
         try {
             await redisClient.setEx(
                 `token:${token}`,
@@ -719,10 +685,8 @@ const logout = async (req, res) => {
             );
         } catch (redisErr) {
             console.error('Redis error:', redisErr);
-            // Even if Redis fails, we should still clear the cookie
         }
 
-        // Clear the cookie with secure options
         res.clearCookie('token', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -737,7 +701,6 @@ const logout = async (req, res) => {
     } catch (err) {
         console.error('Logout error:', err);
 
-        // Ensure cookie is cleared even if error occurs
         res.clearCookie('token', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -790,7 +753,7 @@ const adminRegister = async (req, res) => {
             lastName,
             emailId,
             password: hashedPassword,
-            role: role // Use the role from the request body
+            role: role 
         });
 
         const userResponse = {
@@ -860,8 +823,8 @@ const updateUserProfile = async (req, res) => {
             headline,
             bio,
             location,
-            avatar, // This will be the new URL from Cloudinary
-            avatarPublicId, // NEW: Expect this from frontend if avatar is new
+            avatar, 
+            avatarPublicId, 
             socialLinks,
             preferences,
             newPassword,
@@ -1084,18 +1047,13 @@ const googleLogin = async (req, res) => {
 
 const initiateGithubLogin = (req, res) => {
     try {
-        // Validate environment variables
         if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET || !process.env.GITHUB_REDIRECT_URI) {
             throw new Error("GitHub OAuth configuration is missing");
         }
-
-        // Generate a random state for security
         const state = Math.random().toString(36).substring(7);
 
-        // Store state in Redis (optional but recommended)
         redisClient.setEx(`github:state:${state}`, 600, 'valid'); // 10 minute expiry
 
-        // Construct the GitHub OAuth URL
         const authUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.GITHUB_REDIRECT_URI)}&scope=user:email&state=${state}`;
 
         res.status(200).json({
@@ -1122,7 +1080,6 @@ const handleGithubCallback = async (req, res) => {
             });
         }
 
-        // Optional: Verify state parameter if you're using it
         if (state) {
             try {
                 const isValidState = await redisClient.get(`github:state:${state}`);
@@ -1132,17 +1089,12 @@ const handleGithubCallback = async (req, res) => {
                         message: "Invalid state parameter"
                     });
                 }
-                // Delete the state to prevent reuse
                 await redisClient.del(`github:state:${state}`);
             } catch (redisErr) {
                 console.error('Redis state verification error:', redisErr);
-                // Continue anyway if Redis is down
             }
         }
 
-
-
-        // 1. Exchange code for access token
         const tokenResponse = await axios.post(
             'https://github.com/login/oauth/access_token',
             {
@@ -1159,8 +1111,6 @@ const handleGithubCallback = async (req, res) => {
             }
         );
 
-
-        // 2. Check for errors in token response
         if (tokenResponse.data.error) {
             return res.status(400).json({
                 success: false,
@@ -1177,7 +1127,6 @@ const handleGithubCallback = async (req, res) => {
             });
         }
 
-        // 3. Get user data from GitHub
         const userResponse = await axios.get('https://api.github.com/user', {
             headers: {
                 Authorization: `Bearer ${access_token}`,
@@ -1185,7 +1134,6 @@ const handleGithubCallback = async (req, res) => {
             }
         });
 
-        // 4. Get user emails (needed because primary email might be private)
         const emailsResponse = await axios.get('https://api.github.com/user/emails', {
             headers: {
                 Authorization: `Bearer ${access_token}`,
@@ -1202,7 +1150,6 @@ const handleGithubCallback = async (req, res) => {
             });
         }
 
-        // 5. Create or update user in your database
         let user = await User.findOne({
             $or: [
                 { emailId: primaryEmail.email },
@@ -1211,7 +1158,6 @@ const handleGithubCallback = async (req, res) => {
         });
 
         if (!user) {
-            // Create new user
             user = await User.create({
                 firstName: userResponse.data.name?.split(' ')[0] || userResponse.data.login,
                 lastName: userResponse.data.name?.split(' ').slice(1).join(' ') || '',
@@ -1221,11 +1167,9 @@ const handleGithubCallback = async (req, res) => {
                 role: 'user',
                 isVerified: true,
                 provider: 'github',
-                // Generate a random password for GitHub users (they won't use it)
                 password: await bcrypt.hash(Math.random().toString(36), 10)
             });
         } else {
-            // Update existing user with GitHub info if needed
             if (!user.githubId) {
                 user.githubId = userResponse.data.id.toString();
                 user.provider = user.provider || 'github';
@@ -1236,7 +1180,6 @@ const handleGithubCallback = async (req, res) => {
             }
         }
 
-        // 6. Generate JWT token
         const token = jwt.sign(
             {
                 _id: user._id,
@@ -1247,16 +1190,14 @@ const handleGithubCallback = async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        // 7. Set cookie and return response
         res.cookie('token', token, {
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000,
             httpOnly: true,
             secure: true,
             sameSite: 'None',
             path: '/'
         });
 
-        // For development, you might want to redirect to frontend
         if (process.env.NODE_ENV === 'development') {
             return res.redirect(`${process.env.FRONTEND_URL}/github/success?token=${token}`);
         }
@@ -1277,7 +1218,6 @@ const handleGithubCallback = async (req, res) => {
     } catch (error) {
         console.error('GitHub OAuth error:', error.response?.data || error.message);
 
-        // If it's a development environment, redirect with error
         if (process.env.NODE_ENV === 'development') {
             return res.redirect(`${process.env.FRONTEND_URL}/login?error=github_auth_failed`);
         }
@@ -1296,7 +1236,6 @@ const getAllUsersForAdmin = async (req, res) => {
         const { search, filter } = req.query;
         const query = {};
 
-        // Search functionality
         if (search) {
             const searchRegex = new RegExp(search, 'i');
             query.$or = [
@@ -1306,7 +1245,6 @@ const getAllUsersForAdmin = async (req, res) => {
             ];
         }
 
-        // Filter functionality
         if (filter === 'premium') {
             query.isPremium = true;
         } else if (filter === 'normal') {
@@ -1321,8 +1259,8 @@ const getAllUsersForAdmin = async (req, res) => {
             query.role = { $in: ['admin', 'co-admin'] };
         }
         const users = await User.find(query)
-            .select('-password') // Exclude password from the result
-            .sort({ createdAt: -1 }); // Latest users first
+            .select('-password')
+            .sort({ createdAt: -1 });
 
         res.status(200).json(users);
     } catch (error) {
@@ -1337,9 +1275,8 @@ const getAllUsersForAdmin = async (req, res) => {
 const updateUserRole = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { role: newRole } = req.body; // New role: 'user' or 'admin'
+        const { role: newRole } = req.body;
         const performingUser = req.user;
-        // Basic validation for role
         if (!newRole || !['user', 'admin', 'co-admin'].includes(newRole)) {
             return res.status(400).json({
                 success: false,
@@ -1347,7 +1284,6 @@ const updateUserRole = async (req, res) => {
             });
         }
 
-        // Prevent an admin from changing their own role (optional but recommended)
         if (performingUser._id.toString() === userId) {
             return res.status(403).json({
                 success: false,
@@ -1359,9 +1295,6 @@ const updateUserRole = async (req, res) => {
         if (!userToUpdate) {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
-        // --- Permission Checks based on performingUser's role and target user's current/new role ---
-
-        // 1. Co-admin cannot demote an admin.
         if (userToUpdate.role === 'admin' && performingUser.role === 'co-admin') {
             return res.status(403).json({
                 success: false,
@@ -1380,20 +1313,20 @@ const updateUserRole = async (req, res) => {
             const existingAdmin = await User.findOne({ role: 'admin' });
 
             if (existingAdmin && existingAdmin._id.toString() !== userToUpdate._id.toString()) {
-                existingAdmin.role = 'user'; // Demote current admin to regular 'user'
+                existingAdmin.role = 'user'; 
                 await existingAdmin.save();
             }
         }
 
         userToUpdate.role = newRole;
         await userToUpdate.save();
-        const updatedUserResponse = userToUpdate.toObject(); // Convert Mongoose document to plain JS object
-        delete updatedUserResponse.password; // Remove password field
+        const updatedUserResponse = userToUpdate.toObject();
+        delete updatedUserResponse.password; 
 
         res.status(200).json({
             success: true,
             message: `User role updated to ${newRole} successfully.`,
-            user: updatedUserResponse // Return updated user without password
+            user: updatedUserResponse 
         });
 
     } catch (error) {
@@ -1423,8 +1356,6 @@ const adminDeleteUser = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        // --- Permission Logic for Deletion ---
-        // 1. Co-admin CANNOT delete an admin.
         if (userToDelete.role === 'admin' && performingUser.role === 'co-admin') {
             return res.status(403).json({
                 success: false,
@@ -1432,8 +1363,6 @@ const adminDeleteUser = async (req, res) => {
             });
         }
 
-        // 2. The primary (and only) admin cannot be deleted via this route.
-        // This covers cases where an admin tries to delete themselves or the single existing admin.
         if (userToDelete.role === 'admin' && performingUser.role === 'admin') {
             return res.status(403).json({
                 success: false,
@@ -1441,18 +1370,7 @@ const adminDeleteUser = async (req, res) => {
             });
         }
 
-        // At this point:
-        // - An 'admin' can delete any 'user' or 'co-admin'.
-        // - A 'co-admin' can delete any 'user' or 'co-admin'.
-        // No further checks needed for 'user' or 'co-admin' deletion.
-
         await User.findByIdAndDelete(userId);
-
-        // IMPORTANT: In a real application, when a user is deleted, you should
-        // also clean up all associated data (their posts, comments, submissions, etc.)
-        // This is crucial for data integrity but is outside the scope of this request.
-
-
 
         res.status(200).json({
             success: true,
@@ -1493,7 +1411,7 @@ const toggleUserPremiumStatus = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        if (isPremium) { // Granting premium status
+        if (isPremium) {
             if (!duration) {
                 return res.status(400).json({
                     success: false,
@@ -1503,7 +1421,7 @@ const toggleUserPremiumStatus = async (req, res) => {
 
             let endDate = new Date();
             let planType;
-            let durationString = ''; // To be used in email
+            let durationString = ''; 
             const startDate = new Date();
 
             if (duration === '1month') {
@@ -1540,16 +1458,15 @@ const toggleUserPremiumStatus = async (req, res) => {
                 });
             }
 
-            // Create a new subscription record
             const newSubscription = new Subscription({
                 userId: user._id,
                 plan: planType,
-                amount: 0, // Admin granted, no cost
-                currency: 'N/A', // Not applicable for free grant
+                amount: 0, 
+                currency: 'N/A', 
                 startDate: startDate,
                 endDate: endDate,
                 status: 'active',
-                source: 'admin_grant', // Mark this as admin granted
+                source: 'admin_grant',
             });
             await newSubscription.save();
 
@@ -1709,23 +1626,19 @@ const getTotalRank = async (req, res) => {
             {
                 $project: {
                     _id: 1,
-                    firstName: 1, // Include firstName
-                    lastName: 1,  // Include lastName
-                    emailId: 1,   // Include emailId
-                    avatar: 1,    // Include avatar
-                    // Calculate the size of problemsSolved array.
+                    firstName: 1, 
+                    lastName: 1,  
+                    emailId: 1,   
+                    avatar: 1,    
                     problemsSolvedCount: { $size: { $ifNull: ["$problemsSolved", []] } }
                 }
             },
             {
-                // Sort by solved problems count in descending order
                 $sort: { problemsSolvedCount: -1 }
             },
             {
-                // Assign a rank to each user based on the sorted count
-                // $denseRank is good for leaderboards as it handles ties gracefully (1,1,2,3)
                 $setWindowFields: {
-                    sortBy: { problemsSolvedCount: -1 }, // Required sortBy for ranking functions
+                    sortBy: { problemsSolvedCount: -1 }, 
                     output: {
                         rank: {
                             $denseRank: {}
@@ -1734,7 +1647,6 @@ const getTotalRank = async (req, res) => {
                 }
             },
             {
-                // Project the final desired fields
                 $project: {
                     _id: 1,
                     firstName: 1,
@@ -1746,15 +1658,14 @@ const getTotalRank = async (req, res) => {
             }
         ]);
 
-        // Return the entire list of ranked users
         res.status(200).json({
             success: true,
             ranks: allUsersRanked,
-            totalUsers: allUsersRanked.length // Total users is simply the length of the aggregated array
+            totalUsers: allUsersRanked.length 
         });
 
     } catch (error) {
-        console.error('Error fetching total ranks:', error); // Log the specific error
+        console.error('Error fetching total ranks:', error);
         res.status(500).json({
             success: false,
             message: 'Server error while fetching total ranks.'

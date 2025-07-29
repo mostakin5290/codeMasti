@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 const createPost = async (req, res) => {
     const { title, description, code, language, problemId } = req.body;
-    const authorId = req.user.id; // Assuming `userMiddleware` adds user to req
+    const authorId = req.user.id; 
 
     if (!title || !description || !problemId) {
         return res.status(400).json({ message: 'Title, description, and a linked problem are required.' });
@@ -25,7 +25,7 @@ const createPost = async (req, res) => {
         res.status(201).json(savedPost);
     } catch (error) {
         console.error(error);
-        if (error.code === 11000) { // Handle duplicate slug error
+        if (error.code === 11000) { 
             return res.status(409).json({ message: 'A post with a similar title already exists. Please choose a different title.' });
         }
         res.status(500).json({ message: 'Server error while creating post.' });
@@ -43,14 +43,12 @@ const getAllPosts = async (req, res) => {
 
         const posts = await DiscussionPost.aggregate([
             { $match: query },
-            // Safely handle missing arrays
             {
                 $addFields: {
                     comments: { $ifNull: ["$comments", []] },
                     likes: { $ifNull: ["$likes", []] }
                 }
             },
-            // Now calculate counts safely
             {
                 $addFields: {
                     likeCount: { $size: "$likes" },
@@ -76,7 +74,7 @@ const getAllPosts = async (req, res) => {
                     likeCount: 1,
                     commentCount: 1,
                     createdAt: 1,
-                    comments: 1, // Include if needed
+                    comments: 1, 
                     author: {
                         _id: '$authorInfo._id',
                         username: { $concat: ['$authorInfo.firstName', ' ', '$authorInfo.lastName'] },
@@ -119,21 +117,19 @@ const getPostBySlug = async (req, res) => {
 const togglePostLike = async (req, res) => {
     try {
         const postId = req.params.postId;
-        const userId = req.user.id; // User ID from userMiddleware
+        const userId = req.user.id; 
 
         const post = await DiscussionPost.findById(postId);
         if (!post) {
             return res.status(404).json({ message: 'Post not found.' });
         }
 
-        const hasLiked = post.likes.includes(userId); // Check if user already liked
+        const hasLiked = post.likes.includes(userId); 
 
         if (hasLiked) {
-            // User has liked, so unlike it (pull userId from likes array)
             post.likes.pull(userId);
         } else {
-            // User has not liked, so like it (add userId to likes array)
-            post.likes.addToSet(userId); // Use addToSet to prevent duplicates
+            post.likes.addToSet(userId); 
         }
 
         await post.save();
@@ -142,7 +138,7 @@ const togglePostLike = async (req, res) => {
             success: true,
             message: hasLiked ? 'Post unliked successfully.' : 'Post liked successfully.',
             likeCount: post.likes.length,
-            isLiked: !hasLiked // Indicate the current state after the toggle
+            isLiked: !hasLiked 
         });
 
     } catch (error) {
@@ -160,13 +156,6 @@ const deletePost = async (req, res) => {
         if (!post) {
             return res.status(404).json({ message: 'Post not found.' });
         }
-
-        // Check if the current user is the author of the post
-        // if (post.author != userId) {
-        //     return res.status(403).json({
-        //         message: 'Unauthorized. You can only delete your own posts.'
-        //     });
-        // }
 
         await DiscussionPost.findByIdAndDelete(req.params.id);
 
@@ -199,20 +188,17 @@ const updatePost = async (req, res) => {
             return res.status(404).json({ message: 'Post not found.' });
         }
 
-
-        // Check if the current user is the author of the post
         if (post.author._id.toString() != userId) {
             return res.status(403).json({
                 message: 'Unauthorized. You can only update your own posts.'
             });
         }
 
-        // Update post fields
         post.title = title;
         post.description = description;
-        post.code = code || null;  // Set to null if code is removed
-        post.language = code ? language : null; // Only set language if code exists
-        post.isEdited = true;  // Mark as edited
+        post.code = code || null; 
+        post.language = code ? language : null; 
+        post.isEdited = true; 
         post.editedAt = new Date();
 
         const updatedPost = await post.save();
@@ -226,7 +212,7 @@ const updatePost = async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        if (error.code === 11000) { // Handle duplicate slug error (if title change generates duplicate slug)
+        if (error.code === 11000) {
             return res.status(409).json({
                 message: 'A post with this title already exists. Please choose a different title.'
             });
@@ -262,7 +248,6 @@ const addComment = async (req, res) => {
         post.comments.push(newComment);
         await post.save();
 
-        // Populate author info in the newly added comment
         const populatedPost = await DiscussionPost.findById(postId)
             .populate('comments.author', 'firstName lastName avatar');
 
@@ -292,7 +277,7 @@ const toggleCommentLike = async (req, res) => {
             return res.status(404).json({ message: 'Post not found.' });
         }
 
-        const comment = post.comments.id(commentId); // Find the subdocument (comment) by its ID
+        const comment = post.comments.id(commentId); 
         if (!comment) {
             return res.status(404).json({ message: 'Comment not found.' });
         }
@@ -300,20 +285,18 @@ const toggleCommentLike = async (req, res) => {
         const hasLiked = comment.likes.includes(userId);
 
         if (hasLiked) {
-            // User has liked, so unlike it
             comment.likes.pull(userId);
         } else {
-            // User has not liked, so like it
-            comment.likes.addToSet(userId); // Use addToSet to prevent duplicates
+            comment.likes.addToSet(userId); 
         }
 
-        await post.save(); // Save the parent document to persist changes to the embedded comment
+        await post.save(); 
 
         res.json({
             success: true,
             message: hasLiked ? 'Comment unliked successfully.' : 'Comment liked successfully.',
             likeCount: comment.likes.length,
-            isLiked: !hasLiked // Indicate the current state after the toggle
+            isLiked: !hasLiked
         });
 
     } catch (error) {
@@ -337,7 +320,7 @@ const updateComment = async (req, res) => {
             {
                 _id: postId,
                 'comments._id': commentId,
-                'comments.author': userId // Ensure only author can update
+                'comments.author': userId
             },
             {
                 $set: {
@@ -377,7 +360,7 @@ const deleteComment = async (req, res) => {
             {
                 _id: postId,
                 'comments._id': commentId,
-                'comments.author': userId // Ensure only author can delete
+                'comments.author': userId 
             },
             { $pull: { comments: { _id: commentId } } },
             { new: true }

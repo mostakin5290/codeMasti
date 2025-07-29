@@ -1,25 +1,23 @@
 const User = require('../models/user.js');
 const Problem = require('../models/problem.js');
 const Submission = require('../models/submission.js');
-const PremiumPlan = require('../models/PaymentPlan.js'); // NEW IMPORT
+const PremiumPlan = require('../models/PaymentPlan.js'); 
 
 const getDashboardStats = async (req, res) => {
     try {
-        // Basic Stats
         const [totalUsers, totalProblems, totalSubmissions] = await Promise.all([
             User.countDocuments(),
             Problem.countDocuments(),
             Submission.countDocuments()
         ]);
-
-        // User Role Counts
+        
         const usersByRole = await User.aggregate([
             { $group: { _id: "$role", count: { $sum: 1 } } }
         ]);
         const roleCounts = usersByRole.reduce((acc, item) => {
             acc[item._id] = item.count;
             return acc;
-        }, { user: 0, admin: 0, 'co-admin': 0 }); // Initialize to 0 for all roles
+        }, { user: 0, admin: 0, 'co-admin': 0 }); 
 
         // Premium User Counts
         const premiumUsers = await User.countDocuments({ isPremium: true });
@@ -37,7 +35,7 @@ const getDashboardStats = async (req, res) => {
         const difficultyCounts = problemsByDifficulty.reduce((acc, item) => {
             acc[item._id] = item.count;
             return acc;
-        }, { Easy: 0, Medium: 0, Hard: 0 }); // Initialize
+        }, { Easy: 0, Medium: 0, Hard: 0 }); 
 
         // Submission Status Counts
         const submissionsByStatus = await Submission.aggregate([
@@ -46,23 +44,23 @@ const getDashboardStats = async (req, res) => {
         const statusCounts = submissionsByStatus.reduce((acc, item) => {
             acc[item._id] = item.count;
             return acc;
-        }, {}); // Dynamic statuses
+        }, {}); 
 
         // Top 5 Most Solved Problems
         const topSolvedProblems = await Submission.aggregate([
-            { $match: { status: 'Accepted' } }, // Only count accepted submissions
+            { $match: { status: 'Accepted' } }, 
             { $group: { _id: "$problemId", count: { $sum: 1 } } },
             { $sort: { count: -1 } },
             { $limit: 5 },
             {
                 $lookup: {
-                    from: 'problems', // The collection name for Problem model
+                    from: 'problems', 
                     localField: '_id',
                     foreignField: '_id',
                     as: 'problemDetails'
                 }
             },
-            { $unwind: '$problemDetails' }, // Flatten the array
+            { $unwind: '$problemDetails' }, 
             {
                 $project: {
                     _id: 0,
@@ -72,7 +70,6 @@ const getDashboardStats = async (req, res) => {
                 }
             }
         ]);
-
 
         res.json({
             totalUsers,
@@ -149,7 +146,7 @@ const deleteUser = async (req, res) => {
     }
 };
 
-// NEW FUNCTION: Get the single site settings document
+// Get the single site settings document
 const getPremiumPlan = async (req, res) => {
     try {
         // Find the single settings document. If it doesn't exist, create it with default values.
@@ -165,7 +162,7 @@ const getPremiumPlan = async (req, res) => {
     }
 };
 
-// NEW FUNCTION: Update the single site settings document
+// Update the single site settings document
 const updatePremiumPlan = async (req, res) => {
     try {
         const { monthlyPlanPrice, yearlyPlanPrice } = req.body;
@@ -232,6 +229,6 @@ module.exports = {
     getAllUsers,
     deleteUser,
     getPremiumPlan,  
-    updatePremiumPlan ,
+    updatePremiumPlan,
     createPremiumPlan 
 };

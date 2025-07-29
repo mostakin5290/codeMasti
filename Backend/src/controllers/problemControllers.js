@@ -1,6 +1,6 @@
 const { getLanguageById, submitBatch, submitToken } = require('../utils/problemUtils');
 const Problem = require('../models/problem');
-const Submission = require('../models/submission'); 
+const Submission = require('../models/submission');
 const mongoose = require('mongoose');
 const Video = require('../models/video')
 const DailyChallengeHistory = require('../models/DailyChallengeHistory');
@@ -34,7 +34,7 @@ const createProblem = async (req, res) => {
             title, description, difficulty, tags,
             visibleTestCases, hiddenTestCases, starterCode, referenceSolution,
             executionConfig,
-            problemCreator: req.user._id 
+            problemCreator: req.user._id
         });
 
         res.status(201).json({ message: 'Problem created successfully', problem });
@@ -56,7 +56,7 @@ const updateProblem = async (req, res) => {
     const {
         title, description, difficulty, tags,
         visibleTestCases, hiddenTestCases, starterCode, referenceSolution,
-        executionConfig 
+        executionConfig
     } = req.body;
 
     try {
@@ -70,9 +70,9 @@ const updateProblem = async (req, res) => {
         }
 
         const updatedProblemCandidate = new Problem({
-            ...existingProblem.toObject(), 
-            ...req.body,                  
-            _id: existingProblem._id      
+            ...existingProblem.toObject(),
+            ...req.body,
+            _id: existingProblem._id
         });
 
         const allTestCases = [...(updatedProblemCandidate.visibleTestCases || []), ...(updatedProblemCandidate.hiddenTestCases || [])];
@@ -131,19 +131,16 @@ const getProblemById = async (req, res) => {
         if (!id) {
             return res.status(400).json({ message: "Invalid ID provided." });
         }
-        // When fetching by ID, populate the solution video directly if it exists.
-        const problem = await Problem.findById(id).lean(); // Use lean() for flexibility
+        const problem = await Problem.findById(id).lean();
 
         if (!problem) {
             return res.status(404).json({ message: "Problem not found." });
         }
 
-        // Fetch the associated video solution
         const video = await Video.findOne({ problemId: id }).lean();
 
-        // Attach video details directly to the problem object for convenience
         if (video) {
-            problem.solutionVideo = video; // Attach the whole video object
+            problem.solutionVideo = video;
         } else {
             problem.solutionVideo = null;
         }
@@ -151,7 +148,7 @@ const getProblemById = async (req, res) => {
         res.status(200).json(problem);
     }
     catch (err) {
-        console.error('Error fetching problem by ID:', err); // Use a distinct error message
+        console.error('Error fetching problem by ID:', err);
         res.status(500).json({ message: 'Error fetching problem', error: err.message });
     }
 };
@@ -172,10 +169,10 @@ const getAllProblem = async (req, res) => {
             },
             {
                 $lookup: {
-                    from: 'videos', // Correct collection name should be 'videos' (lowercase, plural)
+                    from: 'videos',
                     localField: '_id',
                     foreignField: 'problemId',
-                    as: 'videos' // Changed alias to 'videos' (lowercase) for consistency
+                    as: 'videos'
                 }
             },
             {
@@ -240,8 +237,7 @@ const getAllProblem = async (req, res) => {
                             }
                         }
                     },
-                    // Attach the first video found to a 'solutionVideo' field
-                    solutionVideo: { $arrayElemAt: ['$videos', 0] } // Corrected alias to 'videos'
+                    solutionVideo: { $arrayElemAt: ['$videos', 0] }
                 }
             },
             {
@@ -252,7 +248,6 @@ const getAllProblem = async (req, res) => {
                     tags: 1,
                     status: 1,
                     acceptance: 1,
-                    // Include all relevant video fields from the 'solutionVideo' object
                     'solutionVideo._id': 1,
                     'solutionVideo.cloudinaryPublicId': 1,
                     'solutionVideo.secureUrl': 1,
@@ -307,131 +302,42 @@ const searchProblems = async (req, res) => {
     }
 };
 
-// const getAllScheduledAndHistoricalDailyChallenges = async (req, res) => {
-//     try {
-//         // Fetch all historical challenges from the new collection
-//         const historicalChallenges = await DailyChallengeHistory.find()
-//             .populate('problemId', 'title difficulty tags') // Populate problem details for display
-//             .sort({ challengeDate: -1 }); // Latest dates first
-
-//         // Get the currently active daily challenge (from the Problem model)
-//         const currentActiveChallenge = await Problem.findOne({ isDailyChallenge: true })
-//             .select('title difficulty dailyChallengeDate _id');
-
-//         const combinedChallenges = [];
-//         const seenDates = new Set(); // To prevent duplicates in case the active challenge also has a history record
-
-//         // Add historical challenges to the list
-//         historicalChallenges.forEach(hist => {
-//             if (hist.problemId) { // Ensure problemId is populated
-//                 const normalizedDate = new Date(hist.challengeDate);
-//                 normalizedDate.setUTCHours(0, 0, 0, 0); // Normalize history date
-//                 const dateKey = normalizedDate.toISOString();
-
-//                 if (!seenDates.has(dateKey)) {
-//                     combinedChallenges.push({
-//                         _id: hist._id, // This is the ID of the DailyChallengeHistory record (for deletion/editing)
-//                         problemId: hist.problemId._id, // The ID of the actual problem
-//                         title: hist.problemId.title,
-//                         difficulty: hist.problemId.difficulty,
-//                         dailyChallengeDate: hist.challengeDate,
-//                         isCurrentActive: false // History records are not 'active'
-//                     });
-//                     seenDates.add(dateKey);
-//                 }
-//             }
-//         });
-
-//         // Add the current active challenge if it exists and is not already in the combined list (e.g., just set it)
-//         if (currentActiveChallenge && currentActiveChallenge.dailyChallengeDate) {
-//             const currentChallengeDate = new Date(currentActiveChallenge.dailyChallengeDate);
-//             currentChallengeDate.setUTCHours(0, 0, 0, 0); // Normalize active challenge date
-//             const dateKey = currentChallengeDate.toISOString();
-
-//             if (!seenDates.has(dateKey)) {
-//                 combinedChallenges.push({
-//                     _id: currentActiveChallenge._id, // For current active, _id is the problem's ID
-//                     problemId: currentActiveChallenge._id,
-//                     title: currentActiveChallenge.title,
-//                     difficulty: currentActiveChallenge.difficulty,
-//                     dailyChallengeDate: currentActiveChallenge.dailyChallengeDate,
-//                     isCurrentActive: true // This one is the current active
-//                 });
-//             } else {
-//                 // If a history record already exists for this date, ensure its 'isCurrentActive' status is true
-//                 const existingIndex = combinedChallenges.findIndex(c =>
-//                     new Date(c.dailyChallengeDate).setUTCHours(0,0,0,0) === currentChallengeDate.getTime()
-//                 );
-//                 if (existingIndex !== -1) {
-//                     combinedChallenges[existingIndex].isCurrentActive = true;
-//                     // Also ensure its _id is the history id if it was a history record
-//                     // And problemId is consistent.
-//                     // If combinedChallenges[existingIndex]._id was problem ID, keep it.
-//                     // If it was history ID, keep it. This relies on frontend using problemId for selection.
-//                 }
-//             }
-//         }
-
-//         // Final sort by date, latest first for admin display
-//         combinedChallenges.sort((a, b) => new Date(b.dailyChallengeDate).getTime() - new Date(a.dailyChallengeDate).getTime());
-
-//         res.status(200).json(combinedChallenges);
-//     } catch (err) {
-//         console.error("Error fetching all daily challenge history:", err);
-//         res.status(500).json({ message: "Error fetching daily challenge history", error: err.message });
-//     }
-// };
-
-
 const getTodayChallenge = async (req, res) => {
     try {
         const today = new Date();
-        today.setUTCHours(0, 0, 0, 0); // Normalize to start of today UTC
+        today.setUTCHours(0, 0, 0, 0);
 
         let challengeProblem = null;
         let challengeHistoryEntry = null;
 
-        // 1. Try to find today's challenge from DailyChallengeHistory
         challengeHistoryEntry = await DailyChallengeHistory.findOne({ challengeDate: today });
 
         if (challengeHistoryEntry) {
-            // 2. If an entry exists in history, fetch the actual problem details
             challengeProblem = await Problem.findById(challengeHistoryEntry.problemId)
                 .select('-hiddenTestCases -referenceSolution'); // Exclude sensitive data for users
 
             if (!challengeProblem) {
-                // Scenario: A problem was scheduled, but then deleted.
                 console.warn(`Problem ${challengeHistoryEntry.problemId} not found for daily challenge on ${today.toISOString().split('T')[0]}. Removing history entry.`);
                 await DailyChallengeHistory.deleteOne({ _id: challengeHistoryEntry._id });
-                // Fall through to return 404
             } else {
-                // 3. This is the activation step: Ensure this problem is marked as the *active*
-                // daily challenge on the Problem model, and all others are unset.
-                // This handles daily rollover and manual unsetting/re-setting.
                 if (!challengeProblem.isDailyChallenge ||
                     !challengeProblem.dailyChallengeDate ||
                     new Date(challengeProblem.dailyChallengeDate).getTime() !== today.getTime()) {
 
-                    // First, unset the 'isDailyChallenge' flag for any other problem
-                    // that might still have it set (e.g., from a previous day or a manual override).
                     await Problem.updateMany(
-                        { isDailyChallenge: true, _id: { $ne: challengeProblem._id } }, // Exclude the current problem
+                        { isDailyChallenge: true, _id: { $ne: challengeProblem._id } }, 
                         { $set: { isDailyChallenge: false, dailyChallengeDate: null } }
                     );
 
-                    // Then, set the 'isDailyChallenge' flag and date for today's challenge.
                     await Problem.findByIdAndUpdate(challengeProblem._id, {
                         $set: { isDailyChallenge: true, dailyChallengeDate: today }
                     });
 
-                    // Update the in-memory object for the current request's response
                     challengeProblem.isDailyChallenge = true;
                     challengeProblem.dailyChallengeDate = today;
                 }
             }
         } else {
-            // If no history entry for today, ensure NO problem is marked as the current daily challenge.
-            // This cleans up old active challenges if the admin hasn't scheduled one for today.
             await Problem.updateMany(
                 { isDailyChallenge: true },
                 { $set: { isDailyChallenge: false, dailyChallengeDate: null } }
@@ -445,7 +351,6 @@ const getTodayChallenge = async (req, res) => {
             });
         }
 
-        // Fetch user's submission status and streak (unchanged logic)
         const submission = req.user ? await Submission.findOne({
             userId: req.user._id,
             problemId: challengeProblem._id,
@@ -491,13 +396,13 @@ const getPreviousChallenges = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0); 
+        todayStart.setHours(0, 0, 0, 0);
 
         const challenges = await Problem.find({
             isDailyChallenge: true,
-            dailyChallengeDate: { $gte: todayStart } 
+            dailyChallengeDate: { $gte: todayStart }
         })
-            .sort({ dailyChallengeDate: -1 }) 
+            .sort({ dailyChallengeDate: -1 })
             .skip(skip)
             .limit(limit)
             .select('title difficulty dailyChallengeDate tags');
@@ -520,18 +425,14 @@ const setDailyChallenge = async (req, res) => {
         }
 
         const targetDate = new Date(date);
-        targetDate.setUTCHours(0, 0, 0, 0); 
+        targetDate.setUTCHours(0, 0, 0, 0);
         console.log(targetDate);
-        
-        // 1. Validate if the problem exists
+
         const problemToSet = await Problem.findById(problemId);
         if (!problemToSet) {
             return res.status(404).json({ message: "Problem not found." });
         }
 
-        // 2. Create or update the DailyChallengeHistory entry for the target date.
-        // This is the source of truth for scheduled daily challenges.
-        // This part handles both "add" and "modify" functionality for a given date.
         const historyEntry = await DailyChallengeHistory.findOneAndUpdate(
             { challengeDate: targetDate },
             {
@@ -539,12 +440,9 @@ const setDailyChallenge = async (req, res) => {
                 title: problemToSet.title,
                 difficulty: problemToSet.difficulty
             },
-            { upsert: true, new: true, runValidators: true } // upsert: create if not exists, new: return updated doc
+            { upsert: true, new: true, runValidators: true }
         );
 
-        // IMPORTANT CHANGE: We are intentionally NOT setting isDailyChallenge:true on the Problem model here.
-        // That flag will now be managed by the getTodayChallenge function when the date becomes current.
-        // This solves the problem of a newly scheduled challenge for a future date removing the current/previous one.
 
         res.status(200).json({
             message: `Daily challenge scheduled successfully for ${targetDate.toISOString().split('T')[0]}`,
@@ -558,7 +456,7 @@ const setDailyChallenge = async (req, res) => {
             return res.status(400).json({ message: "Validation failed", error: err.message });
         }
         if (err.code === 11000) {
-             return res.status(409).json({ message: "A daily challenge is already set for this date. Use edit or choose another date.", error: err.message });
+            return res.status(409).json({ message: "A daily challenge is already set for this date. Use edit or choose another date.", error: err.message });
         }
         res.status(500).json({
             message: "Error setting daily challenge",
@@ -568,22 +466,19 @@ const setDailyChallenge = async (req, res) => {
 };
 
 const deleteDailyChallenge = async (req, res) => {
-    const { id: historyRecordId } = req.params; // Expecting history record ID
+    const { id: historyRecordId } = req.params;
 
     try {
         if (!historyRecordId) {
             return res.status(400).json({ message: "Daily challenge history record ID is required." });
         }
 
-        // 1. Delete the record from DailyChallengeHistory
         const deletedHistoryEntry = await DailyChallengeHistory.findByIdAndDelete(historyRecordId);
 
         if (!deletedHistoryEntry) {
             return res.status(404).json({ message: "Daily challenge history record not found." });
         }
 
-        // 2. If the deleted history entry was for *today's date*,
-        // and its associated problem was currently marked as active for today, unset that problem.
         const today = new Date();
         today.setUTCHours(0, 0, 0, 0);
         const deletedChallengeDate = new Date(deletedHistoryEntry.challengeDate);
@@ -591,7 +486,6 @@ const deleteDailyChallenge = async (req, res) => {
 
         if (deletedChallengeDate.getTime() === today.getTime()) {
             const associatedProblem = await Problem.findById(deletedHistoryEntry.problemId);
-            // Only unset if the problem currently holds the 'isDailyChallenge' flag for TODAY
             if (associatedProblem && associatedProblem.isDailyChallenge &&
                 new Date(associatedProblem.dailyChallengeDate).getTime() === today.getTime()) {
                 await Problem.findByIdAndUpdate(
@@ -618,30 +512,30 @@ const deleteDailyChallenge = async (req, res) => {
 const getAllScheduledAndHistoricalDailyChallenges = async (req, res) => {
     try {
         const historicalChallenges = await DailyChallengeHistory.find()
-            .populate('problemId', 'title difficulty tags') // Populate problem details for display
-            .sort({ challengeDate: -1 }); // Latest dates first
+            .populate('problemId', 'title difficulty tags')
+            .sort({ challengeDate: -1 });
 
         const currentActiveChallenge = await Problem.findOne({ isDailyChallenge: true })
             .select('title difficulty dailyChallengeDate _id');
 
         const combinedChallenges = [];
-        const seenDates = new Set(); // To prevent duplicates in case the active challenge also has a history record
+        const seenDates = new Set();
 
         historicalChallenges.forEach(hist => {
-            if (hist.problemId) { // Ensure problemId is populated
+            if (hist.problemId) {
                 const normalizedDate = new Date(hist.challengeDate);
-                normalizedDate.setUTCHours(0, 0, 0, 0); // Normalize history date
+                normalizedDate.setUTCHours(0, 0, 0, 0);
                 const dateKey = normalizedDate.toISOString();
 
                 if (!seenDates.has(dateKey)) {
                     combinedChallenges.push({
-                        _id: hist._id, // This is the ID of the DailyChallengeHistory record (for deletion/editing)
-                        problemId: hist.problemId._id, // The ID of the actual problem
+                        _id: hist._id,
+                        problemId: hist.problemId._id,
                         title: hist.problemId.title,
                         difficulty: hist.problemId.difficulty,
                         dailyChallengeDate: hist.challengeDate,
-                        isCurrentActive: false, // History records are not 'active'
-                        tags: hist.problemId.tags // Include tags
+                        isCurrentActive: false,
+                        tags: hist.problemId.tags
                     });
                     seenDates.add(dateKey);
                 }
@@ -650,20 +544,20 @@ const getAllScheduledAndHistoricalDailyChallenges = async (req, res) => {
 
         if (currentActiveChallenge && currentActiveChallenge.dailyChallengeDate) {
             const currentChallengeDate = new Date(currentActiveChallenge.dailyChallengeDate);
-            currentChallengeDate.setUTCHours(0, 0, 0, 0); // Normalize active challenge date
+            currentChallengeDate.setUTCHours(0, 0, 0, 0);
             const dateKey = currentChallengeDate.toISOString();
 
             if (!seenDates.has(dateKey)) {
                 const fullProblemDetails = await Problem.findById(currentActiveChallenge._id).select('title difficulty tags');
                 if (fullProblemDetails) {
                     combinedChallenges.push({
-                        _id: currentActiveChallenge._id, // For current active, _id is the problem's ID
+                        _id: currentActiveChallenge._id,
                         problemId: currentActiveChallenge._id,
                         title: fullProblemDetails.title,
                         difficulty: fullProblemDetails.difficulty,
                         dailyChallengeDate: currentActiveChallenge.dailyChallengeDate,
-                        isCurrentActive: true, // This one is the current active
-                        tags: fullProblemDetails.tags // Include tags
+                        isCurrentActive: true,
+                        tags: fullProblemDetails.tags
                     });
                 }
             } else {
@@ -687,11 +581,11 @@ const getAllScheduledAndHistoricalDailyChallenges = async (req, res) => {
 
 const getDailyChallengeCalendarData = async (req, res) => {
     try {
-        const userId = req.user._id; // Get authenticated user ID
+        const userId = req.user._id;
 
         const historicalChallenges = await DailyChallengeHistory.find({})
-            .populate('problemId', 'title difficulty tags') // Populate problem details
-            .lean(); // Use lean() for better performance as we are modifying
+            .populate('problemId', 'title difficulty tags')
+            .lean();
 
         const user = await User.findById(userId)
             .select('dailyChallenges.completed')
@@ -711,13 +605,13 @@ const getDailyChallengeCalendarData = async (req, res) => {
             const isSolved = userCompletedChallengesMap.has(`${challenge.problemId._id.toString()}-${challengeDateKey}`);
 
             return {
-                _id: challenge._id, // History record ID
-                problemId: challenge.problemId, // Populated problem object
+                _id: challenge._id,
+                problemId: challenge.problemId,
                 dailyChallengeDate: challenge.challengeDate,
                 title: challenge.problemId.title,
                 difficulty: challenge.problemId.difficulty,
                 tags: challenge.problemId.tags,
-                isSolved: isSolved // Add solved status for the user
+                isSolved: isSolved
             };
         });
 
@@ -743,7 +637,6 @@ module.exports = {
     getTodayChallenge,
     getUserStreak,
     setDailyChallenge,
-    // getPreviousChallenges,
     deleteDailyChallenge,
     getAllScheduledAndHistoricalDailyChallenges,
     getDailyChallengeCalendarData

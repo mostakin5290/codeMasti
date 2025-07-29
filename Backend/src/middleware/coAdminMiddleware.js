@@ -7,18 +7,16 @@ const coAdminMiddleware = async (req, res, next) => {
         const { token } = req.cookies;
 
         if (!token) {
-            // Be explicit about missing token
             return res.status(401).json({ message: 'Authentication required: Please log in to access this resource.' });
         }
 
         const payload = jwt.verify(token, process.env.JWT_KEY);
 
-        // Ensure payload has _id and check the role
         if (!payload || !payload._id) {
             return res.status(401).json({ message: 'Authentication failed: Invalid token payload.' });
         }
 
-        const user = await User.findById(payload._id); // Renamed adminUser to user for consistency
+        const user = await User.findById(payload._id);
         if (!user) {
             return res.status(401).json({ message: 'Authentication failed: User not found.' });
         }
@@ -32,14 +30,13 @@ const coAdminMiddleware = async (req, res, next) => {
         next();
 
     } catch (err) {
-        console.error("Co Admin Middleware Error:", err); // Log the actual error for debugging
+        console.error("Co Admin Middleware Error:", err);
         if (err.name === 'TokenExpiredError') {
             return res.status(401).json({ message: 'Authentication failed: Token has expired.' });
         }
         if (err.name === 'JsonWebTokenError') {
             return res.status(401).json({ message: 'Authentication failed: Invalid token.' });
         }
-        // Catch any other unexpected errors
         res.status(500).json({ message: err.message || 'An unexpected server error occurred during authentication.' });
     }
 };

@@ -23,37 +23,34 @@ const gameRoomSchema = new Schema({
             type: Boolean,
             default: false
         },
-        status: { // Player's status within the room
+        status: {
             type: String,
             enum: ['pending', 'ready', 'playing', 'disconnected', 'solved', 'finished'], // 'solved' for problem, 'finished' for game
             default: 'pending'
         },
-        // Changed to be an object to store cumulative stats for the current game session
-        gameStats: { // New field for player-specific game stats
+        gameStats: { 
             problemsSolvedCount: { type: Number, default: 0 },
             totalSubmissions: { type: Number, default: 0 },
-            timeTakenToSolve: { type: Number, default: null }, // In seconds for the first accepted problem
+            timeTakenToSolve: { type: Number, default: null },
             firstAcceptedSubmissionId: { type: Schema.Types.ObjectId, ref: 'Submission', default: null }
         },
-        // Track which problems this player solved in this specific game session
-        // This is important if a game has multiple problems (e.g., all 3)
-        problemsCompleted: [{ // Changed name from problemsSolved to avoid confusion with user profile
+        problemsCompleted: [{ 
             problemId: { type: Schema.Types.ObjectId, ref: 'Problem' },
-            acceptedAt: { type: Date, default: Date.now }, // Timestamp of first acceptance
-            timeTaken: Number, // In seconds from game start
-            submissionsCount: Number, // Number of submissions for this problem
+            acceptedAt: { type: Date, default: Date.now },
+            timeTaken: Number, 
+            submissionsCount: Number, 
             isAccepted: { type: Boolean, default: false }
         }]
     }],
-    problemIds: [{ // Store multiple problem IDs if you want 3 problems
+    problemIds: [{ 
         type: Schema.Types.ObjectId,
         ref: 'Problem'
     }],
-    currentProblemIndex: { // If multiple problems in one game
+    currentProblemIndex: { 
         type: Number,
         default: 0
     },
-    status: { // Room/Game status
+    status: { 
         type: String,
         enum: ['waiting', 'in-progress', 'completed', 'cancelled'],
         default: 'waiting'
@@ -67,47 +64,43 @@ const gameRoomSchema = new Schema({
         enum: ['1v1-coding', 'battle-royale'],
         default: '1v1-coding'
     },
-    // NEW: Game settings from lobby
     difficulty: {
         type: String,
         enum: ['easy', 'medium', 'hard'],
-        required: true // Required for matching
+        required: true
     },
-    timeLimit: { // Per game, in minutes
+    timeLimit: {
         type: Number,
         min: 1,
         max: 60,
         default: 10
     },
-    startTime: { // When the game actually starts
+    startTime: { 
         type: Date
     },
-    endTime: { // Calculated based on startTime and timeLimit
+    endTime: { 
         type: Date
     },
-    gameData: { // Flexible field for dynamic game state, e.g., winner, reason for end
+    gameData: { 
         type: Schema.Types.Mixed
     },
-    // NEW: Stores final results when game is completed
     gameResults: {
         winner: { type: Schema.Types.ObjectId, ref: 'User', default: null },
         reason: {
             type: String,
-            // --- UPDATED ENUM VALUES HERE ---
             enum: [
                 'Problem Solved',
                 'Time Expired',
                 'Opponent Left',
                 'All Solved',
-                'All Players Disconnected' // <-- ADDED THIS VALUE
+                'All Players Disconnected' 
             ],
             default: null
         },
-        solvedOrder: [{ // Order in which players solved the problem(s)
+        solvedOrder: [{ 
             userId: { type: Schema.Types.ObjectId, ref: 'User' },
-            timeTaken: Number, // Time taken to solve the *first* assigned problem in seconds (or average)
-            problemsSolvedCount: Number, // How many problems they solved out of total
-            // --- NEW FIELDS FOR ELO ---
+            timeTaken: Number, 
+            problemsSolvedCount: Number, 
             eloBeforeGame: { type: Number, default: null },
             eloChange: { type: Number, default: null },
             eloAfterGame: { type: Number, default: null },
@@ -116,7 +109,6 @@ const gameRoomSchema = new Schema({
     }
 }, { timestamps: true });
 
-// TTL index for 'waiting' rooms - good for cleanup
 gameRoomSchema.index({ createdAt: 1 }, { expireAfterSeconds: 3600, partialFilterExpression: { status: 'waiting' } });
 
 const GameRoom = mongoose.model('GameRoom', gameRoomSchema);

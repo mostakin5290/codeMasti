@@ -1,12 +1,11 @@
 const Subscription = require('../models/subscription');
 const User = require('../models/user'); 
 
-// Define a threshold for renewal alert (e.g., 5 days)
 const RENEWAL_ALERT_THRESHOLD_DAYS = 5;
 
 const getPremiumDetails = async (req, res) => {
     try {
-        const userId = req.user._id; // `userMiddleware` should attach user info to req.user
+        const userId = req.user._id;
 
         // Find the user to ensure they exist and have a premium subscription linked
         const user = await User.findById(userId);

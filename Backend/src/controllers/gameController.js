@@ -5,10 +5,8 @@ const Submission = require('../models/submission');
 const mongoose = require('mongoose');
 const { submitCodeInternal } = require('./submitControllers');
 
-// In-memory matching queue (simple, not scalable for production without Redis)
-const matchingQueue = []; // { userId, socketId, difficulty, timeLimit, timestamp }
+const matchingQueue = []; 
 
-// Utility to generate a random alphanumeric room ID
 const generateRoomId = (length = 6) => {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
@@ -18,7 +16,6 @@ const generateRoomId = (length = 6) => {
     return result;
 };
 
-// Helper to select random problems - Now fetches 3 problems
 async function getRandomProblems(difficulty, count = 3) {
     try {
         const problems = await Problem.aggregate([
@@ -32,7 +29,6 @@ async function getRandomProblems(difficulty, count = 3) {
     }
 }
 
-// Helper function to end the game (moved from app.js for better organization)
 async function endGame(io, roomId, reason, winnerUserId = null) {
     const gameRoom = await GameRoom.findOne({ roomId });
     if (!gameRoom) {
@@ -45,44 +41,38 @@ async function endGame(io, roomId, reason, winnerUserId = null) {
         return;
     }
 
-    const initialStatus = gameRoom.status; // Store initial status to check if it was 'in-progress'
+    const initialStatus = gameRoom.status;
     gameRoom.status = 'completed';
     gameRoom.gameResults = {
         reason: reason,
         winner: winnerUserId,
-        solvedOrder: [] // This will be populated below
+        solvedOrder: []
     };
     gameRoom.endTime = new Date();
 
     const playersInRoom = gameRoom.players;
     const gameDifficulty = gameRoom.difficulty;
 
-    // Determine winner based on solve order or default
     const playersSortedBySolvedTime = playersInRoom
-        .filter(p => p.gameStats?.problemsSolvedCount > 0) // Filter by actually solved problems
+        .filter(p => p.gameStats?.problemsSolvedCount > 0) 
         .sort((a, b) => a.gameStats.timeTakenToSolve - b.gameStats.timeTakenToSolve);
 
-    let finalWinnerId = winnerUserId; // Start with explicit winner if provided
+    let finalWinnerId = winnerUserId; 
     if (!finalWinnerId && playersSortedBySolvedTime.length > 0) {
-        finalWinnerId = playersSortedBySolvedTime[0].userId; // First to solve is winner
+        finalWinnerId = playersSortedBySolvedTime[0].userId; 
     } else if (!finalWinnerId && reason === 'Opponent Left' && playersInRoom.length > 0) {
-        // If opponent left, and game was in progress, the remaining player is the winner.
         const remainingActivePlayers = playersInRoom.filter(p => p.status === 'playing' || p.status === 'ready' || p.status === 'solved');
         if (initialStatus === 'in-progress' && remainingActivePlayers.length === 1 && playersInRoom.length === 2) {
             finalWinnerId = remainingActivePlayers[0].userId;
         }
     } else if (!finalWinnerId && reason === 'Time Expired' && playersSortedBySolvedTime.length === 0) {
-        // No one solved and time expired, no explicit winner
         finalWinnerId = null;
     } else if (!finalWinnerId && reason === 'All Players Disconnected' && playersInRoom.length === 2) {
-        // If both disconnected and no winner was determined before, no winner.
         finalWinnerId = null;
     }
 
     gameRoom.gameResults.winner = finalWinnerId;
 
-    // Create a temporary array to hold updated solvedOrder entries,
-    // as we need to populate 'eloBeforeGame' and 'eloAfterGame' during the loop
     const updatedSolvedOrder = [];
 
     for (const player of playersInRoom) {
@@ -93,52 +83,46 @@ async function endGame(io, roomId, reason, winnerUserId = null) {
             userProfile.stats.gamesPlayed = (userProfile.stats.gamesPlayed || 0) + 1;
 
             let eloChange = 0;
-            let outcome = 'draw/incomplete'; // default to draw, adjust later
+            let outcome = 'draw/incomplete';
 
             if (finalWinnerId && player.userId.toString() === finalWinnerId.toString()) {
-                // Winner logic
                 userProfile.stats.wins = (userProfile.stats.wins || 0) + 1;
                 outcome = 'win';
                 if (gameDifficulty === 'easy') eloChange = 10;
                 else if (gameDifficulty === 'medium') eloChange = 20;
                 else if (gameDifficulty === 'hard') eloChange = 30;
             } else if (finalWinnerId && player.userId.toString() !== finalWinnerId.toString()) {
-                // Loser logic (if there was a clear winner)
                 userProfile.stats.losses = (userProfile.stats.losses || 0) + 1;
                 outcome = 'loss';
                 if (gameDifficulty === 'easy') eloChange = -5;
                 else if (gameDifficulty === 'medium') eloChange = -10;
                 else if (gameDifficulty === 'hard') eloChange = -15;
             } else {
-                // No clear winner (e.g., time expired and no one solved, or both disconnected)
-                eloChange = 0; // No ELO change for a draw/incomplete
+                eloChange = 0;
                 outcome = 'draw/incomplete';
             }
 
             userProfile.stats.eloRating = (userProfile.stats.eloRating || 1000) + eloChange;
-            // Ensure ELO doesn't go below a certain minimum (e.g., 100 to prevent negative ELO)
             if (userProfile.stats.eloRating < 100) userProfile.stats.eloRating = 100;
 
             console.log(`User ${userProfile.firstName}: Game ${outcome}, Difficulty ${gameDifficulty}, ELO Change ${eloChange}, New ELO ${userProfile.stats.eloRating}`);
             await userProfile.save();
 
-            // Populate the new fields for gameResults.solvedOrder
             updatedSolvedOrder.push({
                 userId: player.userId,
                 timeTaken: player.gameStats.timeTakenToSolve || null,
                 problemsSolvedCount: player.gameStats.problemsSolvedCount,
-                eloBeforeGame: initialElo, // Store ELO before this game's calculation
+                eloBeforeGame: initialElo, 
                 eloChange: eloChange,
-                eloAfterGame: userProfile.stats.eloRating, // Store ELO after this game's calculation
+                eloAfterGame: userProfile.stats.eloRating, 
                 outcome: outcome
             });
         }
     }
 
-    gameRoom.gameResults.solvedOrder = updatedSolvedOrder; // Assign the new array
+    gameRoom.gameResults.solvedOrder = updatedSolvedOrder;
     await gameRoom.save();
 
-    // Populate after saving to ensure latest state is reflected
     await gameRoom.populate('players.userId', 'firstName lastName avatar');
     await gameRoom.populate('gameResults.winner', 'firstName lastName avatar');
     await gameRoom.populate('gameResults.solvedOrder.userId', 'firstName lastName avatar'); // Ensure this populates the solvedOrder user details
@@ -149,7 +133,7 @@ async function endGame(io, roomId, reason, winnerUserId = null) {
         reason,
         winnerId: gameRoom.gameResults.winner,
         room: gameRoom,
-        results: gameRoom.gameResults // This now contains the ELO info
+        results: gameRoom.gameResults 
     });
 
     console.log(`Game room ${roomId} ended. Reason: ${reason}. Winner: ${gameRoom.gameResults.winner?.firstName || 'N/A'}`);
@@ -363,14 +347,11 @@ const joinGameRoom = async (req, res) => {
             return res.status(400).json({ message: "Room ID and Socket ID are required." });
         }
 
-        // IMPORTANT: Ensure the roomId is consistently treated.
-        // If your generateRoomId creates uppercase, let's make sure we query with uppercase too.
-        // Frontend already sends uppercase, so just use it.
-        const normalizedRoomId = roomId.toUpperCase(); // Ensure it's uppercase for query consistency
+        const normalizedRoomId = roomId.toUpperCase();
         console.log(`[Join Room] Normalized roomId for query: '${normalizedRoomId}'`); // DEBUG 2
 
 
-        const gameRoom = await GameRoom.findOne({ roomId: normalizedRoomId }); // Use normalizedRoomId for query
+        const gameRoom = await GameRoom.findOne({ roomId: normalizedRoomId });
 
         if (!gameRoom) {
             console.warn(`[Join Room] Game room '${normalizedRoomId}' not found in DB during join attempt.`); // DEBUG 3
@@ -429,15 +410,11 @@ const joinGameRoom = async (req, res) => {
     }
 };
 
-// Endpoint to get details of a specific game room
 const getGameRoomDetails = async (req, res) => {
     try {
         const { roomId } = req.params;
-        console.log(`Attempting to fetch room details for roomId: ${roomId}`); // Debug log
+        console.log(`Attempting to fetch room details for roomId: ${roomId}`); 
 
-        // IMPORTANT: Ensure roomId from req.params matches the type/case in DB
-        // If your generateRoomId creates uppercase, make sure the query matches.
-        // It's already defined as unique:true, trim:true.
         const gameRoom = await GameRoom.findOne({ roomId: roomId })
             .populate('players.userId', 'firstName lastName emailId avatar')
             .populate('problemIds', 'title difficulty tags description starterCode visibleTestCases executionConfig')
@@ -445,11 +422,11 @@ const getGameRoomDetails = async (req, res) => {
             .populate('gameResults.solvedOrder.userId', 'firstName lastName avatar'); // Ensure userId is populated here
 
         if (!gameRoom) {
-            console.warn(`Game room ${roomId} not found in DB.`); // Debug log
+            console.warn(`Game room ${roomId} not found in DB.`);
             return res.status(404).json({ message: "Game room not found." });
         }
 
-        console.log(`Found game room: ${gameRoom.roomId}`); // Debug log
+        console.log(`Found game room: ${gameRoom.roomId}`); 
         res.status(200).json({
             message: "Game room details fetched successfully",
             room: gameRoom
@@ -462,16 +439,15 @@ const getGameRoomDetails = async (req, res) => {
 
 const getMyActiveGameRoom = async (req, res) => {
     try {
-        const userId = req.user._id; // Authenticated user ID
+        const userId = req.user._id; 
 
-        // Find an 'in-progress' game room where the user is a player
         const activeRoom = await GameRoom.findOne({
             'players.userId': userId,
             status: 'in-progress'
         })
         .select('roomId maxPlayers gameMode difficulty timeLimit startTime endTime problemIds currentProblemIndex') // Select only necessary fields
-        .populate('players.userId', 'firstName lastName avatar') // Populate player profiles
-        .lean(); // Return plain JS object for performance
+        .populate('players.userId', 'firstName lastName avatar') 
+        .lean(); 
 
         if (activeRoom) {
             return res.status(200).json({

@@ -1,4 +1,3 @@
-// utils/codeWrapperTemplates.js
 const codeWrapperTemplates = {
     javascript: `// User's function will be inserted here
 {{USER_CODE}}

@@ -102,9 +102,6 @@ const createOrder = async (req, res) => {
 
 const verifyPaymentAndSubscription = async (req, res) => {
     try {
-        // IMPORTANT: For local testing with webhooks, you might need `body-parser` raw body.
-        // Make sure your Express app is configured to parse raw body for webhooks.
-        // e.g., app.use('/api/payment/verify-payment', express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
 
         // Verify signature
         const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
@@ -124,7 +121,7 @@ const verifyPaymentAndSubscription = async (req, res) => {
             case 'payment.captured': {
                 const payment = payload.payment.entity;
 
-                // 1. Find the subscription by order ID
+                // Find the subscription by order ID
                 const subscription = await Subscription.findOne({
                     razorpayOrderId: payment.order_id
                 });
@@ -134,14 +131,14 @@ const verifyPaymentAndSubscription = async (req, res) => {
                     return res.status(404).json({ status: "error", message: "Subscription not found" });
                 }
 
-                // NEW: Fetch user details for email
+                // Fetch user details for email
                 const user = await User.findById(subscription.userId);
                 if (!user) {
                     console.error("User not found for subscription:", subscription._id);
                     // Still proceed with subscription update, but log user not found for email
                 }
 
-                // 2. Update the subscription
+                //Update the subscription
                 const updatedSubscription = await Subscription.findByIdAndUpdate(
                     subscription._id,
                     {
@@ -153,7 +150,7 @@ const verifyPaymentAndSubscription = async (req, res) => {
                     { new: true }
                 );
 
-                // 3. Update the user's premium status
+                // Update the user's premium status
                 await User.findByIdAndUpdate(
                     subscription.userId,
                     {
@@ -162,8 +159,8 @@ const verifyPaymentAndSubscription = async (req, res) => {
                     }
                 );
 
-                // NEW: Send success email
-                if (user && user.email) {
+                // Send success email
+                if (user && user.emailId) {
                     const subject = `${process.env.APP_NAME} - Your Subscription Payment Was Successful! 🎉`;
                     const htmlContent = `
                         <!DOCTYPE html>
@@ -309,7 +306,7 @@ const verifyPaymentAndSubscription = async (req, res) => {
                         </body>
                         </html>
                     `;
-                    await sendEmail(user.email, subject, htmlContent);
+                    await sendEmail(user.emailId, subject, htmlContent);
                 }
 
                 break;
@@ -324,7 +321,7 @@ const verifyPaymentAndSubscription = async (req, res) => {
                         status: 'failed',
                         $inc: { paymentAttempts: 1 }
                     },
-                    { new: true } // Return the updated document
+                    { new: true } 
                 );
 
                 let user = null;
@@ -332,8 +329,8 @@ const verifyPaymentAndSubscription = async (req, res) => {
                     user = await User.findById(subscription.userId);
                 }
 
-                // NEW: Send failure email
-                if (user && user.email) {
+                // Send failure email
+                if (user && user.emailId) {
                     const subject = `${process.env.APP_NAME} - Your Payment Has Failed 😢`;
                     const htmlContent = `
                         <!DOCTYPE html>
@@ -474,7 +471,7 @@ const verifyPaymentAndSubscription = async (req, res) => {
                         </body>
                         </html>
                     `;
-                    await sendEmail(user.email, subject, htmlContent);
+                    await sendEmail(user.emailId, subject, htmlContent);
                 }
 
                 break;

@@ -67,19 +67,17 @@ const DiscussionPostSchema = new Schema({
         unique: true, 
         index: true 
     },
-    comments: [CommentSchema] // Embedded comments subdocument
+    comments: [CommentSchema] 
 }, { 
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true } 
 });
 
-// Virtual for comment count
 DiscussionPostSchema.virtual('commentCount').get(function() {
     return this.comments.length;
 });
 
-// Virtual for like count
 DiscussionPostSchema.virtual('likeCount').get(function() {
     return this.likes.length;
 });
@@ -91,7 +89,6 @@ DiscussionPostSchema.pre('validate', function(next) {
     next();
 });
 
-// Middleware to populate author info when fetching posts
 DiscussionPostSchema.pre(/^find/, function(next) {
     this.populate({
         path: 'author',

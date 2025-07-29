@@ -67,7 +67,6 @@ const createSystemInstruction = ({ title, description, testCases, startCode }) =
 };
 
 
-// Rest of the configuration remains the same
 const generationConfig = {
     temperature: 0.6,
     topK: 1,

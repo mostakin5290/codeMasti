@@ -12,12 +12,11 @@ const adminMiddleware = async (req, res, next) => {
 
         const payload = jwt.verify(token, process.env.JWT_KEY);
 
-        // Ensure payload has _id and check the role
         if (!payload || !payload._id) {
             return res.status(401).json({ message: 'Authentication failed: Invalid token payload.' });
         }
 
-        const user = await User.findById(payload._id); // Renamed adminUser to user for consistency
+        const user = await User.findById(payload._id); 
         if (!user) {
             return res.status(401).json({ message: 'Authentication failed: User not found.' });
         }
@@ -31,7 +30,7 @@ const adminMiddleware = async (req, res, next) => {
         next();
 
     } catch (err) {
-        console.error("Admin Middleware Error:", err); // Log the actual error for debugging
+        console.error("Admin Middleware Error:", err); 
         if (err.name === 'TokenExpiredError') {
             return res.status(401).json({ message: 'Authentication failed: Token has expired.' });
         }

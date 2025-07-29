@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const submissionSchema = new Schema({ // Renamed 'submission' to 'submissionSchema' for clarity
+const submissionSchema = new Schema({
     userId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
@@ -19,7 +19,7 @@ const submissionSchema = new Schema({ // Renamed 'submission' to 'submissionSche
     language: {
         type: String,
         required: true,
-        enum: ['javascript', 'python', 'java', 'c', 'cpp'] // Changed from 'c++' to 'cpp' to match problem schema and common usage
+        enum: ['javascript', 'python', 'java', 'c', 'cpp']
     },
     status: {
         type: String,
@@ -60,19 +60,18 @@ const submissionSchema = new Schema({ // Renamed 'submission' to 'submissionSche
         ref: 'Contest',
         default: null 
     },
-    // NEW FIELD: To store detailed results for each test case
     testCaseResults: [{
         input: {
-            type: Schema.Types.Mixed, // Original input as stored in problem
+            type: Schema.Types.Mixed,
             required: true
         },
         expected: {
-            type: Schema.Types.Mixed, // Original expected output as stored in problem
+            type: Schema.Types.Mixed,
             required: true
         },
         actual: {
-            type: Schema.Types.Mixed, // Judge0's stdout or stderr
-            required: false // Not always present (e.g., compile error)
+            type: Schema.Types.Mixed,
+            required: false
         },
         passed: {
             type: Boolean,
@@ -86,7 +85,7 @@ const submissionSchema = new Schema({ // Renamed 'submission' to 'submissionSche
             type: Number,
             default: 0
         },
-        error: { // Specific error description if not 'Accepted'
+        error: {
             type: String,
             trim: true
         }

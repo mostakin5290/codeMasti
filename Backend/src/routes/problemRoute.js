@@ -13,9 +13,8 @@ const {
     getUserStreak,
     setDailyChallenge,
     getDailyChallengeCalendarData,
-    // getPreviousChallenges, // <--- NOTE: If getPreviousChallenges is still intended for "past" problems NOT necessarily from DailyChallengeHistory, keep its route. Otherwise, it might be redundant with getAllScheduledAndHistoricalDailyChallenges.
     getAllScheduledAndHistoricalDailyChallenges,
-    deleteDailyChallenge // This controller now expects history record ID
+    deleteDailyChallenge 
 } = require('../controllers/problemControllers');
 const coAdminMiddleware = require('../middleware/coAdminMiddleware');
 const userMiddleware = require('../middleware/userMiddleware');
@@ -32,9 +31,9 @@ problemRouter.get('/problemByIdForAdmin/:id', coAdminMiddleware, getProblemByIdF
 problemRouter.get('/search', userMiddleware, searchProblems);
 
 // Daily Challenge routes
-problemRouter.get('/daily', userMiddleware, getTodayChallenge); // Get today's active challenge
-problemRouter.get('/daily/streak', userMiddleware, getUserStreak); // Get user's streak
-problemRouter.post('/daily/set', coAdminMiddleware, setDailyChallenge); // Set a new daily challenge (admin)
+problemRouter.get('/daily', userMiddleware, getTodayChallenge); 
+problemRouter.get('/daily/streak', userMiddleware, getUserStreak);
+problemRouter.post('/daily/set', coAdminMiddleware, setDailyChallenge);
 
 // NOTE: Please clarify the purpose of getPreviousChallenges if it differs from
 // getAllScheduledAndHistoricalDailyChallenges. If it's meant to get historical
@@ -43,9 +42,8 @@ problemRouter.post('/daily/set', coAdminMiddleware, setDailyChallenge); // Set a
 // problemRouter.get('/daily/previous', userMiddleware, getPreviousChallenges);
 
 // Admin-specific daily challenge management (using DailyChallengeHistory)
-problemRouter.get('/daily/all', coAdminMiddleware, getAllScheduledAndHistoricalDailyChallenges); // Get all scheduled and historical challenges for admin
-problemRouter.delete('/daily/history/:id', coAdminMiddleware, deleteDailyChallenge); // Delete a specific daily challenge history record
-
+problemRouter.get('/daily/all', coAdminMiddleware, getAllScheduledAndHistoricalDailyChallenges);
+problemRouter.delete('/daily/history/:id', coAdminMiddleware, deleteDailyChallenge); 
 problemRouter.get('/daily/calendar', userMiddleware, getDailyChallengeCalendarData);
 
 module.exports = problemRouter;

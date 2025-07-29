@@ -1,10 +1,9 @@
-// ... (your existing imports) ...
-const Problem = require("../models/problem"); // Ensure Problem model is imported
-const Submission = require("../models/submission"); // Ensure Submission model is imported
+const Problem = require("../models/problem");
+const Submission = require("../models/submission");
 const User = require("../models/user");
 const { getLanguageById, submitBatch, submitToken } = require("../utils/problemUtils");
 const Contest = require('../models/Contest');
-const ContestParticipation = require('../models/ ContestParticipation'); // Corrected typo here
+const ContestParticipation = require('../models/ ContestParticipation');
 
 const normalizeLanguage = (lang) => {
     const lowerLang = String(lang).toLowerCase();
@@ -32,8 +31,6 @@ const formatForComparison = (value) => {
     return formattedString.trim();
 };
 
-// Internal function to handle code submission logic
-// This function does NOT take req, res. It returns the result directly.
 const submitCodeInternal = async ({ userId, problemId, code, language, contestId = null }) => {
     try {
         if (!userId || !code || !problemId || !language) {
@@ -117,17 +114,17 @@ const submitCodeInternal = async ({ userId, problemId, code, language, contestId
                 error: result.status.description
             };
 
-            if (result.status.id === 6) { // Compilation Error
+            if (result.status.id === 6) { 
                 compilationErrorOutput = result.compile_output || "Compilation Error: No output provided.";
                 currentTestCaseResult.actual = compilationErrorOutput;
                 currentTestCaseResult.error = "Compilation Error";
                 testCaseDetails.push(currentTestCaseResult);
                 break;
-            } else if (result.status.id !== 3) { // Any other non-accepted status
+            } else if (result.status.id !== 3) { 
                 currentTestCaseResult.actual = result.stderr || result.stdout || "No specific output/error provided.";
                 currentTestCaseResult.passed = false;
                 testCaseDetails.push(currentTestCaseResult);
-            } else { // Status ID 3 = Accepted
+            } else { 
                 const actualOutputString = formatForComparison(result.stdout);
                 const expectedOutputString = formatForComparison(testCase.output);
 
@@ -180,7 +177,6 @@ const submitCodeInternal = async ({ userId, problemId, code, language, contestId
             let userDoc = await User.findById(userId);
             if (!userDoc) {
                 console.warn("User not found after submission processing, potential data inconsistency.");
-                // Continue, as submission was recorded.
             } else {
                 userDoc.dailyChallenges = userDoc.dailyChallenges || {
                     completed: [],
@@ -274,15 +270,13 @@ const submitCodeInternal = async ({ userId, problemId, code, language, contestId
             responseData.isFirstAcceptedDailyChallengeToday = isFirstAcceptedDailyChallengeToday;
         }
 
-        return responseData; // Return the result
+        return responseData; 
     } catch (err) {
         console.error('Submission Error (Internal):', err);
         throw new Error(`Failed to submit code internally: ${err.message}`);
     }
 };
 
-// NEW: Internal function to handle code running logic
-// This function does NOT take req, res. It returns the result directly.
 const runCodeInternal = async ({ userId, problemId, code, language, customInput }) => {
     try {
         if (!userId || !code || !problemId || !language) {
@@ -358,17 +352,17 @@ const runCodeInternal = async ({ userId, problemId, code, language, customInput 
                 error: result.status.description
             };
 
-            if (result.status.id === 6) { // Compilation Error
+            if (result.status.id === 6) { 
                 compilationErrorOutput = result.compile_output || "Compilation Error: No output provided.";
                 currentTestCaseResult.actual = compilationErrorOutput;
                 currentTestCaseResult.error = "Compilation Error";
                 testCaseDetails.push(currentTestCaseResult);
                 break;
-            } else if (result.status.id !== 3) { // Any other non-accepted status
+            } else if (result.status.id !== 3) { 
                 currentTestCaseResult.actual = result.stderr || result.stdout || "No specific output/error provided.";
                 currentTestCaseResult.passed = false;
                 testCaseDetails.push(currentTestCaseResult);
-            } else { // Status ID 3 = Accepted
+            } else { 
                 const actualOutputString = formatForComparison(result.stdout);
                 const expectedOutputString = testCase.output !== null ? formatForComparison(testCase.output) : null;
 
@@ -427,7 +421,6 @@ const submitCode = async (req, res) => {
         const { code, language } = req.body;
         const contestId = req.query.contestId;
 
-        // Call the internal function
         const submissionResult = await submitCodeInternal({
             userId,
             problemId,
@@ -453,7 +446,6 @@ const runCode = async (req, res) => {
         const problemId = req.params.id;
         const { code, language, customInput } = req.body;
 
-        // Call the internal function
         const runResult = await runCodeInternal({
             userId,
             problemId,
@@ -631,6 +623,6 @@ module.exports = {
     getSubmissionHistory,
     getAllSubmission,
     getDailyChallengeStats,
-    submitCodeInternal, // Export the internal function for Socket.IO
-    runCodeInternal // NEW: Export the internal run code function for Socket.IO
+    submitCodeInternal, 
+    runCodeInternal 
 };

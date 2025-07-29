@@ -13,7 +13,7 @@ const ContestParticipationSchema = new mongoose.Schema({
         points: { type: Number }
     }],
     totalPoints: { type: Number, default: 0 },
-    timeTaken: { type: Number } // in minutes
+    timeTaken: { type: Number }
 });
 
 module.exports = mongoose.model('ContestParticipation', ContestParticipationSchema);

@@ -1,23 +1,17 @@
-// controllers/playlistController.js
 const Playlist = require('../models/playlist');
 const Problem = require('../models/problem');
 
-// Middleware to check if the user is premium
 const checkPremium = (req, res, next) => {
-    // req.user is populated by your 'protect' auth middleware
     if (!req.user || !req.user.isPremium) {
         return res.status(403).json({ message: 'Access Denied: Only premium users can perform this action.' });
     }
     next();
 };
 
-// @desc    Create a new playlist
-// @route   POST /api/playlist
-// @access  Private (Premium Only)
 const createPlaylist = async (req, res) => {
     try {
         const { name, description } = req.body;
-        const userId = req.user._id; // User ID from authenticated session
+        const userId = req.user._id; 
 
         if (!name || name.trim() === '') {
             return res.status(400).json({ message: 'Playlist name is required.' });
@@ -27,14 +21,13 @@ const createPlaylist = async (req, res) => {
             name,
             description,
             userId,
-            problems: [] // New playlists start empty
+            problems: [] 
         });
 
         res.status(201).json({ message: 'Playlist created successfully', playlist: newPlaylist });
 
     } catch (error) {
         console.error('Error creating playlist:', error);
-        // Handle unique name constraint error
         if (error.code === 11000 && error.keyPattern && error.keyPattern.name && error.keyPattern.userId) {
             return res.status(409).json({ message: 'You already have a playlist with this name. Please choose a different one.' });
         }
@@ -42,16 +35,12 @@ const createPlaylist = async (req, res) => {
     }
 };
 
-// @desc    Get all playlists for the authenticated user
-// @route   GET /api/playlist/my
-// @access  Private
 const getPlaylistsByUserId = async (req, res) => {
     try {
         const userId = req.user._id;
-        // Populate problems to get their titles and difficulties, but limit fields for performance
         const playlists = await Playlist.find({ userId })
-            .populate('problems', 'title difficulty tags') // Add 'tags' if needed on frontend playlist view
-            .sort({ createdAt: -1 }); // Sort by most recently created
+            .populate('problems', 'title difficulty tags') 
+            .sort({ createdAt: -1 }); 
 
         res.status(200).json(playlists);
 
@@ -61,12 +50,9 @@ const getPlaylistsByUserId = async (req, res) => {
     }
 };
 
-// @desc    Get a single playlist by ID
-// @route   GET /api/playlist/:id
-// @access  Private (Owner or Public if implemented)
 const getPlaylistById = async (req, res) => {
     try {
-        const { id } = req.params; // Playlist ID
+        const { id } = req.params; 
         const userId = req.user._id;
 
         const playlist = await Playlist.findById(id)
@@ -76,7 +62,6 @@ const getPlaylistById = async (req, res) => {
             return res.status(404).json({ message: 'Playlist not found.' });
         }
 
-        // Only allow access if user owns the playlist or if it's public (if 'isPublic' is used)
         if (!playlist.userId.equals(userId) && !playlist.isPublic) {
             return res.status(403).json({ message: 'Access Denied: You do not have permission to view this playlist.' });
         }
@@ -89,31 +74,25 @@ const getPlaylistById = async (req, res) => {
     }
 };
 
-// @desc    Add a problem to a playlist
-// @route   POST /api/playlist/:playlistId/add/:problemId
-// @access  Private (Premium Only)
 const addProblemToPlaylist = async (req, res) => {
     try {
         const { playlistId, problemId } = req.params;
         const userId = req.user._id;
 
-        // Find the playlist and ensure it belongs to the authenticated user
         const playlist = await Playlist.findOne({ _id: playlistId, userId });
         if (!playlist) {
             return res.status(404).json({ message: 'Playlist not found or you do not own it.' });
         }
 
-        // Validate problemId exists
         const problemExists = await Problem.findById(problemId);
         if (!problemExists) {
             return res.status(404).json({ message: 'Problem not found.' });
         }
 
-        // Use $addToSet to add problemId to the problems array, which automatically prevents duplicates
         const updatedPlaylist = await Playlist.findByIdAndUpdate(
             playlistId,
             { $addToSet: { problems: problemId } },
-            { new: true } // Return the updated document
+            { new: true } 
         );
 
         res.status(200).json({ message: 'Problem added to playlist successfully', playlist: updatedPlaylist });
@@ -124,9 +103,6 @@ const addProblemToPlaylist = async (req, res) => {
     }
 };
 
-// @desc    Remove a problem from a playlist
-// @route   DELETE /api/playlist/:playlistId/remove/:problemId
-// @access  Private (Premium Only)
 const removeProblemFromPlaylist = async (req, res) => {
     try {
         const { playlistId, problemId } = req.params;
@@ -137,7 +113,6 @@ const removeProblemFromPlaylist = async (req, res) => {
             return res.status(404).json({ message: 'Playlist not found or you do not own it.' });
         }
 
-        // Use $pull to remove problemId from the problems array
         const updatedPlaylist = await Playlist.findByIdAndUpdate(
             playlistId,
             { $pull: { problems: problemId } },
@@ -152,13 +127,10 @@ const removeProblemFromPlaylist = async (req, res) => {
     }
 };
 
-// @desc    Update a playlist's name or description
-// @route   PUT /api/playlist/:id
-// @access  Private (Premium Only)
 const updatePlaylist = async (req, res) => {
     try {
-        const { id } = req.params; // playlist ID
-        const { name, description, isPublic } = req.body; // Allow updating isPublic as well
+        const { id } = req.params; 
+        const { name, description, isPublic } = req.body; 
         const userId = req.user._id;
 
         const playlist = await Playlist.findOne({ _id: id, userId });
@@ -166,11 +138,11 @@ const updatePlaylist = async (req, res) => {
             return res.status(404).json({ message: 'Playlist not found or you do not own it.' });
         }
 
-        if (name !== undefined) playlist.name = name.trim(); // Ensure trim for updates too
+        if (name !== undefined) playlist.name = name.trim(); 
         if (description !== undefined) playlist.description = description;
         if (isPublic !== undefined) playlist.isPublic = isPublic;
 
-        await playlist.save(); // Use .save() to trigger schema validation if needed
+        await playlist.save(); 
 
         res.status(200).json({ message: 'Playlist updated successfully', playlist });
 
@@ -183,15 +155,11 @@ const updatePlaylist = async (req, res) => {
     }
 };
 
-// @desc    Delete a playlist
-// @route   DELETE /api/playlist/:id
-// @access  Private (Premium Only)
 const deletePlaylist = async (req, res) => {
     try {
-        const { id } = req.params; // playlist ID
+        const { id } = req.params; 
         const userId = req.user._id;
 
-        // Find and delete the playlist, ensuring it belongs to the authenticated user
         const deletedPlaylist = await Playlist.findOneAndDelete({ _id: id, userId });
 
         if (!deletedPlaylist) {

@@ -1,6 +1,6 @@
 const cloudinary = require('cloudinary').v2;
 const Problem = require("../models/problem");
-const User = require("../models/user"); // Not directly used here, but good to have if needed elsewhere
+const User = require("../models/user"); 
 const SolutionVideo = require("../models/video");
 
 cloudinary.config({
@@ -13,27 +13,21 @@ const generateUploadSignature = async (req, res) => {
     try {
         const { problemId } = req.params;
 
-        // --- FIX HERE: Change req.result._id to req.admin._id ---
         const userId = req.user._id;
-        // --- End FIX ---
 
-        // Verify problem exists
         const problem = await Problem.findById(problemId);
         if (!problem) {
             return res.status(404).json({ error: 'Problem not found' });
         }
 
-        // Generate unique public_id for the video
         const timestamp = Math.round(new Date().getTime() / 1000);
         const publicId = `leetcode-solutions/${problemId}/${userId}_${timestamp}`;
 
-        // Upload parameters
         const uploadParams = {
             timestamp: timestamp,
             public_id: publicId,
         };
 
-        // Generate signature
         const signature = cloudinary.utils.api_sign_request(
             uploadParams,
             process.env.CLOUDINARY_API_SECRET
@@ -64,11 +58,8 @@ const saveVideoMetadata = async (req, res) => {
             duration,
         } = req.body;
 
-        // --- FIX HERE: Change req.result._id to req.admin._id ---
         const userId = req.user._id;
-        // --- End FIX ---
 
-        // Verify the upload with Cloudinary
         const cloudinaryResource = await cloudinary.api.resource(
             cloudinaryPublicId,
             { resource_type: 'video' }
@@ -78,37 +69,30 @@ const saveVideoMetadata = async (req, res) => {
             return res.status(400).json({ error: 'Video not found on Cloudinary' });
         }
 
-        // Check if video already exists for this problem and user
-        // Note: cloudinaryPublicId is unique, so checking just that might be enough
         const existingVideo = await SolutionVideo.findOne({
-            cloudinaryPublicId // This field is unique by schema definition
-            // problemId, // You might remove these if cloudinaryPublicId is globally unique per asset
-            // userId,    // You might remove these if cloudinaryPublicId is globally unique per asset
+            cloudinaryPublicId
         });
 
         if (existingVideo) {
-            // If the same video was uploaded again (same publicId), it's a conflict
             return res.status(409).json({ error: 'This specific video asset (public ID) has already been saved.' });
         }
 
-        // Generate a new thumbnail URL (updated for clarity, it uses the public_id from CloudinaryResource)
         const thumbnailUrl = cloudinary.url(cloudinaryResource.public_id, {
             resource_type: 'image',
             transformation: [
                 { width: 400, height: 225, crop: 'fill' },
                 { quality: 'auto' },
-                { start_offset: 'auto' } // Use an auto start offset for thumbnails
+                { start_offset: 'auto' }
             ],
             format: 'jpg'
         });
 
-        // Create video solution record
         const videoSolution = await SolutionVideo.create({
             problemId,
             userId,
             cloudinaryPublicId,
             secureUrl,
-            duration: cloudinaryResource.duration || duration, // Prioritize Cloudinary's duration
+            duration: cloudinaryResource.duration || duration, 
             thumbnailUrl
         });
 
@@ -119,16 +103,15 @@ const saveVideoMetadata = async (req, res) => {
                 thumbnailUrl: videoSolution.thumbnailUrl,
                 duration: videoSolution.duration,
                 uploadedAt: videoSolution.createdAt,
-                problemId: videoSolution.problemId, // Include problemId for frontend state update
-                cloudinaryPublicId: videoSolution.cloudinaryPublicId, // Include for consistency
-                secureUrl: videoSolution.secureUrl // Include for consistency
+                problemId: videoSolution.problemId, 
+                cloudinaryPublicId: videoSolution.cloudinaryPublicId, 
+                secureUrl: videoSolution.secureUrl 
             }
         });
 
     } catch (error) {
         console.error('Error saving video metadata:', error);
-        // Handle specific Mongoose duplicate key error if you want to be more precise
-        if (error.code === 11000) { // Duplicate key error code for MongoDB
+        if (error.code === 11000) {
             return res.status(409).json({ error: 'A video with this public ID already exists in the database.' });
         }
         res.status(500).json({ error: 'Failed to save video metadata' });
@@ -138,15 +121,8 @@ const saveVideoMetadata = async (req, res) => {
 
 const deleteVideo = async (req, res) => {
     try {
-        const { videoId } = req.params; // Changed to videoId
-        // --- FIX HERE: Change req.result._id to req.admin._id ---
-        const userId = req.user._id; // Admin's ID
-        // --- End FIX ---
-
-        // Find and delete the video document by its _id.
-        // For security, you might also want to ensure the deleting admin
-        // has permission (e.g., if only the uploader can delete, or if a super-admin role is needed).
-        // For simplicity with adminMiddleware, we'll assume any admin can delete any video.
+        const { videoId } = req.params;
+        const userId = req.user._id;
         const video = await SolutionVideo.findOneAndDelete({ _id: videoId });
 
         if (!video) {

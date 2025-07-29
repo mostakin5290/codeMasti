@@ -1,4 +1,3 @@
-// utils/emailSender.js
 const nodemailer = require('nodemailer');
 require('dotenv').config(); // Load environment variables
 

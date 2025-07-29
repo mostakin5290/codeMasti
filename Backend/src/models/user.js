@@ -52,14 +52,14 @@ const userSchema = new Schema({
         trim: true,
         maxLength: 100
     },
-    avatar: { // Stores the full secure URL
+    avatar: { 
         type: String,
         default: 'https://res.cloudinary.com/dcmzfn5oq/image/upload/v1752850490/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4841_gbmgeo.avif'
     },
-    avatarPublicId: { // NEW: Stores the Cloudinary public_id for easy deletion/management
+    avatarPublicId: { 
         type: String,
-        sparse: true, // Allows nulls, but ensures unique non-null values
-        unique: true, // Ensure no two users have the same avatarPublicId
+        sparse: true, 
+        unique: true, 
     },
     socialLinks: {
         github: String,
@@ -98,7 +98,6 @@ const userSchema = new Schema({
             default: 'vs-dark'
         }
     },
-    // --- NEW: Premium Subscription Fields ---
     isPremium: {
         type: Boolean,
         default: false

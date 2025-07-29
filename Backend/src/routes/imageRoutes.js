@@ -1,4 +1,3 @@
-// backend/routes/imageRoutes.js
 const express = require('express');
 const imageRouter = express.Router();
 const userMiddleware = require('../middleware/userMiddleware'); // Assuming this exists for authenticated users

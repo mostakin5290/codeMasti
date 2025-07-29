@@ -1,4 +1,3 @@
-// aiSupportInstructions.js
 
 const { HarmBlockThreshold, HarmCategory } = require("@google/generative-ai");
 
