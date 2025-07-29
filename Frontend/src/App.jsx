@@ -67,6 +67,7 @@ import GamePage from "./Pages/GamePage";
 import GameCodefield from "./Pages/GameCodefield";
 import GameRoomDetailsPage from "./Pages/GameRoomDetailsPage";
 import Tools from "./Pages/Tools";
+import SplashCursor from "./components/animation/SplashCursor"
 
 
 const AppRoutes = () => {
@@ -162,7 +163,7 @@ const AppRoutes = () => {
                 <Route path="/game/room/:roomId/play" element={isAuthenticated ? <GameCodefield /> : <Navigate to="/" />} />
 
 
-                <Route path="/tools" element={<Tools/> } />
+                <Route path="/tools" element={<Tools />} />
                 {/* --- Admin Routes --- */}
                 <Route element={<AdminRoute />}>
                     <Route path="/admin" element={<AdminLayout />}>
@@ -190,6 +191,23 @@ const App = () => {
         <ThemeProvider>
             <AnimationProvider>
                 <AppRoutes />
+                <SplashCursor
+                    SIM_RESOLUTION={64}
+                    DYE_RESOLUTION={160}
+                    CAPTURE_RESOLUTION={160}
+                    DENSITY_DISSIPATION={65}
+                    VELOCITY_DISSIPATION={2.5}
+                    PRESSURE={0.02}
+                    PRESSURE_ITERATIONS={6}
+                    CURL={3.0}
+                    SPLAT_RADIUS={0.08}
+                    SPLAT_FORCE={10}
+                    SHADING={false}
+                    COLOR_UPDATE_SPEED={0}
+                    BACK_COLOR={{ r: 0, g: 0, b: 0 }}
+                    TRANSPARENT={false}
+                    FIXED_COLOR={{ r: 255, g: 255, b: 255 }}
+                />
             </AnimationProvider>
         </ThemeProvider>
     );

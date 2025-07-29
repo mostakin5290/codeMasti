@@ -14,6 +14,8 @@ import codingAnimation from '../assets/lotties/coding.json';
 import ideaAnimation from '../assets/lotties/Idea.json';
 import successAnimation from '../assets/lotties/success.json';
 import Aurora from '../components/ui/Aurora'
+import RippleCursor from '../components/animation/RippleCursor';
+import SplashCursor from '../components/animation/SplashCursor';
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
     primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
@@ -29,7 +31,6 @@ const defaultTheme = {
     infoColor: 'text-blue-400',
 };
 
-// Define tailwindColorMap here, outside the component for reusability
 const tailwindColorMap = {
     // Grays/Zincs/Slates/Neutrals/Stones
     'gray-50': '#F9FAFB', 'gray-100': '#F3F4F6', 'gray-200': '#E5E7EB', 'gray-300': '#D1D5DB', 'gray-400': '#9CA3AF', 'gray-500': '#6B7280', 'gray-600': '#4B5563', 'gray-700': '#374151', 'gray-800': '#1F2937', 'gray-900': '#111827', 'gray-950': '#0A0A0A',
@@ -78,21 +79,18 @@ const Home = () => {
     const navigate = useNavigate();
     const celebrationRef = useRef(null);
 
-    // Helper to get hex color from Tailwind class string
     const getHexColor = (tailwindClass) => {
-        // Extracts "color-shade" from "bg-color-shade" or "text-color-shade"
         const parts = tailwindClass.split('-');
         if (parts.length < 2) return null;
         const colorKey = parts.slice(1).join('-');
         return tailwindColorMap[colorKey] || null;
     };
 
-    // Determine color stops for Aurora based on theme
     const auroraColorStops = [
         getHexColor(theme.primary),
         getHexColor(theme.highlightSecondary),
         getHexColor(theme.highlight)
-    ].filter(Boolean); // Filter out any null values
+    ].filter(Boolean);
 
     useEffect(() => {
         const queryParams = new URLSearchParams(location.search);
@@ -141,7 +139,6 @@ const Home = () => {
 
     const isUserPremium = user && user.isPremium;
 
-    // 3D Card component
     const Card3D = ({ children, className = '' }) => {
         return (
             <div className={`${className} transition-all duration-500 transform hover:-translate-y-2 hover:shadow-2xl`}>
@@ -174,22 +171,18 @@ const Home = () => {
 
             <Header />
 
-            {/* Hero Section with Aurora Background and Lottie Animation */}
             <section className="relative overflow-hidden py-20 md:py-32 lg:py-40 flex items-center justify-center">
                 <div className="absolute inset-0 z-0"> {/* Changed z-1 to z-0 to put Aurora behind content */}
-                    {/* Removed static background image and gradient to allow Aurora to be the primary background */}
 
-                    {/* Floating circles (kept for additional visual depth) */}
                     <div className={`absolute top-1/4 left-1/4 w-16 h-16 rounded-full ${theme.highlightSecondary.replace('text-', 'bg-')}/20 blur-xl animate-float-and-rotate`}></div>
                     <div className={`absolute top-1/3 right-1/4 w-24 h-24 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/20 blur-xl animate-float-and-rotate animation-delay-2000`}></div>
                     <div className={`absolute bottom-1/4 right-1/3 w-20 h-20 rounded-full ${theme.highlight.replace('text-', 'bg-')}/20 blur-xl animate-float-and-rotate animation-delay-4000`}></div>
 
-                    {/* Aurora Background Component */}
-                    {auroraColorStops.length >= 3 && ( // Ensure at least 3 colors for the gradient
+                    {auroraColorStops.length >= 3 && (
                         <Aurora
                             colorStops={auroraColorStops}
-                            amplitude={12}
-                            blend={.1}
+                            amplitude={2}
+                            blend={0}
                         />
                     )}
                 </div>
@@ -240,7 +233,6 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* Features Section with Interactive Cards */}
             <section className="py-20 relative">
                 <div className="absolute inset-0 overflow-hidden">
                     <div className={`absolute top-0 right-0 w-64 h-64 rounded-full ${theme.highlightSecondary.replace('text-', 'bg-')}/10 blur-3xl -mr-32 -mt-32`}></div>
@@ -549,6 +541,7 @@ const Home = () => {
             </section>
 
             <Footer />
+
         </div>
     );
 };
