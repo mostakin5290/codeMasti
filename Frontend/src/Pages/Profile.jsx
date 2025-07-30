@@ -79,7 +79,6 @@ function ProfilePage() {
     const postsPerPage = 10;
     const [totalPosts, setTotalPosts] = useState(0);
     
-    // New states for enhanced features
     const [showAchievements, setShowAchievements] = useState(false);
     const [profileViews, setProfileViews] = useState(0);
     const [isFollowing, setIsFollowing] = useState(false);
