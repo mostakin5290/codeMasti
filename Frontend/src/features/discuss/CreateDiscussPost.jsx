@@ -23,7 +23,7 @@ import Underline from '@tiptap/extension-underline';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
-import {Placeholder} from '@tiptap/extension-placeholder';
+import Placeholder from '@tiptap/extension-placeholder'; // Fixed import
 
 // Default theme for the app context
 const defaultAppTheme = {
@@ -39,7 +39,7 @@ const defaultAppTheme = {
     infoColor: 'text-blue-400',
 };
 
-// Updated MenuBar component without image functionality
+// Updated MenuBar component
 const MenuBar = ({ editor, appTheme }) => {
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [showHighlightPicker, setShowHighlightPicker] = useState(false);
@@ -304,7 +304,7 @@ const MenuBar = ({ editor, appTheme }) => {
 
             <div className={`w-px h-8 ${appTheme.border} mx-1`}></div>
 
-            {/* Link - Kept as requested */}
+            {/* Link */}
             <div className="relative">
                 <button
                     type="button"
@@ -566,7 +566,7 @@ const MenuBar = ({ editor, appTheme }) => {
     );
 };
 
-// Updated CreateDiscussPost Component without Image extension
+// Updated CreateDiscussPost Component
 const CreateDiscussPost = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -585,7 +585,7 @@ const CreateDiscussPost = () => {
 
     const postToEdit = location.state?.post;
 
-    // Updated Tiptap Editor setup without Image extension
+    // Updated Tiptap Editor setup with correct Placeholder import
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
