@@ -23,7 +23,6 @@ import Underline from '@tiptap/extension-underline';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
-import Placeholder from '@tiptap/extension-placeholder'; // Fixed import
 
 // Default theme for the app context
 const defaultAppTheme = {
@@ -622,9 +621,6 @@ const CreateDiscussPost = () => {
             }),
             TextAlign.configure({
                 types: ['heading', 'paragraph'],
-            }),
-            Placeholder.configure({
-                placeholder: 'Start writing your discussion post here... You can format text, add links, and more using the toolbar above.',
             }),
         ],
         content: '',
