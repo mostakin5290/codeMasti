@@ -23,7 +23,7 @@ import Underline from '@tiptap/extension-underline';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
-import Placeholder from '@tiptap/extension-placeholder';
+import {Placeholder} from '@tiptap/extension-placeholder';
 
 // Default theme for the app context
 const defaultAppTheme = {
