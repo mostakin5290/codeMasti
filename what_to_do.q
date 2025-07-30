@@ -1,4 +1,3 @@
---> payment email fix 
 --> profile layout fix 
 --> ui change 
 --> Visualizer cretate 

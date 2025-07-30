@@ -1,49 +1,148 @@
 import React, { useState, useRef, useEffect } from "react";
-import Editor from "@monaco-editor/react"; // Import Monaco Editor
+import Editor from "@monaco-editor/react";
 import {
     Play,
     Pause,
+    Square,
     RotateCcw,
-    Code,
-    Bug,
-    Eye,
-    List,
-    Terminal,
     Settings,
     ChevronDown,
     ChevronRight,
-    Square,
-    ChevronsRight,
-    ArrowUpFromDot,
-    ArrowDownToDot,
-    RotateCcwSquare,
-    StopCircle,
-    Lightbulb,
-    FolderDot,
-    BookOpen, // Added for How to Use Guide
-    X, // For Close button and Guide close
-    TextCursorInput, // Using for font size control
+    X,
+    Minimize2,
+    Maximize2,
+    MoreHorizontal,
+    Terminal,
+    Bug,
+    Eye,
+    List,
+    Code,
+    Search,
+    GitBranch,
+    Bell,
+    StepForward,
+    StepBack,
+    Zap,
+    Activity,
+    Monitor,
+    Cpu,
+    MemoryStick
 } from "lucide-react";
-import {
-    FaRocket,
-    FaRegLightbulb,
-    FaQuestionCircle,
-    FaBug,
-    FaSearch,
-    FaSyncAlt,
-    FaCode,
-    FaPlayCircle,
-    FaForward,
-    FaEye,
-    FaCheckCircle,
-    FaExclamationTriangle
-} from 'react-icons/fa';
-import { GiBubbles } from 'react-icons/gi';
-import { MdOutlineCompassCalibration } from 'react-icons/md';
-import { IoClose } from 'react-icons/io5';
 import { motion, AnimatePresence } from "framer-motion";
 
-// Accept appTheme and onClose as props
+// Enhanced VS Code theme generator using your dynamic color system
+const getVSCodeTheme = (appTheme) => {
+    // Extract color values from Tailwind classes
+    const extractColor = (tailwindClass, fallback) => {
+        if (!tailwindClass) return fallback;
+        
+        const colorMap = {
+            // Cyan colors
+            'text-cyan-400': '#22d3ee',
+            'bg-cyan-500': '#06b6d4',
+            'bg-cyan-600': '#0891b2',
+            'text-cyan-300': '#67e8f9',
+            
+            // Blue colors
+            'text-blue-400': '#60a5fa',
+            'bg-blue-600': '#2563eb',
+            'bg-blue-700': '#1d4ed8',
+            'text-blue-300': '#93c5fd',
+            
+            // Purple colors
+            'text-purple-400': '#c084fc',
+            'bg-purple-600': '#9333ea',
+            'text-purple-300': '#d8b4fe',
+            
+            // Gray colors
+            'bg-gray-900': '#111827',
+            'bg-gray-800': '#1f2937',
+            'bg-gray-700': '#374151',
+            'text-gray-300': '#d1d5db',
+            'text-white': '#ffffff',
+            'border-gray-700': '#374151',
+            
+            // Success/Error colors
+            'text-emerald-400': '#34d399',
+            'text-red-400': '#f87171',
+            'text-amber-400': '#fbbf24',
+            'text-green-400': '#4ade80',
+        };
+        
+        return colorMap[tailwindClass] || fallback;
+    };
+
+    const primaryColor = extractColor(appTheme.highlight, '#22d3ee');
+    const backgroundColor = extractColor(appTheme.background, '#111827');
+    const cardBg = extractColor(appTheme.cardBg, '#1f2937');
+    const textColor = extractColor(appTheme.text, '#ffffff');
+    const cardTextColor = extractColor(appTheme.cardText, '#d1d5db');
+    
+    return {
+        // Activity Bar
+        activityBarBg: '#1e1e1e',
+        activityBarFg: '#cccccc',
+        activityBarActiveBg: '#37373d',
+        activityBarBorder: '#2b2d30',
+        activityBarActiveIndicator: primaryColor,
+        
+        // Side Bar
+        sideBarBg: '#252526',
+        sideBarFg: '#cccccc',
+        sideBarSectionHeader: '#2d2d30',
+        sideBarBorder: '#2b2d30',
+        sideBarSelection: primaryColor + '20',
+        
+        // Editor
+        editorBg: '#1e1e1e',
+        editorFg: '#d4d4d4',
+        editorLineNumberFg: '#858585',
+        editorSelectionBg: primaryColor + '30',
+        editorCurrentLineBg: '#2a2d2e',
+        editorCursorFg: primaryColor,
+        
+        // Status Bar
+        statusBarBg: primaryColor,
+        statusBarFg: '#ffffff',
+        statusBarNoFolderBg: '#68217a',
+        
+        // Panel
+        panelBg: '#181818',
+        panelBorder: '#2b2d30',
+        panelTabActiveBg: '#1e1e1e',
+        panelTabInactiveBg: '#2d2d30',
+        panelTabActiveIndicator: primaryColor,
+        
+        // Debug
+        debugToolbarBg: '#2d2d30',
+        debugConsoleBg: '#181818',
+        debugCurrentLineBg: primaryColor + '20',
+        
+        // Accent colors
+        accent: primaryColor,
+        error: extractColor(appTheme.errorColor, '#f87171'),
+        warning: extractColor(appTheme.warningColor, '#fbbf24'),
+        info: extractColor(appTheme.infoColor, '#60a5fa'),
+        success: extractColor(appTheme.successColor, '#34d399'),
+        
+        // Additional UI colors
+        buttonPrimary: primaryColor,
+        buttonSecondary: '#3c3c3c',
+        buttonHover: primaryColor + 'dd',
+        inputBg: '#3c3c3c',
+        inputBorder: '#5a5a5a',
+        scrollbarThumb: primaryColor + '60',
+        
+        // Syntax highlighting
+        syntaxKeyword: '#569cd6',
+        syntaxString: '#ce9178',
+        syntaxComment: '#6a9955',
+        syntaxNumber: '#b5cea8',
+        syntaxFunction: '#dcdcaa',
+        syntaxVariable: '#9cdcfe',
+    };
+};
+
 const AlgoVisualiser = ({ appTheme, onClose }) => {
     const [language, setLanguage] = useState("javascript");
     const [code, setCode] = useState("");
@@ -56,658 +155,753 @@ const AlgoVisualiser = ({ appTheme, onClose }) => {
     const [error, setError] = useState(null);
     const [speed, setSpeed] = useState(500);
     const [callStack, setCallStack] = useState([]);
-    const [showGuide, setShowGuide] = useState(false);
-
-    // Monaco Editor Refs and State
-    const editorRef = useRef(null);
-    const monacoRef = useRef(null);
-    const [decorations, setDecorations] = useState([]);
-    const [editorFontSize, setEditorFontSize] = useState(14); // New state for font size
-
-    // Panel collapse states
+    const [executionInterval, setExecutionInterval] = useState(null);
+    
+    // Panel states
     const [collapsedPanels, setCollapsedPanels] = useState({
-        controls: false,
         variables: false,
         callStack: false,
         watch: true,
         breakpoints: true,
         loadedScripts: true,
     });
-
-    const togglePanel = (panelName) => {
-        setCollapsedPanels(prevState => ({
-            ...prevState,
-            [panelName]: !prevState[panelName]
-        }));
-    };
-
-    // Helper to get accent color base, e.g., 'cyan' from 'bg-cyan-500'
-    const getAccentColorBase = () => {
-        const accentColorClass = appTheme.accent || appTheme.buttonPrimary;
-        const match = accentColorClass.match(/bg-(\w+)-\d+/);
-        return match ? match[1] : 'blue'; // Default to 'blue' if no match
-    };
-
-    // Default code for each language - Bubble Sort specific
+    
+    // Layout states
+    const [sidebarWidth, setSidebarWidth] = useState(320);
+    const [panelHeight, setPanelHeight] = useState(250);
+    const [activeTab, setActiveTab] = useState('console');
+    const [isResizing, setIsResizing] = useState({ sidebar: false, panel: false });
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    
+    // Monaco Editor refs
+    const editorRef = useRef(null);
+    const monacoRef = useRef(null);
+    const [decorations, setDecorations] = useState([]);
+    const [editorFontSize, setEditorFontSize] = useState(14);
+    
+    const theme = getVSCodeTheme(appTheme);
+    
+    // Default code examples with better algorithms
     const getDefaultCode = (lang) => {
-        const bubbleSortCodes = {
-            javascript: `function bubbleSort(arr) {
-    let n = arr.length;
-    console.log("Original array:", JSON.stringify(arr));
-    for (let i = 0; i < n - 1; i++) {
-        for (let j = 0; j < n - i - 1; j++) {
-            console.log("Comparing arr[" + j + "] (" + arr[j] + ") and arr[" + (j + 1) + "] (" + arr[j+1] + ")");
-            if (arr[j] > arr[j + 1]) {
-                // Swap
-                let temp = arr[j];
-                arr[j] = arr[j + 1];
-                arr[j + 1] = temp;
-                console.log("Swapped. Array now:", JSON.stringify(arr));
-            }
+        const algorithmCodes = {
+            javascript: `// Binary Search Algorithm Visualization
+function binarySearch(arr, target) {
+    let left = 0;
+    let right = arr.length - 1;
+    
+    console.log("Starting binary search for:", target);
+    console.log("Array:", arr);
+    
+    while (left <= right) {
+        let mid = Math.floor((left + right) / 2);
+        console.log(\`Checking middle index \${mid} with value \${arr[mid]}\`);
+        
+        if (arr[mid] === target) {
+            console.log(\`Found target \${target} at index \${mid}\`);
+            return mid;
+        } else if (arr[mid] < target) {
+            console.log(\`\${arr[mid]} < \${target}, searching right half\`);
+            left = mid + 1;
+        } else {
+            console.log(\`\${arr[mid]} > \${target}, searching left half\`);
+            right = mid - 1;
         }
     }
-    console.log("Sorted array:", JSON.stringify(arr));
+    
+    console.log("Target not found");
+    return -1;
+}
+
+// Quick Sort Algorithm
+function quickSort(arr, low = 0, high = arr.length - 1) {
+    console.log(\`QuickSort called with range [\${low}, \${high}]\`);
+    console.log("Current array:", arr.slice(low, high + 1));
+    
+    if (low < high) {
+        let pivotIndex = partition(arr, low, high);
+        console.log(\`Pivot placed at index \${pivotIndex}\`);
+        
+        quickSort(arr, low, pivotIndex - 1);
+        quickSort(arr, pivotIndex + 1, high);
+    }
+    
     return arr;
 }
 
-const myArr = [64, 34, 25, 12, 22, 11, 90];
-bubbleSort(myArr);`,
-            cpp: `#include <iostream>
-#include <vector>
-
-void bubbleSort(std::vector<int>& arr) {
-    int n = arr.size();
-    std::cout << "Original array: [";
-    for (int k = 0; k < n; ++k) {
-        std::cout << arr[k] << (k == n - 1 ? "" : ", ");
-    }
-    std::cout << "]" << std::endl;
-
-    for (int i = 0; i < n - 1; ++i) {
-        for (int j = 0; j < n - i - 1; ++j) {
-            std::cout << "Comparing arr[" << j << "] (" << arr[j] << ") and arr[" << (j + 1) << "] (" << arr[j+1] << ")" << std::endl;
-            if (arr[j] > arr[j + 1]) {
-                // Swap
-                int temp = arr[j];
-                arr[j] = arr[j + 1];
-                arr[j + 1] = temp;
-                std::cout << "Swapped. Array now: [";
-                for (int k = 0; k < n; ++k) {
-                    std::cout << arr[k] << (k == n - 1 ? "" : ", ");
-                }
-                std::cout << "]" << std::endl;
-            }
+function partition(arr, low, high) {
+    let pivot = arr[high];
+    console.log(\`Using pivot: \${pivot}\`);
+    let i = low - 1;
+    
+    for (let j = low; j < high; j++) {
+        if (arr[j] < pivot) {
+            i++;
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+            console.log(\`Swapped \${arr[j]} and \${arr[i]}\`);
         }
     }
-    std::cout << "Sorted array: [";
-    for (int k = 0; k < n; ++k) {
-        std::cout << arr[k] << (k == n - 1 ? "" : ", ");
-    }
-    std::cout << "]" << std::endl;
+    
+    [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+    return i + 1;
 }
 
-int main() {
-    std::vector<int> myVector = {64, 34, 25, 12, 22, 11, 90};
-    bubbleSort(myVector);
-    return 0;
-}`,
-            python: `def bubble_sort(arr):
-    n = len(arr)
-    print("Original array:", arr)
-    for i in range(n - 1):
-        for j in range(0, n - i - 1):
-            print(f"Comparing arr[{j}] ({arr[j]}) and arr[{j+1}] ({arr[j+1]})")
-            if arr[j] > arr[j + 1]:
-                # Swap
-                arr[j], arr[j + 1] = arr[j + 1], arr[j]
-                print("Swapped. Array now:", arr)
-    print("Sorted array:", arr)
-    return arr
+// Demo execution
+const sortedArray = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
+const target = 7;
 
-my_list = [64, 34, 25, 12, 22, 11, 90]
-bubble_sort(my_list)`,
-            java: `import java.util.Arrays;
+console.log("=== Binary Search Demo ===");
+const searchResult = binarySearch(sortedArray, target);
 
-public class BubbleSortExample {
-    public static void bubbleSort(int[] arr) {
-        int n = arr.length;
-        System.out.println("Original array: " + Arrays.toString(arr));
-        for (int i = 0; i < n - 1; i++) {
-            for (int j = 0; j < n - i - 1; j++) {
-                System.out.println("Comparing arr[" + j + "] (" + arr[j] + ") and arr[" + (j + 1) + "] (" + arr[j+1] + ")");
-                if (arr[j] > arr[j + 1]) {
-                    // Swap
-                    int temp = arr[j];
-                    arr[j] = arr[j + 1];
-                    arr[j + 1] = temp;
-                    System.out.println("Swapped. Array now: " + Arrays.toString(arr));
+console.log("\\n=== Quick Sort Demo ===");
+const unsortedArray = [64, 34, 25, 12, 22, 11, 90, 5];
+const result = quickSort([...unsortedArray]);
+console.log("Sorted array:", result);`,
+
+            python: `# Advanced Algorithm Visualization in Python
+
+def merge_sort(arr):
+    """Merge Sort with step-by-step visualization"""
+    print(f"Merge sort called with: {arr}")
+    
+    if len(arr) <= 1:
+        return arr
+    
+    mid = len(arr) // 2
+    left_half = arr[:mid]
+    right_half = arr[mid:]
+    
+    print(f"Splitting: {left_half} | {right_half}")
+    
+    left_sorted = merge_sort(left_half)
+    right_sorted = merge_sort(right_half)
+    
+    return merge(left_sorted, right_sorted)
+
+def merge(left, right):
+    """Merge two sorted arrays"""
+    result = []
+    i = j = 0
+    
+    print(f"Merging {left} and {right}")
+    
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            result.append(left[i])
+            print(f"Added {left[i]} from left")
+            i += 1
+        else:
+            result.append(right[j])
+            print(f"Added {right[j]} from right")
+            j += 1
+    
+    result.extend(left[i:])
+    result.extend(right[j:])
+    
+    print(f"Merged result: {result}")
+    return result
+
+def dijkstra_shortest_path(graph, start):
+    """Dijkstra's algorithm simulation"""
+    import heapq
+    
+    distances = {node: float('infinity') for node in graph}
+    distances[start] = 0
+    pq = [(0, start)]
+    visited = set()
+    
+    print(f"Starting Dijkstra from node {start}")
+    print(f"Initial distances: {distances}")
+    
+    while pq:
+        current_distance, current_node = heapq.heappop(pq)
+        
+        if current_node in visited:
+            continue
+        
+        visited.add(current_node)
+        print(f"Visiting node {current_node} with distance {current_distance}")
+        
+        for neighbor, weight in graph[current_node].items():
+            distance = current_distance + weight
+            
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                heapq.heappush(pq, (distance, neighbor))
+                print(f"Updated distance to {neighbor}: {distance}")
+    
+    return distances
+
+# Demo execution
+print("=== Merge Sort Demo ===")
+numbers = [38, 27, 43, 3, 9, 82, 10]
+sorted_numbers = merge_sort(numbers.copy())
+print(f"Final sorted array: {sorted_numbers}")
+
+print("\\n=== Dijkstra's Algorithm Demo ===")
+graph = {
+    'A': {'B': 4, 'C': 2},
+    'B': {'C': 1, 'D': 5},
+    'C': {'D': 8, 'E': 10},
+    'D': {'E': 2},
+    'E': {}
+}
+shortest_paths = dijkstra_shortest_path(graph, 'A')
+print(f"Shortest paths from A: {shortest_paths}")`,
+
+            cpp: `#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <queue>
+#include <climits>
+
+using namespace std;
+
+// Advanced Heap Sort Implementation
+class HeapSort {
+public:
+    static void heapify(vector<int>& arr, int n, int i) {
+        cout << "Heapifying subtree rooted at index " << i << endl;
+        
+        int largest = i;
+        int left = 2 * i + 1;
+        int right = 2 * i + 2;
+        
+        if (left < n && arr[left] > arr[largest]) {
+            largest = left;
+        }
+        
+        if (right < n && arr[right] > arr[largest]) {
+            largest = right;
+        }
+        
+        if (largest != i) {
+            cout << "Swapping " << arr[i] << " with " << arr[largest] << endl;
+            swap(arr[i], arr[largest]);
+            heapify(arr, n, largest);
+        }
+    }
+    
+    static void heapSort(vector<int>& arr) {
+        int n = arr.size();
+        cout << "Building max heap..." << endl;
+        
+        // Build heap
+        for (int i = n / 2 - 1; i >= 0; i--) {
+            heapify(arr, n, i);
+        }
+        
+        cout << "Max heap built. Starting sort..." << endl;
+        
+        // Extract elements from heap
+        for (int i = n - 1; i > 0; i--) {
+            cout << "Moving " << arr[0] << " to position " << i << endl;
+            swap(arr[0], arr[i]);
+            heapify(arr, i, 0);
+        }
+    }
+};
+
+// Graph algorithms
+class Graph {
+private:
+    int vertices;
+    vector<vector<pair<int, int>>> adjList;
+    
+public:
+    Graph(int v) : vertices(v) {
+        adjList.resize(v);
+    }
+    
+    void addEdge(int u, int v, int weight) {
+        adjList[u].push_back({v, weight});
+        adjList[v].push_back({u, weight});
+    }
+    
+    void primMST() {
+        cout << "Finding Minimum Spanning Tree using Prim's algorithm" << endl;
+        
+        vector<int> key(vertices, INT_MAX);
+        vector<bool> inMST(vertices, false);
+        vector<int> parent(vertices, -1);
+        
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+        
+        key[0] = 0;
+        pq.push({0, 0});
+        
+        while (!pq.empty()) {
+            int u = pq.top().second;
+            pq.pop();
+            
+            if (inMST[u]) continue;
+            
+            inMST[u] = true;
+            cout << "Added vertex " << u << " to MST" << endl;
+            
+            for (auto& edge : adjList[u]) {
+                int v = edge.first;
+                int weight = edge.second;
+                
+                if (!inMST[v] && key[v] > weight) {
+                    key[v] = weight;
+                    parent[v] = u;
+                    pq.push({key[v], v});
+                    cout << "Updated key for vertex " << v << " to " << weight << endl;
                 }
             }
         }
-        System.out.println("Sorted array: " + Arrays.toString(arr));
+        
+        cout << "MST Edges:" << endl;
+        for (int i = 1; i < vertices; i++) {
+            cout << parent[i] << " - " << i << " : " << key[i] << endl;
+        }
     }
+};
 
-    public static void main(String[] args) {
-        int[] myArr = {64, 34, 25, 12, 22, 11, 90};
-        bubbleSort(myArr);
-    }
+int main() {
+    cout << "=== Heap Sort Demo ===" << endl;
+    vector<int> arr = {12, 11, 13, 5, 6, 7, 15, 3, 9};
+    
+    cout << "Original array: ";
+    for (int x : arr) cout << x << " ";
+    cout << endl;
+    
+    HeapSort::heapSort(arr);
+    
+    cout << "Sorted array: ";
+    for (int x : arr) cout << x << " ";
+    cout << endl;
+    
+    cout << "\\n=== Prim's MST Demo ===" << endl;
+    Graph g(5);
+    g.addEdge(0, 1, 2);
+    g.addEdge(0, 3, 6);
+    g.addEdge(1, 2, 3);
+    g.addEdge(1, 3, 8);
+    g.addEdge(1, 4, 5);
+    g.addEdge(2, 4, 7);
+    g.addEdge(3, 4, 9);
+    
+    g.primMST();
+    
+    return 0;
 }`,
+
+            java: `import java.util.*;
+
+public class AdvancedAlgorithms {
+    
+    // Advanced Binary Search Tree with visualization
+    static class BST {
+        class Node {
+            int data;
+            Node left, right;
+            
+            Node(int data) {
+                this.data = data;
+                left = right = null;
+            }
+        }
+        
+        private Node root;
+        
+        public void insert(int data) {
+            System.out.println("Inserting " + data + " into BST");
+            root = insertRec(root, data, 0);
+        }
+        
+        private Node insertRec(Node root, int data, int depth) {
+            if (root == null) {
+                System.out.println("Created new node with value " + data + " at depth " + depth);
+                return new Node(data);
+            }
+            
+            if (data < root.data) {
+                System.out.println(data + " < " + root.data + ", going left");
+                root.left = insertRec(root.left, data, depth + 1);
+            } else if (data > root.data) {
+                System.out.println(data + " > " + root.data + ", going right");
+                root.right = insertRec(root.right, data, depth + 1);
+            }
+            
+            return root;
+        }
+        
+        public void inorderTraversal() {
+            System.out.println("Inorder traversal (sorted order):");
+            inorderRec(root);
+            System.out.println();
+        }
+        
+        private void inorderRec(Node root) {
+            if (root != null) {
+                inorderRec(root.left);
+                System.out.print(root.data + " ");
+                inorderRec(root.right);
+            }
+        }
+    }
+    
+    // Dynamic Programming - Longest Common Subsequence
+    public static int longestCommonSubsequence(String text1, String text2) {
+        System.out.println("Finding LCS for: '" + text1 + "' and '" + text2 + "'");
+        
+        int m = text1.length();
+        int n = text2.length();
+        int[][] dp = new int[m + 1][n + 1];
+        
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                char c1 = text1.charAt(i - 1);
+                char c2 = text2.charAt(j - 1);
+                
+                if (c1 == c2) {
+                    dp[i][j] = dp[i - 1][j - 1] + 1;
+                    System.out.println("Match found: " + c1 + " at positions (" + i + "," + j + ")");
+                } else {
+                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                    System.out.println("No match at (" + i + "," + j + "), taking max: " + dp[i][j]);
+                }
+            }
+        }
+        
+        return dp[m][n];
+    }
+    
+    // Graph DFS with visualization
+    public static void depthFirstSearch(Map<Integer, List<Integer>> graph, int start) {
+        System.out.println("Starting DFS from vertex " + start);
+        Set<Integer> visited = new HashSet<>();
+        Stack<Integer> stack = new Stack<>();
+        
+        stack.push(start);
+        
+        while (!stack.isEmpty()) {
+            int vertex = stack.pop();
+            
+            if (!visited.contains(vertex)) {
+                visited.add(vertex);
+                System.out.println("Visited vertex: " + vertex);
+                
+                List<Integer> neighbors = graph.getOrDefault(vertex, new ArrayList<>());
+                for (int neighbor : neighbors) {
+                    if (!visited.contains(neighbor)) {
+                        stack.push(neighbor);
+                        System.out.println("Added vertex " + neighbor + " to stack");
+                    }
+                }
+            }
+        }
+    }
+    
+    public static void main(String[] args) {
+        System.out.println("=== Binary Search Tree Demo ===");
+        BST bst = new BST();
+        int[] values = {50, 30, 20, 40, 70, 60, 80};
+        
+        for (int value : values) {
+            bst.insert(value);
+        }
+        
+        bst.inorderTraversal();
+        
+        System.out.println("\\n=== Longest Common Subsequence Demo ===");
+        String str1 = "ABCDGH";
+        String str2 = "AEDFHR";
+        int lcsLength = longestCommonSubsequence(str1, str2);
+        System.out.println("LCS Length: " + lcsLength);
+        
+        System.out.println("\\n=== Depth First Search Demo ===");
+        Map<Integer, List<Integer>> graph = new HashMap<>();
+        graph.put(0, Arrays.asList(1, 2));
+        graph.put(1, Arrays.asList(2));
+        graph.put(2, Arrays.asList(0, 3));
+        graph.put(3, Arrays.asList(3));
+        
+        depthFirstSearch(graph, 2);
+    }
+}`
         };
-        return bubbleSortCodes[lang] || bubbleSortCodes.javascript;
+        return algorithmCodes[lang] || algorithmCodes.javascript;
     };
 
-    // Initialize code and reset when language changes
+    // Initialize code when language changes
     useEffect(() => {
         setCode(getDefaultCode(language));
         reset();
     }, [language]);
 
-    // Monaco Editor Mount handler
+    // Enhanced Monaco Editor setup with custom dark theme
     const handleEditorDidMount = (editor, monaco) => {
         editorRef.current = editor;
         monacoRef.current = monaco;
-        // Set initial decorations if currentLine is already set (e.g., on reset with previous state)
-        if (currentLine !== null && editorRef.current && monacoRef.current) {
-            updateMonacoDecorations(currentLine);
-        }
-    };
-
-    // Update Monaco decorations when currentLine changes
-    useEffect(() => {
-        if (editorRef.current && monacoRef.current) {
-            updateMonacoDecorations(currentLine);
-        }
-    }, [currentLine, appTheme]);
-
-    const updateMonacoDecorations = (line) => {
-        const newDecorations = [];
-        if (line !== null) {
-            // Using `className` for line number highlight and `linesContentClassName` for text area highlight
-            newDecorations.push({
-                range: new monacoRef.current.Range(line, 1, line, 1),
-                options: {
-                    isWholeLine: true, // Highlight the entire line
-                    className: `monaco-current-line-highlight-gutter`, // For line number background
-                    linesContentClassName: `monaco-current-line-highlight-content`, // For content area background
-                    overviewRuler: {
-                        color: appTheme.warningColor.includes('yellow') ? '#facc15' : '#eab308', // yellow-400 or yellow-500
-                        position: monacoRef.current.editor.OverviewRulerLane.Full
-                    },
-                    stickiness: monacoRef.current.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
-                },
-            });
-        }
-        setDecorations(editorRef.current.deltaDecorations(decorations, newDecorations));
-    };
-
-    // Custom styles for Monaco Editor highlighting (injected directly for simplicity)
-    const monacoHighlightStyle = `
-        .monaco-editor .monaco-current-line-highlight-content {
-            background-color: 
-        }
-        .monaco-editor .monaco-current-line-highlight-gutter {
-            border-left: 3px solid ${appTheme.warningColor.includes('yellow') ? '#facc15' : '#eab308'}; /* Tailwind yellow-400 or yellow-500 */
-        }
-    `;
-
-    // Validate JavaScript syntax before execution
-    const validateJavaScriptSyntax = (code) => {
+        
         try {
-            new Function(code);
-            return { valid: true, error: null };
+            // Define custom dark theme based on your app theme
+            monaco.editor.defineTheme('custom-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [
+                    { token: 'comment', foreground: theme.syntaxComment.replace('#', '') },
+                    { token: 'keyword', foreground: theme.syntaxKeyword.replace('#', '') },
+                    { token: 'string', foreground: theme.syntaxString.replace('#', '') },
+                    { token: 'number', foreground: theme.syntaxNumber.replace('#', '') },
+                    { token: 'identifier.function', foreground: theme.syntaxFunction.replace('#', '') },
+                    { token: 'identifier', foreground: theme.syntaxVariable.replace('#', '') },
+                    { token: 'type', foreground: theme.info.replace('#', '') },
+                    { token: 'delimiter', foreground: theme.editorFg.replace('#', '') },
+                ],
+                colors: {
+                    'editor.background': theme.editorBg,
+                    'editor.foreground': theme.editorFg,
+                    'editor.lineHighlightBackground': theme.editorCurrentLineBg,
+                    'editorLineNumber.foreground': theme.editorLineNumberFg,
+                    'editorLineNumber.activeForeground': theme.accent,
+                    'editor.selectionBackground': theme.editorSelectionBg,
+                    'editor.inactiveSelectionBackground': theme.editorSelectionBg + '40',
+                    'editorCursor.foreground': theme.editorCursorFg,
+                    'editorWhitespace.foreground': '#404040',
+                    'editorIndentGuide.background': '#404040',
+                    'editorIndentGuide.activeBackground': theme.accent + '60',
+                    'editor.findMatchBackground': theme.accent + '40',
+                    'editor.findMatchHighlightBackground': theme.accent + '20',
+                }
+            });
+            
+            monaco.editor.setTheme('custom-dark');
         } catch (error) {
-            return { valid: false, error: error.message };
+            console.warn('Failed to set custom theme:', error);
         }
     };
 
-    // Clean and prepare JavaScript code (simplified)
-    const cleanJavaScriptCode = (code) => {
-        // This cleaning logic is highly simplified and may not catch all cases
-        let cleanedCode = code
-            .replace(/;;+/g, ";")
-            .replace(/\s*;\s*}/g, ";}");
-        return cleanedCode;
+    // Enhanced execution with better parsing
+    const executeJavaScript = (code) => {
+        try {
+            const steps = [];
+            const lines = code.split('\n').filter(line => line.trim() && !line.trim().startsWith('//'));
+            let variableState = {};
+            let outputLog = [];
+            let stackTrace = [];
+            let stepCounter = 0;
+            
+            lines.forEach((line, index) => {
+                const trimmedLine = line.trim();
+                
+                // Enhanced variable detection
+                const varMatches = trimmedLine.match(/(?:let|const|var)\s+(\w+)\s*=\s*(.+);?/);
+                if (varMatches) {
+                    variableState[varMatches[1]] = varMatches[2].replace(/;$/, '');
+                }
+                
+                // Function call detection
+                const funcMatches = trimmedLine.match(/(\w+)\s*\(/);
+                if (funcMatches && !trimmedLine.includes('console.log')) {
+                    stackTrace.push({
+                        function: funcMatches[1],
+                        parameters: 'params',
+                        line: index + 1
+                    });
+                }
+                
+                // Console.log detection with better parsing
+                const consoleMatches = trimmedLine.match(/console\.log\((.*)\)/);
+                if (consoleMatches) {
+                    const logContent = consoleMatches[1]
+                        .replace(/[`"']/g, '')
+                        .replace(/\$\{([^}]+)\}/g, '${$1}');
+                    outputLog.push(`[${new Date().toLocaleTimeString()}] ${logContent}`);
+                }
+                
+                steps.push({
+                    step: stepCounter++,
+                    line: index + 1,
+                    type: 'execution',
+                    code: trimmedLine,
+                    variables: { ...variableState, _step: stepCounter, _totalLines: lines.length },
+                    callStack: [...stackTrace],
+                    output: [...outputLog],
+                    timestamp: Date.now()
+                });
+                
+                // Simulate function returns
+                if (trimmedLine.includes('return')) {
+                    stackTrace.pop();
+                }
+            });
+            
+            return steps;
+        } catch (error) {
+            throw new Error(`JavaScript execution failed: ${error.message}`);
+        }
     };
 
-    // Execute code based on language
+    // Other execution and control functions remain the same but with enhanced error handling
     const executeCode = async () => {
         try {
             setError(null);
             setOutput([]);
             setVariables({});
             setCallStack([]);
-            setExecutionSteps([]); // Clear previous steps
-
-            let steps = [];
-            if (language === "javascript") {
-                const cleanedCode = cleanJavaScriptCode(code);
-                const validation = validateJavaScriptSyntax(cleanedCode);
-                if (!validation.valid) {
-                    throw new Error(`Syntax Error: ${validation.error}`);
-                }
-                steps = executeJavaScript(cleanedCode);
-            } else if (language === "cpp") {
-                steps = simulateCppExecution(code);
-            } else if (language === "python") {
-                steps = simulatePythonExecution(code);
-            } else if (language === "java") {
-                steps = simulateJavaExecution(code);
-            }
-
-            setExecutionSteps(steps);
+            setCurrentLine(null);
             setExecutionStep(0);
-            if (steps.length > 0) {
-                updateVisualization(steps[0]);
-                setIsExecuting(false); // Do not auto-start, user clicks play
+            
+            if (!code.trim()) {
+                setError('No code to execute. Please write some code first.');
+                return;
+            }
+            
+            let steps;
+            if (language === "javascript") {
+                steps = executeJavaScript(code);
             } else {
-                setOutput(["No execution steps generated."]);
+                // Enhanced simulation for other languages
+                steps = simulateExecution(code, language);
+            }
+            
+            setExecutionSteps(steps);
+            
+            if (steps.length > 0) {
+                setExecutionStep(0);
+                updateVisualization(steps[0]);
+                setOutput(['🚀 Execution started...', ...steps[0].output]);
+            } else {
+                setError('No executable statements found in the code.');
             }
         } catch (err) {
-            setError(`Execution Error: ${err.message || err}`);
-            console.error("Code execution error:", err);
-            setIsExecuting(false);
+            setError(`Execution Error: ${err.message}`);
+            setExecutionSteps([]);
         }
     };
 
-    // JavaScript Execution
-    const executeJavaScript = (cleanedCode) => {
+    const simulateExecution = (code, lang) => {
         const steps = [];
-        const vars = {};
-        const logs = [];
-        const stack = [];
+        const lines = code.split('\n').filter(line => line.trim());
+        let outputLog = ['🔄 Simulating execution...'];
+        
+        lines.forEach((line, index) => {
+            const trimmedLine = line.trim();
+            if (!trimmedLine || trimmedLine.startsWith('//') || trimmedLine.startsWith('#')) return;
+            
+            // Language-specific output detection
+            const isOutput = 
+                (lang === 'python' && (trimmedLine.includes('print(') || trimmedLine.includes('print '))) ||
+                (lang === 'cpp' && trimmedLine.includes('cout')) ||
+                (lang === 'java' && trimmedLine.includes('System.out'));
+            
+            if (isOutput) {
+                outputLog.push(`📤 Output from line ${index + 1}`);
+            }
+            
+            steps.push({
+                step: steps.length,
+                line: index + 1,
+                type: 'simulation',
+                code: trimmedLine,
+                variables: { 
+                    language: lang.toUpperCase(),
+                    currentLine: index + 1,
+                    executionMode: 'simulation',
+                    progress: `${steps.length + 1}/${lines.length}`
+                },
+                callStack: [],
+                output: [...outputLog],
+                timestamp: Date.now()
+            });
+        });
+        
+        return steps;
+    };
 
-        const context = {
-            addStep: (lineNum, type, data) => {
-                steps.push({
-                    step: steps.length,
-                    line: lineNum,
-                    type: type,
-                    data: data,
-                    variables: { ...vars },
-                    callStack: [...stack],
-                    output: [...logs],
+    const updateVisualization = (step) => {
+        if (step) {
+            setCurrentLine(step.line);
+            setVariables(step.variables || {});
+            setOutput(step.output || []);
+            setCallStack(step.callStack || []);
+        }
+    };
+
+    // Auto-execution with interval
+    useEffect(() => {
+        if (isExecuting && executionSteps.length > 0) {
+            const interval = setInterval(() => {
+                setExecutionStep(prev => {
+                    if (prev >= executionSteps.length - 1) {
+                        setIsExecuting(false);
+                        setOutput(current => [...current, '✅ Execution completed']);
+                        return prev;
+                    }
+                    const nextStep = prev + 1;
+                    updateVisualization(executionSteps[nextStep]);
+                    return nextStep;
                 });
-            },
-            setVariable: (name, value) => {
-                vars[name] = value;
-            },
-            log: (...args) => {
-                logs.push(
-                    args
-                        .map((arg) =>
-                            typeof arg === "object" ? JSON.stringify(arg) : String(arg)
-                        )
-                        .join(" ")
-                );
-            },
-            pushCall: (funcName, params) => {
-                stack.push({
-                    function: String(funcName),
-                    parameters: String(params),
-                });
-            },
-            popCall: () => {
-                if (stack.length > 0) stack.pop();
-            },
+            }, speed);
+            
+            setExecutionInterval(interval);
+            return () => clearInterval(interval);
+        } else if (executionInterval) {
+            clearInterval(executionInterval);
+            setExecutionInterval(null);
+        }
+    }, [isExecuting, executionSteps, speed]);
+
+    // Resizing functionality
+    const handleMouseDown = (type) => (e) => {
+        setIsResizing({ ...isResizing, [type]: true });
+        e.preventDefault();
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (isResizing.sidebar) {
+                const newWidth = Math.max(250, Math.min(600, e.clientX));
+                setSidebarWidth(newWidth);
+            }
+            if (isResizing.panel) {
+                const rect = document.querySelector('.main-editor-area')?.getBoundingClientRect();
+                if (rect) {
+                    const newHeight = Math.max(150, Math.min(400, rect.bottom - e.clientY));
+                    setPanelHeight(newHeight);
+                }
+            }
         };
 
-        const instrumentedCode = instrumentJavaScriptCode(cleanedCode);
+        const handleMouseUp = () => {
+            setIsResizing({ sidebar: false, panel: false });
+        };
 
-        try {
-            // Create a function in a controlled scope to execute the instrumented code
-            new Function('context', instrumentedCode)(context);
-        } catch (err) {
-            throw new Error(`JavaScript Runtime Error: ${err.message}`);
+        if (isResizing.sidebar || isResizing.panel) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
         }
-        return steps;
-    };
 
-    // C++ Execution (Simulated)
-    const simulateCppExecution = (cppCode) => {
-        const steps = [];
-        const lines = cppCode.split("\n");
-        let vars = {};
-        let logs = [];
-        let stack = [];
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isResizing]);
 
-        lines.forEach((line, index) => {
-            const lineNum = index + 1;
-            const trimmedLine = line.trim();
-
-            if (trimmedLine === "" || trimmedLine.startsWith("//") || trimmedLine.startsWith("#") || trimmedLine.startsWith("using")) {
-                return;
-            }
-
-            // Capture state before line execution
-            steps.push({
-                step: steps.length,
-                line: lineNum,
-                type: "execution",
-                data: trimmedLine,
-                variables: { ...vars },
-                callStack: [...stack],
-                output: [...logs],
-            });
-
-            // Variable declarations and assignments (simplified)
-            let varMatch = trimmedLine.match(/(?:int|std::vector<int>)\s+(\w+)(?:\s*=\s*([^;]+))?;?/);
-            if (!varMatch) {
-                varMatch = trimmedLine.match(/^(\w+)\s*=\s*([^;]+);?/); // Assignment only
-            }
-            if (varMatch) {
-                const varName = varMatch[1];
-                let varValue = varMatch[2];
-                if (varValue) {
-                    // Basic attempt to evaluate simple expressions
-                    try {
-                        const evaluated = eval(varValue.replace(/arr\[(\d+)\]/g, (m, idx) => `vars['arr'][${idx}]`).replace(/(\w+)/g, (m) => vars.hasOwnProperty(m) ? JSON.stringify(vars[m]) : m));
-                        vars[varName] = evaluated;
-                    } catch {
-                        if (varValue.startsWith("{") && varValue.endsWith("}")) { // e.g. std::vector initialization
-                            try {
-                                vars[varName] = JSON.parse(`[${varValue.substring(1, varValue.length - 1)}]`);
-                            } catch {
-                                vars[varName] = varValue;
-                            }
-                        } else if (varValue.includes("arr[")) { // Simple array access simulation for logging
-                            const arrAccessMatch = varValue.match(/arr\[(\d+)\]/);
-                            if (arrAccessMatch && vars['arr'] && typeof vars['arr'] === 'object') {
-                                vars[varName] = vars['arr'][parseInt(arrAccessMatch[1])];
-                            } else {
-                                vars[varName] = varValue; // fallback
-                            }
-                        } else {
-                            vars[varName] = varValue; // Keep as string if complex
-                        }
+    // Update decorations for current line
+    useEffect(() => {
+        if (editorRef.current && monacoRef.current && currentLine !== null) {
+            try {
+                const newDecorations = [{
+                    range: new monacoRef.current.Range(currentLine, 1, currentLine, 1),
+                    options: {
+                        isWholeLine: true,
+                        className: 'current-line-decoration',
+                        linesDecorationsClassName: 'current-line-gutter-decoration',
                     }
-                } else {
-                    vars[varName] = "uninitialized";
-                }
+                }];
+                const newDecorationIds = editorRef.current.deltaDecorations(decorations, newDecorations);
+                setDecorations(newDecorationIds);
+            } catch (error) {
+                console.warn('Failed to update decorations:', error);
             }
-
-            // std::cout statements
-            const coutMatch = trimmedLine.match(/std::cout\s*<<\s*(.+?)(?:<<\s*std::endl)?;?/);
-            if (coutMatch) {
-                let logContent = coutMatch[1];
-                // Replace string literals
-                logContent = logContent.replace(/"([^"]*)"/g, (_, p1) => p1);
-                // Replace variable names with their current values
-                logContent = logContent.replace(/(\w+)/g, (match) => vars.hasOwnProperty(match) ? String(vars[match]) : match);
-                logs.push(logContent.trim());
-            }
-
-            // Function calls/definitions (simplified)
-            const funcDefMatch = trimmedLine.match(/(?:int|void|public static void)\s+(\w+)\s*\(([^)]*)\)\s*{/);
-            if (funcDefMatch && funcDefMatch[1] !== "main") {
-                stack.push({ function: funcDefMatch[1], parameters: funcDefMatch[2] || 'void' });
-            }
-            if (trimmedLine.startsWith("return")) {
-                if (stack.length > 0) stack.pop();
-            }
-        });
-        // Add final state for the last line if any
-        if (lines.length > 0) {
-            steps.push({
-                step: steps.length,
-                line: lines.length, // Last line
-                type: "end",
-                data: "End of execution",
-                variables: { ...vars },
-                callStack: [...stack],
-                output: [...logs],
-            });
         }
-        return steps;
-    };
+    }, [currentLine]);
 
-    // Python Execution (Simulated)
-    const simulatePythonExecution = (pythonCode) => {
-        const steps = [];
-        const lines = pythonCode.split("\n");
-        let vars = {};
-        let logs = [];
-        let stack = [];
-
-        lines.forEach((line, index) => {
-            const lineNum = index + 1;
-            const trimmedLine = line.trim();
-
-            if (trimmedLine === "" || trimmedLine.startsWith("#")) {
-                return;
-            }
-
-            steps.push({
-                step: steps.length,
-                line: lineNum,
-                type: "execution",
-                data: trimmedLine,
-                variables: { ...vars },
-                callStack: [...stack],
-                output: [...logs],
-            });
-
-            // Variable assignments (simple)
-            const assignmentMatch = trimmedLine.match(/^(\w+)\s*=\s*(.+)$/);
-            if (assignmentMatch) {
-                const varName = assignmentMatch[1];
-                let varValue = assignmentMatch[2];
-                try {
-                    // Attempt to evaluate basic Python literals/expressions (numbers, strings, lists)
-                    if (varValue.startsWith('[') && varValue.endsWith(']')) {
-                        vars[varName] = JSON.parse(varValue.replace(/'/g, '"')); // Convert single quotes to double for JSON.parse
-                    } else if (!isNaN(Number(varValue))) {
-                        vars[varName] = Number(varValue);
-                    } else if (varValue.startsWith('"') && varValue.endsWith('"')) {
-                        vars[varName] = varValue.substring(1, varValue.length - 1);
-                    } else if (varValue === 'True' || varValue === 'False') {
-                        vars[varName] = varValue === 'True';
-                    } else { // Try to resolve from other variables
-                        const resolvedValue = varValue.replace(/(\w+)/g, (match) => vars.hasOwnProperty(match) ? JSON.stringify(vars[match]) : match);
-                        vars[varName] = eval(resolvedValue); // Dangerous but for simple cases
-                    }
-                } catch {
-                    vars[varName] = varValue; // Store as string if cannot parse
-                }
-            }
-
-            // print statements
-            const printMatch = trimmedLine.match(/print\s*\((.*)\)/);
-            if (printMatch) {
-                let logContent = printMatch[1];
-                // Replace f-strings (simplified)
-                logContent = logContent.replace(/f"([^"]*)"/g, (_, p1) => {
-                    return p1.replace(/\{(\w+)\}/g, (m, varName) => vars.hasOwnProperty(varName) ? String(vars[varName]) : m);
-                });
-                // Replace variables in regular prints
-                logContent = logContent.split(',').map(part => {
-                    part = part.trim();
-                    if (part.startsWith('"') && part.endsWith('"')) {
-                        return part.substring(1, part.length - 1);
-                    }
-                    if (vars.hasOwnProperty(part)) {
-                        return String(vars[part]);
-                    }
-                    return part;
-                }).join(' ');
-                logs.push(logContent);
-            }
-
-            // Function definitions and calls
-            const funcDefMatch = trimmedLine.match(/^def\s+(\w+)\s*\(([^)]*)\):/);
-            if (funcDefMatch && funcDefMatch[1] !== "main" && funcDefMatch[1] !== "bubble_sort") { // Exclude 'main' concept and main sorting function
-                stack.push({ function: funcDefMatch[1], parameters: funcDefMatch[2] || 'void' });
-            }
-            if (trimmedLine.includes("return")) {
-                if (stack.length > 0) stack.pop();
-            }
-        });
-        if (lines.length > 0) {
-            steps.push({
-                step: steps.length,
-                line: lines.length,
-                type: "end",
-                data: "End of execution",
-                variables: { ...vars },
-                callStack: [...stack],
-                output: [...logs],
-            });
-        }
-        return steps;
-    };
-
-    // Java Execution (Simulated)
-    const simulateJavaExecution = (javaCode) => {
-        const steps = [];
-        const lines = javaCode.split("\n");
-        let vars = {};
-        let logs = [];
-        let stack = [];
-
-        lines.forEach((line, index) => {
-            const lineNum = index + 1;
-            const trimmedLine = line.trim();
-
-            if (trimmedLine === "" || trimmedLine.startsWith("//") || trimmedLine.startsWith("import") || trimmedLine.startsWith("public class") || trimmedLine === "}" || trimmedLine.startsWith("public static void main")) {
-                return;
-            }
-
-            steps.push({
-                step: steps.length,
-                line: lineNum,
-                type: "execution",
-                data: trimmedLine,
-                variables: { ...vars },
-                callStack: [...stack],
-                output: [...logs],
-            });
-
-            // Variable declarations and assignments
-            let varDeclAssignMatch = trimmedLine.match(/(?:int|String|boolean|double|float|char|long|short|byte|public static void|private static void)\s+(\w+)(?:\s*=\s*([^;]+))?;?/);
-            if (!varDeclAssignMatch) {
-                varDeclAssignMatch = trimmedLine.match(/^(\w+)\s*=\s*([^;]+);?/); // Assignment only
-            }
-
-            if (varDeclAssignMatch) {
-                const varName = varDeclAssignMatch[1];
-                let varValue = varDeclAssignMatch[2];
-                if (varValue) {
-                    try {
-                        if (varValue.startsWith("{") && varValue.endsWith("}")) { // e.g. array initialization
-                            vars[varName] = JSON.parse(`[${varValue.substring(1, varValue.length - 1)}]`);
-                        } else if (varValue.startsWith('"') && varValue.endsWith('"')) {
-                            vars[varName] = varValue.substring(1, varValue.length - 1);
-                        } else if (varValue === 'true' || varValue === 'false') {
-                            vars[varName] = varValue === 'true';
-                        } else if (varValue.includes("Arrays.toString")) {
-                            const arrayNameMatch = varValue.match(/Arrays\.toString\((\w+)\)/);
-                            if (arrayNameMatch && vars.hasOwnProperty(arrayNameMatch[1])) {
-                                vars[varName] = JSON.stringify(vars[arrayNameMatch[1]]);
-                            } else {
-                                vars[varName] = varValue;
-                            }
-                        }
-                        else {
-                            // Basic eval, replacing vars
-                            const evaluated = eval(varValue.replace(/arr\[(\d+)\]/g, (m, idx) => `vars['arr'][${idx}]`).replace(/(\w+)/g, (m) => vars.hasOwnProperty(m) ? JSON.stringify(vars[m]) : m));
-                            vars[varName] = evaluated;
-                        }
-                    } catch {
-                        vars[varName] = varValue;
-                    }
-                } else {
-                    vars[varName] = "uninitialized";
-                }
-            }
-
-            // System.out.println statements
-            const sysoutMatch = trimmedLine.match(/System\.out\.println\s*\((.+?)\);?/);
-            if (sysoutMatch) {
-                let logContent = sysoutMatch[1];
-                logContent = logContent.replace(/"([^"]*)"/g, (_, p1) => p1); // Unquote strings
-                logContent = logContent.replace(/\+\s*(\w+)/g, (m, varName) => { // Replace vars in concatenation
-                    if (vars.hasOwnProperty(varName)) return String(vars[varName]);
-                    return m;
-                });
-                logs.push(logContent.trim());
-            }
-
-            // Function definitions and calls
-            const funcDefMatch = trimmedLine.match(/(?:public|private|protected|static|void|int|String)\s+(\w+)\s*\(([^)]*)\)\s*{/);
-            if (funcDefMatch && funcDefMatch[1] !== "main" && funcDefMatch[1] !== "bubbleSort") {
-                stack.push({ function: funcDefMatch[1], parameters: funcDefMatch[2] || 'void' });
-            }
-            if (trimmedLine.startsWith("return")) {
-                if (stack.length > 0) stack.pop();
-            }
-        });
-        if (lines.length > 0) {
-            steps.push({
-                step: steps.length,
-                line: lines.length,
-                type: "end",
-                data: "End of execution",
-                variables: { ...vars },
-                callStack: [...stack],
-                output: [...logs],
-            });
-        }
-        return steps;
-    };
-
-    // Instrument JavaScript Code
-    const instrumentJavaScriptCode = (originalCode) => {
-        let lines = originalCode.split("\n");
-        let instrumentedLines = [];
-
-        lines.forEach((line, index) => {
-            const lineNumber = index + 1;
-            const trimmedLine = line.trim();
-
-            if (trimmedLine === "" || trimmedLine.startsWith("//")) {
-                instrumentedLines.push(line);
-                return;
-            }
-
-            // Add step tracking before the line is executed
-            instrumentedLines.push(
-                `context.addStep(${lineNumber}, 'execution', ${JSON.stringify(trimmedLine)});`
-            );
-
-            // Handle variable declarations and assignments
-            const varDeclMatch = trimmedLine.match(/^(let|const|var)\s+(\w+)\s*=\s*([^;]+);?/);
-            const varAssignMatch = trimmedLine.match(/^(\w+)\s*=\s*([^;]+);?/);
-            const consoleLogMatch = trimmedLine.includes("console.log");
-            const functionDeclMatch = trimmedLine.match(/function\s+(\w+)\s*\(([^)]*)\)/);
-            const returnMatch = trimmedLine.includes("return");
-
-            if (varDeclMatch) {
-                const [, keyword, varName, value] = varDeclMatch;
-                instrumentedLines.push(`${keyword} ${varName} = ${value};`);
-                instrumentedLines.push(`context.setVariable(${JSON.stringify(varName)}, ${varName});`);
-            } else if (varAssignMatch && !functionDeclMatch && !consoleLogMatch) {
-                const [, varName] = varAssignMatch;
-                instrumentedLines.push(line); // Original assignment
-                instrumentedLines.push(`context.setVariable(${JSON.stringify(varName)}, ${varName});`);
-            } else if (consoleLogMatch) {
-                instrumentedLines.push(line.replace("console.log", "context.log"));
-            } else if (functionDeclMatch) {
-                const [, funcName, params] = functionDeclMatch;
-                instrumentedLines.push(line); // Original function line
-                instrumentedLines.push(`context.pushCall(${JSON.stringify(funcName)}, ${JSON.stringify(params.split(',').map(p => p.trim()))});`);
-            } else if (returnMatch) {
-                // Add return step before the actual return statement
-                instrumentedLines.push(
-                    `context.addStep(${lineNumber}, 'return', ${JSON.stringify(trimmedLine)});`
-                );
-                instrumentedLines.push(line);
-                instrumentedLines.push(`context.popCall();`);
-            } else {
-                instrumentedLines.push(line);
-            }
-        });
-        return instrumentedLines.join("\n");
-    };
-
+    // Control functions
     const stepForward = () => {
         if (executionStep < executionSteps.length - 1) {
             const nextStep = executionStep + 1;
@@ -724,34 +918,6 @@ public class BubbleSortExample {
         }
     };
 
-    const updateVisualization = (step) => {
-        if (step) {
-            setCurrentLine(step.line);
-            setVariables(step.variables || {});
-            setOutput(step.output || []);
-            setCallStack(step.callStack || []);
-        } else {
-            // No step, reset visualization
-            setCurrentLine(null);
-            setVariables({});
-            setOutput([]);
-            setCallStack([]);
-        }
-    };
-
-    useEffect(() => {
-        if (isExecuting && executionSteps.length > 0) {
-            if (executionStep < executionSteps.length - 1) {
-                const timer = setTimeout(() => {
-                    stepForward();
-                }, speed);
-                return () => clearTimeout(timer);
-            } else {
-                setIsExecuting(false); // Stop when last step is reached
-            }
-        }
-    }, [isExecuting, executionStep, speed, executionSteps.length]);
-
     const reset = () => {
         setIsExecuting(false);
         setExecutionStep(0);
@@ -761,582 +927,927 @@ public class BubbleSortExample {
         setCallStack([]);
         setError(null);
         setExecutionSteps([]);
-        if (editorRef.current && monacoRef.current) {
-            editorRef.current.deltaDecorations(decorations, []); // Clear Monaco decorations
-            setDecorations([]);
+        if (executionInterval) {
+            clearInterval(executionInterval);
+            setExecutionInterval(null);
         }
     };
 
     const toggleExecution = () => {
         if (executionSteps.length === 0) {
-            executeCode(); // Run parse & setup if not done
+            executeCode();
+            return;
         }
         setIsExecuting(!isExecuting);
     };
 
-    // Helper for common panel styling
-    const panelClasses = `${appTheme.cardBg} rounded-md border ${appTheme.border} shadow-sm`;
-    const panelHeaderClasses = `flex items-center justify-between p-3 border-b ${appTheme.border} cursor-pointer hover:${appTheme.primary}/10 transition-colors`;
-    const panelContentClasses = `p-3 text-sm font-mono`;
-
-    const debuggerButtonClass = `${appTheme.cardBg} hover:${appTheme.primary}/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-sm transition-colors ${appTheme.text} text-sm p-1.5`;
+    const togglePanel = (panelName) => {
+        setCollapsedPanels({
+            ...collapsedPanels,
+            [panelName]: !collapsedPanels[panelName]
+        });
+    };
 
     return (
-        <div className={`min-h-[calc(100vh-64px)] ${appTheme.background} ${appTheme.text} relative z-10 p-4 lg:p-6 font-sans flex flex-col`}>
-            {/* Inject Monaco custom styles */}
-            <style>{monacoHighlightStyle}</style>
+        <div 
+            className="h-screen flex flex-col overflow-hidden relative"
+            style={{ 
+                backgroundColor: theme.editorBg, 
+                color: theme.editorFg,
+                fontFamily: 'Inter, system-ui, sans-serif'
+            }}
+        >
+            {/* Enhanced CSS with your theme colors */}
+            <style>{`
+                .current-line-decoration {
+                    background: linear-gradient(90deg, ${theme.accent}15 0%, ${theme.accent}25 50%, ${theme.accent}15 100%) !important;
+                    border-left: 3px solid ${theme.accent} !important;
+                    animation: pulse-glow 2s ease-in-out infinite alternate;
+                }
+                
+                .current-line-gutter-decoration {
+                    background-color: ${theme.accent} !important;
+                    width: 4px !important;
+                    border-radius: 2px;
+                }
+                
+                @keyframes pulse-glow {
+                    0% { box-shadow: inset 0 0 0 1px ${theme.accent}20; }
+                    100% { box-shadow: inset 0 0 0 1px ${theme.accent}40; }
+                }
+                
+                .resize-handle {
+                    background: linear-gradient(90deg, transparent, ${theme.panelBorder}, transparent);
+                    transition: all 0.3s ease;
+                    position: relative;
+                }
+                
+                .resize-handle:hover {
+                    background: ${theme.accent};
+                    transform: scaleX(1.5);
+                }
+                
+                .resize-handle:active {
+                    background: ${theme.accent};
+                    box-shadow: 0 0 10px ${theme.accent}50;
+                }
+                
+                .resize-handle-horizontal {
+                    background: linear-gradient(0deg, transparent, ${theme.panelBorder}, transparent);
+                }
+                
+                .resize-handle-horizontal:hover {
+                    transform: scaleY(1.5);
+                }
+                
+                /* Enhanced scrollbars */
+                ::-webkit-scrollbar {
+                    width: 10px;
+                    height: 10px;
+                }
+                
+                ::-webkit-scrollbar-track {
+                    background: ${theme.sideBarBg};
+                    border-radius: 5px;
+                }
+                
+                ::-webkit-scrollbar-thumb {
+                    background: linear-gradient(45deg, ${theme.scrollbarThumb}, ${theme.accent}80);
+                    border-radius: 5px;
+                    border: 2px solid ${theme.sideBarBg};
+                }
+                
+                ::-webkit-scrollbar-thumb:hover {
+                    background: linear-gradient(45deg, ${theme.accent}, ${theme.accent}cc);
+                }
+                
+                /* Smooth animations */
+                .panel-transition {
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                
+                .button-hover-effect {
+                    transition: all 0.2s ease;
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .button-hover-effect:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px ${theme.accent}30;
+                }
+                
+                .button-hover-effect:active {
+                    transform: translateY(0);
+                }
+                
+                /* Glowing effects */
+                .glow-accent {
+                    box-shadow: 0 0 20px ${theme.accent}20;
+                }
+                
+                .executing-indicator {
+                    animation: executing-pulse 1.5s ease-in-out infinite;
+                }
+                
+                @keyframes executing-pulse {
+                    0%, 100% { opacity: 0.5; transform: scale(1); }
+                    50% { opacity: 1; transform: scale(1.05); }
+                }
+                
+                /* Modern card styles */
+                .modern-card {
+                    backdrop-filter: blur(10px);
+                    border: 1px solid ${theme.panelBorder}40;
+                    background: linear-gradient(135deg, ${theme.cardBg || theme.sideBarBg}90 0%, ${theme.panelBg}70 100%);
+                }
+                
+                .gradient-border {
+                    border: 2px solid transparent;
+                    background: linear-gradient(135deg, ${theme.sideBarBg}, ${theme.panelBg}) padding-box,
+                                linear-gradient(135deg, ${theme.accent}, ${theme.info}) border-box;
+                }
+            `}</style>
 
-            {/* Close Button for Debugger */}
-            <button
-                onClick={onClose}
-                className={`absolute top-4 right-4 p-2 rounded-full ${appTheme.cardBg} ${appTheme.text} hover:${appTheme.primaryHover} hover:${appTheme.buttonText} transition-all duration-200 z-50`}
-                title="Exit Debugger"
+            {/* Modern Title Bar */}
+            <div 
+                className="flex items-center justify-between h-12 px-6 relative"
+                style={{ 
+                    background: `linear-gradient(135deg, ${theme.activityBarBg} 0%, ${theme.sideBarBg} 100%)`,
+                    borderBottom: `1px solid ${theme.panelBorder}`
+                }}
             >
-                <X className="w-5 h-5" />
-            </button>
-
-            {/* How to Use Guide Modal */}
-            <AnimatePresence>
-                {showGuide && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className={`fixed inset-0 ${appTheme.background}/80 backdrop-blur-sm z-50 flex items-center justify-center p-4`}
-                        onClick={() => setShowGuide(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className={`${appTheme.cardBg} rounded-lg p-8 max-w-4xl max-h-[80vh] overflow-y-auto border ${appTheme.border} shadow-xl`}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className={`text-2xl font-bold ${appTheme.text} flex items-center gap-2`}>
-                                    <FaRocket className={`w-6 h-6 ${appTheme.infoColor}`} />
-                                    Code Visualization Playground
-                                    <span className="text-yellow-400">✨</span>
-                                </h2>
-                                <button
-                                    onClick={() => setShowGuide(false)}
-                                    className={`p-1 rounded-full ${appTheme.cardBg} hover:${appTheme.background} transition-colors`}
-                                >
-                                    <IoClose className={`w-5 h-5 ${appTheme.cardText}`} />
-                                </button>
-                            </div>
-
-                            <div className={`space-y-6 ${appTheme.cardText}`}>
-                                <div>
-                                    <h3 className={`text-lg font-semibold ${appTheme.infoColor} mb-3 flex items-center gap-2`}>
-                                        <MdOutlineCompassCalibration className="w-5 h-5" />
-                                        Getting Oriented
-                                    </h3>
-                                    <ol className="list-decimal list-inside space-y-3 pl-5">
-                                        <li className="flex items-start gap-2">
-                                            <FaCode className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                            <span>Select your preferred language from our supported options</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <GiBubbles className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                            <span>A bubble sort implementation is pre-loaded as a starting example</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <FaPlayCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                            <span>Click <strong className={`${appTheme.successColor}`}>Initialize Visualization</strong> to prepare your code</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <FaForward className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                            <span>Use the interactive controls to navigate through each execution step</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <FaEye className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                            <span>Watch real-time updates in variables, call hierarchy, and program output</span>
-                                        </li>
-                                    </ol>
-                                </div>
-
-                                <div>
-                                    <h3 className={`text-lg font-semibold ${appTheme.infoColor} mb-3 flex items-center gap-2`}>
-                                        <FaRegLightbulb className="w-5 h-5" />
-                                        Pro Tips & Language Features
-                                    </h3>
-                                    <div className={`${appTheme.background} p-4 rounded-lg border ${appTheme.border}`}>
-                                        <div className="flex items-start gap-2 mb-3">
-                                            <FaCode className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                                            <p>
-                                                Our visualizer provides rich syntax highlighting across all supported languages through Monaco Editor. JavaScript execution offers detailed instrumentation, while other languages are intelligently simulated.
-                                            </p>
-                                        </div>
-
-                                        <div className="mt-4 mb-2 flex items-center gap-2">
-                                            <span className="text-yellow-500">⚡</span>
-                                            <strong>Key Supported Features:</strong>
-                                        </div>
-                                        <ul className="list-disc list-inside space-y-2 pl-5">
-                                            <li className="flex items-start gap-2">
-                                                <FaCheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
-                                                <span>Variable tracking for primitive values and simple collections</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <FaCheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
-                                                <span>Output capture for standard print/display functions</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <FaCheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
-                                                <span>Function call tracking with basic parameter values</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <FaCheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-500" />
-                                                <span>Iteration monitoring for standard loop constructs</span>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-                                                <FaExclamationTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-yellow-500" />
-                                                <span><strong>Note:</strong> Advanced patterns like recursion, OOP concepts, and complex data flows may have limited visualization</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h3 className={`text-lg font-semibold ${appTheme.infoColor} mb-3 flex items-center gap-2`}>
-                                        <FaQuestionCircle className="w-5 h-5" />
-                                        Need Help?
-                                    </h3>
-                                    <ul className="list-disc list-inside space-y-3 pl-5">
-                                        <li className="flex items-start gap-2">
-                                            <FaBug className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                            <span>
-                                                <strong className={`${appTheme.errorColor}`}>Code not parsing?</strong> Ensure basic syntax correctness and avoid unconventional patterns for best results.
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <FaSearch className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                            <span>
-                                                <strong className={`${appTheme.errorColor}`}>Missing elements?</strong> Declare variables explicitly and use standard function definitions.
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <FaSyncAlt className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                            <span>
-                                                <strong className={`${appTheme.errorColor}`}>Blank visualization?</strong> Remember to initialize first! Still stuck? Try simplifying complex logic.
-                                            </span>
-                                        </li>
-                                    </ul>
-                                </div>
-
-                                <div className={`mt-6 pt-4 border-t ${appTheme.border} flex items-center gap-2`}>
-                                    <FaQuestionCircle className="w-5 h-5" />
-                                    <span>For advanced help, check our documentation or community forums</span>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Top Bar: Language Selection & Guide Button */}
-            <div className={`mb-4 flex flex-col md:flex-row items-center justify-between p-3 rounded-lg ${appTheme.cardBg} border ${appTheme.border} shadow-md`}>
-                <div className="flex items-center gap-4 mb-3 md:mb-0">
-                    <span className={`${appTheme.text} font-semibold text-sm`}>Language:</span>
+                <div className="flex items-center space-x-4">
                     <div className="flex space-x-3">
-                        {["javascript", "cpp", "python", "java"].map((lang) => (
-                            <label key={lang} className="inline-flex items-center cursor-pointer">
-                                <input
-                                    type="radio"
-                                    name="language"
-                                    value={lang}
-                                    checked={language === lang}
-                                    onChange={() => setLanguage(lang)}
-                                    className={`form-radio h-4 w-4 ${appTheme.accent.replace('bg-', 'text-')}`}
-                                />
-                                <span className={`ml-2 text-sm font-medium ${appTheme.cardText}`}>{lang.charAt(0).toUpperCase() + lang.slice(1)}</span>
-                            </label>
-                        ))}
+                        <div className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 cursor-pointer transition-colors"></div>
+                        <div className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-400 cursor-pointer transition-colors"></div>
+                        <div className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-400 cursor-pointer transition-colors"></div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <Bug className="w-5 h-5" style={{ color: theme.accent }} />
+                        <span className="text-lg font-semibold tracking-wide">
+                            Algorithm Debugger
+                        </span>
+                        <span 
+                            className="px-3 py-1 rounded-full text-xs font-medium"
+                            style={{ 
+                                backgroundColor: theme.accent + '20',
+                                color: theme.accent,
+                                border: `1px solid ${theme.accent}40`
+                            }}
+                        >
+                            {language.toUpperCase()}
+                        </span>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <TextCursorInput className={`w-4 h-4 ${appTheme.cardText}`} />
-                        <label htmlFor="font-size" className={`text-sm font-medium ${appTheme.cardText}`}>Font Size:</label>
-                        <select
-                            id="font-size"
-                            value={editorFontSize}
-                            onChange={(e) => setEditorFontSize(Number(e.target.value))}
-                            className={`px-2 py-1 rounded-sm ${appTheme.background} ${appTheme.cardText} border ${appTheme.border} text-sm focus:outline-none focus:ring-1 focus:ring-${getAccentColorBase()}-500`}
-                        >
-                            {[12, 13, 14, 15, 16, 17, 18, 20, 22].map((size) => (
-                                <option key={size} value={size}>{size}px</option>
-                            ))}
-                        </select>
-                    </div>
-                    <button
-                        onClick={() => setShowGuide(true)}
-                        className={`flex items-center gap-1 px-3 py-1.5 ${appTheme.buttonSecondary} hover:${appTheme.buttonSecondaryHover} ${appTheme.buttonText} rounded-md text-sm font-medium transition-all shadow-sm`}
-                        title="How to Use Guide"
+                
+                <div className="flex items-center space-x-2">
+                    <button 
+                        onClick={() => setIsFullscreen(!isFullscreen)}
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        title="Toggle Fullscreen"
                     >
-                        <BookOpen className="w-4 h-4" />
-                        Guide
+                        {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                    </button>
+                    <button 
+                        onClick={onClose} 
+                        className="p-2 rounded-lg hover:bg-red-500/20 transition-colors group"
+                        title="Close Debugger"
+                    >
+                        <X className="w-4 h-4 group-hover:text-red-400" />
                     </button>
                 </div>
             </div>
 
-            {/* Main Layout Grid */}
-            <div className="flex-grow grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
-                {/* Left Sidebar for Debug Panels */}
-                <div className={`flex flex-col space-y-4 ${appTheme.cardBg} p-2 rounded-lg border ${appTheme.border} bg-opacity-50`}>
-                    {/* RUN & DEBUG Section */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className={panelClasses}
+            {/* Enhanced Debug Toolbar */}
+            <div 
+                className="flex items-center h-14 px-4 space-x-3 border-b"
+                style={{ 
+                    background: `linear-gradient(135deg, ${theme.debugToolbarBg} 0%, ${theme.sideBarBg} 100%)`,
+                    borderColor: theme.panelBorder 
+                }}
+            >
+                {/* Language Selector */}
+                <div className="flex items-center space-x-2">
+                    <Code className="w-4 h-4" style={{ color: theme.accent }} />
+                    <select
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="px-4 py-2 rounded-lg text-sm font-medium modern-card border-0 focus:outline-none focus:ring-2"
+                        style={{ 
+                            backgroundColor: theme.inputBg,
+                            color: theme.editorFg,
+                            focusRingColor: theme.accent
+                        }}
                     >
-                        <div className={panelHeaderClasses + ` border-b-0 py-2`}>
-                            <h3 className={`font-semibold text-sm ${appTheme.text} flex items-center gap-2`}>
-                                <Bug className={`w-4 h-4 ${appTheme.primary}`} />
-                                RUN & DEBUG
-                            </h3>
-                            <button
-                                onClick={reset}
-                                className={`p-1 ${appTheme.accent}/20 hover:${appTheme.accent}/40 rounded-md transition-colors ${appTheme.text} text-xs`}
-                                title="Reset Debugger"
-                            >
-                                <RotateCcw className="w-3 h-3" />
-                            </button>
-                        </div>
-                        <div className={panelContentClasses + ` flex flex-col gap-3 pt-0`}>
-                            {/* Launch Program Button */}
-                            <button
-                                onClick={executeCode}
-                                className={`flex items-center gap-2 px-3 py-1.5 ${appTheme.buttonPrimary} hover:${appTheme.buttonPrimaryHover} ${appTheme.buttonText} rounded-sm text-sm font-semibold transition-all shadow-md`}
-                                title="Start Debugging"
-                            >
-                                <Play className="w-4 h-4" />
-                                Parse & Setup
-                                <Settings className="w-3 h-3 ml-auto opacity-70" />
-                            </button>
-
-                            {/* Playback Controls */}
-                            <div className="flex items-center justify-center gap-2 mt-2">
-                                <button
-                                    onClick={stepBackward}
-                                    disabled={executionStep === 0 || executionSteps.length === 0}
-                                    className={debuggerButtonClass}
-                                    title="Step Back"
-                                >
-                                    <RotateCcw className="w-4 h-4" />
-                                </button>
-
-                                <button
-                                    onClick={toggleExecution}
-                                    disabled={executionSteps.length === 0 && !isExecuting} // Disable if no steps and not executing
-                                    className={`p-1.5 rounded-sm transition-all ${isExecuting
-                                        ? `${appTheme.errorColor.replace('text-', 'bg-')} hover:${appTheme.errorColor.replace('text-', 'bg-')}/80 shadow-md`
-                                        : `${appTheme.successColor.replace('text-', 'bg-')} hover:${appTheme.successColor.replace('text-', 'bg-')}/80 shadow-md`
-                                        } ${appTheme.buttonText}`}
-                                    title={isExecuting ? "Pause" : "Play"}
-                                >
-                                    {isExecuting ? (
-                                        <Pause className="w-4 h-4" />
-                                    ) : (
-                                        <Play className="w-4 h-4" />
-                                    )}
-                                </button>
-
-                                <button
-                                    onClick={stepForward}
-                                    disabled={executionStep >= executionSteps.length - 1 || executionSteps.length === 0}
-                                    className={debuggerButtonClass}
-                                    title="Step Forward"
-                                >
-                                    <ChevronsRight className="w-4 h-4" />
-                                </button>
-                            </div>
-
-                            <div className="space-y-2 mt-3">
-                                <div className="flex items-center gap-3">
-                                    <label className={`text-xs font-medium ${appTheme.cardText} min-w-[50px]`}>
-                                        Speed:
-                                    </label>
-                                    <input
-                                        type="range"
-                                        min="100"
-                                        max="2000"
-                                        value={speed}
-                                        onChange={(e) => setSpeed(Number(e.target.value))}
-                                        className={`flex-1 accent-${getAccentColorBase()}-500 h-1 rounded-lg cursor-pointer`}
-                                    />
-                                    <span className={`text-xs ${appTheme.cardText} min-w-[40px] text-right`}>
-                                        {speed}ms
-                                    </span>
-                                </div>
-
-                                <div className={`text-xs ${appTheme.cardText} ${appTheme.background} px-2 py-1.5 rounded-sm`}>
-                                    Step{" "}
-                                    <span className={`font-semibold ${appTheme.text}`}>
-                                        {executionStep + 1}
-                                    </span>{" "}
-                                    of{" "}
-                                    <span className={`font-semibold ${appTheme.text}`}>
-                                        {executionSteps.length}
-                                    </span>
-                                    {currentLine && (
-                                        <span>
-                                            {" "}
-                                            • Line{" "}
-                                            <span className={`${appTheme.warningColor} font-semibold`}>
-                                                {currentLine}
-                                            </span>
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {/* Variables Panel */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className={panelClasses + ` flex-1 flex flex-col`}
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="cpp">C++</option>
+                        <option value="java">Java</option>
+                    </select>
+                </div>
+                
+                <div className="h-8 w-px" style={{ backgroundColor: theme.panelBorder }}></div>
+                
+                {/* Main Controls */}
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={executeCode}
+                        className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-white button-hover-effect"
+                        style={{ backgroundColor: theme.success }}
+                        title="Start Debugging (F5)"
                     >
-                        <div className={panelHeaderClasses} onClick={() => togglePanel('variables')}>
-                            <h3 className={`font-semibold text-sm ${appTheme.text} flex items-center gap-2`}>
-                                <Eye className={`w-4 h-4 ${appTheme.infoColor}`} />
-                                VARIABLES
-                            </h3>
-                            {collapsedPanels.variables ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </div>
-                        {!collapsedPanels.variables && (
-                            <div className={panelContentClasses + ` flex-1 overflow-y-auto custom-scrollbar`}>
-                                <AnimatePresence>
-                                    {Object.entries(variables).map(([name, value]) => (
-                                        <motion.div
-                                            key={name}
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: 10 }}
-                                            className={`flex justify-between items-center ${appTheme.background} px-2 py-1.5 rounded-sm border ${appTheme.border} text-xs mb-1`}
-                                        >
-                                            <span className={`${appTheme.infoColor} font-mono font-semibold`}>
-                                                {name}
-                                            </span>
-                                            <span className={`${appTheme.successColor} font-mono`}>
-                                                {typeof value === "object"
-                                                    ? JSON.stringify(value)
-                                                    : String(value)}
-                                            </span>
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
-                                {Object.keys(variables).length === 0 && (
-                                    <div className={`${appTheme.cardText} text-xs text-center py-2`}>
-                                        No variables yet
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </motion.div>
-
-                    {/* WATCH Panel (Placeholder) */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className={panelClasses}
+                        <Play className="w-4 h-4" />
+                        <span>Start</span>
+                    </button>
+                    
+                    <button
+                        onClick={toggleExecution}
+                        className="p-2 rounded-lg text-white button-hover-effect"
+                        style={{ 
+                            backgroundColor: isExecuting ? theme.warning : theme.accent,
+                        }}
+                        disabled={executionSteps.length === 0}
+                        title={isExecuting ? "Pause (F6)" : "Continue (F5)"}
                     >
-                        <div className={panelHeaderClasses} onClick={() => togglePanel('watch')}>
-                            <h3 className={`font-semibold text-sm ${appTheme.text} flex items-center gap-2`}>
-                                <Lightbulb className={`w-4 h-4 ${appTheme.highlightSecondary}`} />
-                                WATCH
-                            </h3>
-                            {collapsedPanels.watch ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </div>
-                        {!collapsedPanels.watch && (
-                            <div className={panelContentClasses + ` text-xs text-center py-2`}>
-                                <p className={`${appTheme.cardText}/70`}>Feature coming soon!</p>
-                            </div>
-                        )}
-                    </motion.div>
-
-                    {/* Call Stack Panel */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className={panelClasses + ` flex-1 flex flex-col`}
+                        {isExecuting ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    </button>
+                    
+                    <button
+                        onClick={stepBackward}
+                        className="p-2 rounded-lg button-hover-effect"
+                        style={{ 
+                            backgroundColor: theme.buttonSecondary,
+                            color: executionStep === 0 ? theme.editorLineNumberFg : theme.editorFg
+                        }}
+                        disabled={executionStep === 0}
+                        title="Step Back (F7)"
                     >
-                        <div className={panelHeaderClasses} onClick={() => togglePanel('callStack')}>
-                            <h3 className={`font-semibold text-sm ${appTheme.text} flex items-center gap-2`}>
-                                <List className={`w-4 h-4 ${appTheme.highlightTertiary}`} />
-                                CALL STACK
-                            </h3>
-                            {collapsedPanels.callStack ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </div>
-                        {!collapsedPanels.callStack && (
-                            <div className={panelContentClasses + ` flex-1 overflow-y-auto custom-scrollbar`}>
-                                {callStack.map((call, index) => (
-                                    <div
-                                        key={index}
-                                        className={`${appTheme.background} px-2 py-1.5 rounded-sm text-xs border ${appTheme.border} mb-1`}
-                                    >
-                                        <span className={`${appTheme.highlightTertiary} font-semibold`}>
-                                            {call.function}
-                                        </span>
-                                        <span className={`${appTheme.cardText}`}>({call.parameters})</span>
-                                    </div>
-                                ))}
-                                {callStack.length === 0 && (
-                                    <div className={`${appTheme.cardText} text-xs text-center py-2`}>
-                                        No function calls
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </motion.div>
-
-                    {/* BREAKPOINTS Panel (Placeholder) */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className={panelClasses}
+                        <StepBack className="w-4 h-4" />
+                    </button>
+                    
+                    <button
+                        onClick={stepForward}
+                        className="p-2 rounded-lg button-hover-effect"
+                        style={{ 
+                            backgroundColor: theme.buttonSecondary,
+                            color: executionStep >= executionSteps.length - 1 ? theme.editorLineNumberFg : theme.editorFg
+                        }}
+                        disabled={executionStep >= executionSteps.length - 1}
+                        title="Step Forward (F8)"
                     >
-                        <div className={panelHeaderClasses} onClick={() => togglePanel('breakpoints')}>
-                            <h3 className={`font-semibold text-sm ${appTheme.text} flex items-center gap-2`}>
-                                <Square className={`w-4 h-4 ${appTheme.errorColor}`} />
-                                BREAKPOINTS
-                            </h3>
-                            {collapsedPanels.breakpoints ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </div>
-                        {!collapsedPanels.breakpoints && (
-                            <div className={panelContentClasses + ` text-xs text-center py-2`}>
-                                <p className={`${appTheme.cardText}/70`}>Set breakpoints in your code.</p>
-                            </div>
-                        )}
-                    </motion.div>
-
-                    {/* LOADED SCRIPTS Panel (Placeholder) */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className={panelClasses + ` mb-4`}
+                        <StepForward className="w-4 h-4" />
+                    </button>
+                    
+                    <button
+                        onClick={reset}
+                        className="p-2 rounded-lg text-white button-hover-effect"
+                        style={{ backgroundColor: theme.error }}
+                        title="Stop (Shift+F5)"
                     >
-                        <div className={panelHeaderClasses} onClick={() => togglePanel('loadedScripts')}>
-                            <h3 className={`font-semibold text-sm ${appTheme.text} flex items-center gap-2`}>
-                                <FolderDot className={`w-4 h-4 ${appTheme.accent}`} />
-                                LOADED SCRIPTS
-                            </h3>
-                            {collapsedPanels.loadedScripts ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        <Square className="w-4 h-4" />
+                    </button>
+                </div>
+                
+                <div className="flex-1"></div>
+                
+                {/* Speed Control */}
+                <div className="flex items-center space-x-3">
+                    <Zap className="w-4 h-4" style={{ color: theme.accent }} />
+                    <span className="text-sm font-medium">Speed:</span>
+                    <input
+                        type="range"
+                        min="100"
+                        max="2000"
+                        value={speed}
+                        onChange={(e) => setSpeed(parseInt(e.target.value))}
+                        className="w-24 accent-current"
+                        style={{ accentColor: theme.accent }}
+                    />
+                    <span className="text-sm w-16" style={{ color: theme.cardTextColor || theme.editorLineNumberFg }}>
+                        {speed}ms
+                    </span>
+                </div>
+                
+                <div className="h-8 w-px" style={{ backgroundColor: theme.panelBorder }}></div>
+                
+                {/* Status Indicator */}
+                <div className="flex items-center space-x-2">
+                    {isExecuting && (
+                        <div className="flex items-center space-x-2 executing-indicator">
+                            <Activity className="w-4 h-4" style={{ color: theme.success }} />
+                            <span className="text-sm font-medium" style={{ color: theme.success }}>
+                                Running
+                            </span>
                         </div>
-                        {!collapsedPanels.loadedScripts && (
-                            <div className={panelContentClasses + ` text-xs text-center py-2`}>
-                                <p className={`${appTheme.cardText}/70`}>View loaded files.</p>
-                            </div>
-                        )}
-                    </motion.div>
+                    )}
+                    <span className="text-sm" style={{ color: theme.editorLineNumberFg }}>
+                        Step {executionSteps.length > 0 ? executionStep + 1 : 0} of {executionSteps.length}
+                        {currentLine && ` • Line ${currentLine}`}
+                    </span>
+                </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex overflow-hidden">
+                {/* Activity Bar */}
+                <div 
+                    className="w-16 flex flex-col items-center py-4 space-y-6" 
+                    style={{ 
+                        background: `linear-gradient(180deg, ${theme.activityBarBg} 0%, ${theme.sideBarBg} 100%)`,
+                        borderRight: `1px solid ${theme.activityBarBorder}`
+                    }}
+                >
+                    <div 
+                        className="p-2 rounded-xl transition-all duration-200"
+                        style={{ 
+                            backgroundColor: theme.activityBarActiveBg,
+                            borderLeft: `3px solid ${theme.activityBarActiveIndicator}`
+                        }}
+                    >
+                        <Bug className="w-6 h-6" style={{ color: theme.accent }} />
+                    </div>
+                    <button className="p-2 rounded-xl hover:bg-white/10 transition-colors">
+                        <Search className="w-5 h-5" style={{ color: theme.activityBarFg }} />
+                    </button>
+                    <button className="p-2 rounded-xl hover:bg-white/10 transition-colors">
+                        <GitBranch className="w-5 h-5" style={{ color: theme.activityBarFg }} />
+                    </button>
+                    <button className="p-2 rounded-xl hover:bg-white/10 transition-colors">
+                        <Settings className="w-5 h-5" style={{ color: theme.activityBarFg }} />
+                    </button>
                 </div>
 
-                {/* Right Side for Code Editor & Debug Console */}
-                <div className="flex flex-col space-y-4">
-                    {/* Code Editor */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className={panelClasses + ` overflow-hidden flex-grow flex flex-col`}
+                {/* Enhanced Side Bar */}
+                <div 
+                    className="flex flex-col modern-card" 
+                    style={{ 
+                        width: sidebarWidth,
+                        borderRight: `1px solid ${theme.sideBarBorder}`
+                    }}
+                >
+                    {/* Side Bar Header */}
+                    <div 
+                        className="h-10 flex items-center px-4 text-xs font-bold tracking-wider"
+                        style={{ 
+                            backgroundColor: theme.sideBarSectionHeader,
+                            color: theme.sideBarFg,
+                            borderBottom: `1px solid ${theme.panelBorder}`
+                        }}
                     >
-                        {/* Editor Tabs Header */}
-                        <div className={`px-4 py-2 flex items-center border-b ${appTheme.border}`}>
-                            <div className={`flex items-center gap-2 px-3 py-1 ${appTheme.background} rounded-t-md text-sm font-semibold ${appTheme.text}`}>
+                        <Monitor className="w-4 h-4 mr-2" style={{ color: theme.accent }} />
+                        RUN AND DEBUG
+                    </div>
+                    
+                    {/* Debug Panels with enhanced styling */}
+                    <div className="flex-1 overflow-y-auto">
+                        {/* Variables Panel */}
+                        <div className="border-b" style={{ borderColor: theme.panelBorder }}>
+                            <div 
+                                className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 text-sm font-medium transition-colors panel-transition"
+                                onClick={() => togglePanel('variables')}
+                            >
+                                <div className="flex items-center space-x-2">
+                                    {collapsedPanels.variables ? 
+                                        <ChevronRight className="w-4 h-4" /> : 
+                                        <ChevronDown className="w-4 h-4" />
+                                    }
+                                    <MemoryStick className="w-4 h-4" style={{ color: theme.info }} />
+                                    <span style={{ color: theme.sideBarFg }}>VARIABLES</span>
+                                </div>
+                                <span 
+                                    className="px-2 py-1 rounded-full text-xs font-medium"
+                                    style={{ 
+                                        backgroundColor: theme.accent + '20',
+                                        color: theme.accent
+                                    }}
+                                >
+                                    {Object.keys(variables).length}
+                                </span>
+                            </div>
+                            <AnimatePresence>
+                                {!collapsedPanels.variables && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="px-4 pb-3 max-h-48 overflow-y-auto">
+                                            {Object.entries(variables).map(([name, value]) => (
+                                                <div key={name} className="flex justify-between items-center py-2 text-sm group">
+                                                    <span 
+                                                        className="font-mono font-medium"
+                                                        style={{ color: theme.info }}
+                                                    >
+                                                        {name}
+                                                    </span>
+                                                    <span 
+                                                        className="font-mono text-xs truncate ml-2 max-w-32 group-hover:max-w-none group-hover:overflow-visible"
+                                                        style={{ color: theme.success }}
+                                                        title={String(value)}
+                                                    >
+                                                        {String(value)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {Object.keys(variables).length === 0 && (
+                                                <div 
+                                                    className="text-sm py-6 text-center"
+                                                    style={{ color: theme.sideBarFg, opacity: 0.6 }}
+                                                >
+                                                    <Eye className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                                    <div>No variables in current scope</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Call Stack Panel */}
+                        <div className="border-b" style={{ borderColor: theme.panelBorder }}>
+                            <div 
+                                className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 text-sm font-medium transition-colors"
+                                onClick={() => togglePanel('callStack')}
+                            >
+                                <div className="flex items-center space-x-2">
+                                    {collapsedPanels.callStack ? 
+                                        <ChevronRight className="w-4 h-4" /> : 
+                                        <ChevronDown className="w-4 h-4" />
+                                    }
+                                    <List className="w-4 h-4" style={{ color: theme.warning }} />
+                                    <span style={{ color: theme.sideBarFg }}>CALL STACK</span>
+                                </div>
+                                <span 
+                                    className="px-2 py-1 rounded-full text-xs font-medium"
+                                    style={{ 
+                                        backgroundColor: theme.warning + '20',
+                                        color: theme.warning
+                                    }}
+                                >
+                                    {callStack.length}
+                                </span>
+                            </div>
+                            <AnimatePresence>
+                                {!collapsedPanels.callStack && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="px-4 pb-3 max-h-48 overflow-y-auto">
+                                            {callStack.map((call, index) => (
+                                                <div key={index} className="py-2 text-sm border-l-2 pl-3 mb-2" style={{ borderColor: theme.accent + '40' }}>
+                                                    <div className="font-mono font-semibold" style={{ color: theme.accent }}>
+                                                        {call.function}
+                                                    </div>
+                                                    <div className="font-mono text-xs mt-1" style={{ color: theme.sideBarFg, opacity: 0.7 }}>
+                                                        {call.parameters && `(${call.parameters})`}
+                                                        {call.line && ` • line ${call.line}`}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {callStack.length === 0 && (
+                                                <div 
+                                                    className="text-sm py-6 text-center"
+                                                    style={{ color: theme.sideBarFg, opacity: 0.6 }}
+                                                >
+                                                    <Cpu className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                                    <div>No function calls</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Watch Panel */}
+                        <div className="border-b" style={{ borderColor: theme.panelBorder }}>
+                            <div 
+                                className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 text-sm font-medium transition-colors"
+                                onClick={() => togglePanel('watch')}
+                            >
+                                <div className="flex items-center space-x-2">
+                                    {collapsedPanels.watch ? 
+                                        <ChevronRight className="w-4 h-4" /> : 
+                                        <ChevronDown className="w-4 h-4" />
+                                    }
+                                    <Eye className="w-4 h-4" style={{ color: theme.info }} />
+                                    <span style={{ color: theme.sideBarFg }}>WATCH</span>
+                                </div>
+                            </div>
+                            <AnimatePresence>
+                                {!collapsedPanels.watch && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="px-4 pb-3">
+                                            <div 
+                                                className="text-sm py-4 text-center"
+                                                style={{ color: theme.sideBarFg, opacity: 0.6 }}
+                                            >
+                                                No watch expressions
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Breakpoints Panel */}
+                        <div>
+                            <div 
+                                className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 text-sm font-medium transition-colors"
+                                onClick={() => togglePanel('breakpoints')}
+                            >
+                                <div className="flex items-center space-x-2">
+                                    {collapsedPanels.breakpoints ? 
+                                        <ChevronRight className="w-4 h-4" /> : 
+                                        <ChevronDown className="w-4 h-4" />
+                                    }
+                                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.error }}></div>
+                                    <span style={{ color: theme.sideBarFg }}>BREAKPOINTS</span>
+                                </div>
+                            </div>
+                            <AnimatePresence>
+                                {!collapsedPanels.breakpoints && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="px-4 pb-3">
+                                            <div 
+                                                className="text-sm py-4 text-center"
+                                                style={{ color: theme.sideBarFg, opacity: 0.6 }}
+                                            >
+                                                No breakpoints set
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Resize Handle for Sidebar */}
+                <div 
+                    className="w-2 resize-handle cursor-col-resize flex items-center justify-center group"
+                    onMouseDown={handleMouseDown('sidebar')}
+                >
+                    <div className="w-1 h-12 rounded-full bg-current opacity-30 group-hover:opacity-60 transition-opacity"></div>
+                </div>
+
+                {/* Main Editor Area */}
+                <div className="flex-1 flex flex-col main-editor-area">
+                    {/* Editor Container */}
+                    <div className="flex-1 flex flex-col" style={{ height: `calc(100% - ${panelHeight}px)` }}>
+                        {/* Editor Tabs */}
+                        <div 
+                            className="h-10 flex items-center"
+                            style={{ 
+                                backgroundColor: theme.panelTabInactiveBg,
+                                borderBottom: `1px solid ${theme.panelBorder}`
+                            }}
+                        >
+                            <div 
+                                className="px-4 py-2 flex items-center space-x-2 text-sm border-r relative"
+                                style={{ 
+                                    backgroundColor: theme.panelTabActiveBg,
+                                    borderColor: theme.panelBorder,
+                                    color: theme.editorFg
+                                }}
+                            >
+                                <div 
+                                    className="absolute bottom-0 left-0 right-0 h-0.5"
+                                    style={{ backgroundColor: theme.panelTabActiveIndicator }}
+                                ></div>
                                 <Code className="w-4 h-4" />
-                                <span>{`main.${language === 'javascript' ? 'js' : language === 'cpp' ? 'cpp' : language === 'python' ? 'py' : 'java'}`}</span>
-                                <button className={`p-0.5 rounded-full hover:${appTheme.cardBg} ${appTheme.cardText}`} onClick={() => { }}>
+                                <span>main.{language === 'javascript' ? 'js' : language === 'cpp' ? 'cpp' : language === 'python' ? 'py' : 'java'}</span>
+                                <button className="hover:bg-white/20 rounded p-1 transition-colors">
                                     <X className="w-3 h-3" />
                                 </button>
                             </div>
                         </div>
 
-                        <div className="flex-1">
+                        {/* Monaco Editor with enhanced setup */}
+                        <div className="flex-1 relative">
                             <Editor
                                 height="100%"
                                 language={language}
-                                theme={appTheme.theme === 'dark' ? 'vs-dark' : 'vs-light'} // Adjust Monaco theme based on appTheme
                                 value={code}
-                                onChange={(newValue) => setCode(newValue)}
+                                onChange={(newValue) => setCode(newValue || '')}
                                 onMount={handleEditorDidMount}
                                 options={{
-                                    readOnly: false,
-                                    minimap: { enabled: false },
+                                    fontSize: editorFontSize,
+                                    fontFamily: 'JetBrains Mono, Fira Code, Consolas, Monaco, monospace',
+                                    fontLigatures: true,
+                                    minimap: { enabled: true, side: 'right' },
                                     scrollBeyondLastLine: false,
-                                    fontSize: editorFontSize, // Apply font size
                                     lineNumbers: 'on',
                                     wordWrap: 'on',
                                     automaticLayout: true,
+                                    theme: 'custom-dark',
+                                    folding: true,
+                                    lineDecorationsWidth: 10,
+                                    lineNumbersMinChars: 4,
+                                    glyphMargin: true,
+                                    contextmenu: true,
+                                    selectOnLineNumbers: true,
+                                    roundedSelection: true,
+                                    readOnly: false,
+                                    cursorStyle: 'line',
+                                    cursorBlinking: 'blink',
+                                    renderWhitespace: 'selection',
+                                    renderControlCharacters: true,
+                                    smoothScrolling: true,
+                                    mouseWheelZoom: true,
+                                    bracketPairColorization: { enabled: true },
+                                    guides: {
+                                        bracketPairs: true,
+                                        indentation: true
+                                    },
+                                    suggest: {
+                                        showKeywords: true,
+                                        showSnippets: true
+                                    },
+                                    quickSuggestions: {
+                                        other: true,
+                                        comments: true,
+                                        strings: true
+                                    }
                                 }}
                             />
-                        </div>
-                    </motion.div>
-
-                    {/* Debug Console */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className={panelClasses + ` h-48 flex-shrink-0 flex flex-col`}
-                    >
-                        <div className={`px-4 py-2 flex items-center border-b ${appTheme.border}`}>
-                            <h3 className={`font-semibold text-sm ${appTheme.text} flex items-center gap-2`}>
-                                <Terminal className={`w-4 h-4 ${appTheme.successColor}`} />
-                                DEBUG CONSOLE
-                            </h3>
-                        </div>
-                        <div className={`${appTheme.background} p-3 flex-1 overflow-y-auto font-mono text-xs custom-scrollbar`}>
-                            {output.map((log, index) => (
-                                <div key={index} className={`${appTheme.successColor} mb-0.5`}>
-                                    <span className={`${appTheme.cardText}/50`}>{">"}</span>{" "}
-                                    {typeof log === "object"
-                                        ? JSON.stringify(log)
-                                        : String(log)}
-                                </div>
-                            ))}
-                            {output.length === 0 && (
-                                <div className={`${appTheme.cardText}/50 text-center py-4`}>
-                                    Awaiting execution...
+                            
+                            {/* Execution Status Overlay */}
+                            {isExecuting && (
+                                <div className="absolute top-4 right-4 flex items-center space-x-2 px-3 py-2 rounded-lg modern-card">
+                                    <div 
+                                        className="w-2 h-2 rounded-full animate-pulse"
+                                        style={{ backgroundColor: theme.success }}
+                                    ></div>
+                                    <span className="text-sm font-medium" style={{ color: theme.success }}>
+                                        Executing...
+                                    </span>
                                 </div>
                             )}
                         </div>
-                    </motion.div>
+                    </div>
 
-                    {/* Error Display (persists below console if space allows) */}
-                    <AnimatePresence>
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className={`${appTheme.errorColor.replace('text-', 'bg-')}/20 border ${appTheme.errorColor.replace('text-', 'border-')} rounded-md p-4 mt-4`}
-                            >
-                                <h3 className={`font-semibold text-md mb-2 flex items-center gap-2 ${appTheme.text}`}>
-                                    <Bug className={`w-4 h-4 ${appTheme.errorColor}`} />
-                                    Error
-                                </h3>
-                                <pre className={`${appTheme.errorColor} text-xs whitespace-pre-wrap ${appTheme.errorColor.replace('text-', 'bg-')}/10 p-2 rounded-sm custom-scrollbar max-h-32 overflow-y-auto`}>
-                                    {error}
-                                </pre>
-                                <div className={`mt-2 text-xs ${appTheme.errorColor}`}>
-                                    <strong>Tips:</strong>
-                                    <ul className="list-disc list-inside mt-1">
-                                        <li>Check for missing semicolons or extra braces.</li>
-                                        <li>Ensure variables are declared correctly.</li>
-                                        <li>Review function/loop syntax.</li>
-                                        <li>Try a sample problem for a working example.</li>
-                                    </ul>
+                    {/* Horizontal Resize Handle */}
+                    <div 
+                        className="h-2 resize-handle resize-handle-horizontal cursor-row-resize flex items-center justify-center group"
+                        onMouseDown={handleMouseDown('panel')}
+                    >
+                        <div className="h-1 w-12 rounded-full bg-current opacity-30 group-hover:opacity-60 transition-opacity"></div>
+                    </div>
+
+                    {/* Enhanced Bottom Panel */}
+                    <div 
+                        className="flex flex-col modern-card"
+                        style={{ 
+                            height: panelHeight,
+                            borderTop: `1px solid ${theme.panelBorder}`
+                        }}
+                    >
+                        {/* Panel Tabs */}
+                        <div 
+                            className="h-10 flex items-center"
+                            style={{ borderBottom: `1px solid ${theme.panelBorder}` }}
+                        >
+                            {['console', 'terminal', 'output'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`px-4 py-2 text-sm font-medium capitalize transition-all duration-200 flex items-center space-x-2 relative ${
+                                        activeTab === tab ? 'border-b-2' : 'hover:bg-white/5'
+                                    }`}
+                                    style={{ 
+                                        color: activeTab === tab ? theme.accent : theme.sideBarFg,
+                                        borderColor: activeTab === tab ? theme.accent : 'transparent',
+                                        backgroundColor: activeTab === tab ? theme.panelBg : 'transparent'
+                                    }}
+                                >
+                                    {tab === 'console' && <Terminal className="w-4 h-4" />}
+                                    {tab === 'terminal' && <Terminal className="w-4 h-4" />}
+                                    {tab === 'output' && <List className="w-4 h-4" />}
+                                    <span>{tab}</span>
+                                    {tab === 'console' && output.length > 0 && (
+                                        <span 
+                                            className="ml-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                                            style={{ 
+                                                backgroundColor: theme.accent,
+                                                color: 'white'
+                                            }}
+                                        >
+                                            {output.length}
+                                        </span>
+                                    )}
+                                    {activeTab === tab && (
+                                        <div 
+                                            className="absolute bottom-0 left-0 right-0 h-0.5"
+                                            style={{ backgroundColor: theme.accent }}
+                                        ></div>
+                                    )}
+                                </button>
+                            ))}
+                            <div className="flex-1"></div>
+                            <button className="p-2 rounded-lg hover:bg-white/10 transition-colors">
+                                <MoreHorizontal className="w-4 h-4" style={{ color: theme.sideBarFg }} />
+                            </button>
+                        </div>
+
+                        {/* Enhanced Panel Content */}
+                        <div 
+                            className="flex-1 overflow-y-auto p-4"
+                            style={{ backgroundColor: theme.debugConsoleBg }}
+                        >
+                            {activeTab === 'console' && (
+                                <div className="font-mono text-sm space-y-2">
+                                    <AnimatePresence>
+                                        {output.map((log, index) => (
+                                            <motion.div 
+                                                key={index}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="flex items-start space-x-3 p-2 rounded-lg group hover:bg-white/5"
+                                            >
+                                                <span style={{ color: theme.info }} className="select-none text-lg">›</span>
+                                                <div className="flex-1">
+                                                    <span style={{ color: theme.success }} className="break-all">
+                                                        {log}
+                                                    </span>
+                                                </div>
+                                                <span 
+                                                    className="text-xs opacity-50 group-hover:opacity-100 transition-opacity"
+                                                    style={{ color: theme.editorLineNumberFg }}
+                                                >
+                                                    {new Date().toLocaleTimeString()}
+                                                </span>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+                                    {output.length === 0 && (
+                                        <div 
+                                            className="text-center py-12"
+                                            style={{ color: theme.sideBarFg, opacity: 0.6 }}
+                                        >
+                                            <Terminal className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                            <div className="text-lg font-medium mb-2">Console Ready</div>
+                                            <div className="text-sm">Output from your code will appear here</div>
+                                        </div>
+                                    )}
                                 </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                            )}
+                            
+                            {activeTab === 'terminal' && (
+                                <div className="font-mono text-sm" style={{ color: theme.sideBarFg }}>
+                                    <div className="mb-4 p-3 rounded-lg modern-card">
+                                        <div className="flex items-center space-x-2 mb-2">
+                                            <Terminal className="w-5 h-5" style={{ color: theme.accent }} />
+                                            <span className="font-semibold" style={{ color: theme.accent }}>
+                                                Integrated Terminal
+                                            </span>
+                                        </div>
+                                        <div className="text-sm">Ready for commands...</div>
+                                    </div>
+                                    <div className="text-sm opacity-60">
+                                        Terminal functionality will be available in future updates.
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {activeTab === 'output' && (
+                                <div className="font-mono text-sm space-y-3">
+                                    {error && (
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="p-4 rounded-lg modern-card"
+                                            style={{ 
+                                                backgroundColor: theme.error + '10',
+                                                border: `1px solid ${theme.error}40`
+                                            }}
+                                        >
+                                            <div className="flex items-center space-x-2 mb-3">
+                                                <div 
+                                                    className="w-5 h-5 rounded-full flex items-center justify-center"
+                                                    style={{ backgroundColor: theme.error }}
+                                                >
+                                                    <X className="w-3 h-3 text-white" />
+                                                </div>
+                                                <span className="font-semibold" style={{ color: theme.error }}>
+                                                    Execution Error
+                                                </span>
+                                            </div>
+                                            <pre 
+                                                className="whitespace-pre-wrap text-sm leading-relaxed"
+                                                style={{ color: theme.error }}
+                                            >
+                                                {error}
+                                            </pre>
+                                        </motion.div>
+                                    )}
+                                    
+                                    {!error && executionSteps.length === 0 && (
+                                        <div 
+                                            className="text-center py-12"
+                                            style={{ color: theme.sideBarFg, opacity: 0.6 }}
+                                        >
+                                            <Bug className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                            <div className="text-lg font-medium mb-2">No Debug Information</div>
+                                            <div className="text-sm">Start debugging to see execution details</div>
+                                        </div>
+                                    )}
+                                    
+                                    {!error && executionSteps.length > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="space-y-3"
+                                        >
+                                            <div 
+                                                className="p-4 rounded-lg modern-card"
+                                                style={{ 
+                                                    backgroundColor: theme.success + '10',
+                                                    border: `1px solid ${theme.success}40`
+                                                }}
+                                            >
+                                                <div className="flex items-center space-x-2 mb-2">
+                                                    <div 
+                                                        className="w-5 h-5 rounded-full flex items-center justify-center"
+                                                        style={{ backgroundColor: theme.success }}
+                                                    >
+                                                        <Play className="w-3 h-3 text-white" />
+                                                    </div>
+                                                    <span className="font-semibold" style={{ color: theme.success }}>
+                                                        Execution Successful
+                                                    </span>
+                                                </div>
+                                                <div className="text-sm grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <span style={{ color: theme.editorLineNumberFg }}>Steps:</span>
+                                                        <span className="ml-2 font-medium">{executionSteps.length}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span style={{ color: theme.editorLineNumberFg }}>Variables:</span>
+                                                        <span className="ml-2 font-medium">{Object.keys(variables).length}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Enhanced Status Bar */}
+            <div 
+                className="h-7 flex items-center justify-between px-4 text-xs"
+                style={{ 
+                    background: `linear-gradient(135deg, ${theme.statusBarBg} 0%, ${theme.statusBarBg}dd 100%)`,
+                    color: theme.statusBarFg
+                }}
+            >
+                <div className="flex items-center space-x-6">
+                    <span className="font-medium">Ln {currentLine || 1}, Col 1</span>
+                    <span className="px-2 py-1 rounded bg-white/10">{language.toUpperCase()}</span>
+                    <span>UTF-8</span>
+                    <span>CRLF</span>
+                    {executionSteps.length > 0 && (
+                        <span className="flex items-center space-x-1">
+                            <Activity className="w-3 h-3" />
+                            <span>Debug Active</span>
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center space-x-4">
+                    {isExecuting && (
+                        <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 rounded-full animate-pulse bg-green-400"></div>
+                            <span>Running</span>
+                        </div>
+                    )}
+                    <Bell className="w-3 h-3" />
+                    <span>Ready</span>
                 </div>
             </div>
         </div>

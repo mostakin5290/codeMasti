@@ -27,6 +27,7 @@ import {
 } from 'react-icons/fa';
 import Header from '../components/layout/Header';
 import SearchingVisualizer from '../components/Tools/Visualizer/SearchingVisualizer';
+import SortingVisualizer from '../components/Tools/Visualizer/SortingVisualizer';
 
 const defaultTheme = {
     background: 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900',
@@ -63,10 +64,6 @@ const algorithmCategories = [
         algorithms: [
             { name: 'Linear Search', complexity: 'O(n)', difficulty: 'Easy' },
             { name: 'Binary Search', complexity: 'O(log n)', difficulty: 'Easy' },
-            { name: 'Jump Search', complexity: 'O(√n)', difficulty: 'Medium' },
-            { name: 'Exponential Search', complexity: 'O(log n)', difficulty: 'Medium' },
-            { name: 'Interpolation Search', complexity: 'O(log log n)', difficulty: 'Medium' },
-            { name: 'Ternary Search', complexity: 'O(log₃ n)', difficulty: 'Medium' },
         ],
     },
     {
@@ -223,10 +220,59 @@ const VisualizerPage = () => {
         )
     })).filter(category => category.algorithms.length > 0);
 
+    // Helper function to determine which visualizer to use
+    const getVisualizerComponent = (selectedAlgorithm) => {
+        // Check if it's a searching algorithm
+        if (algorithmCategories[0].algorithms.some(algo => algo.name === selectedAlgorithm.name)) {
+            return (
+                <SearchingVisualizer
+                    algorithm={selectedAlgorithm}
+                    theme={theme}
+                    isPlaying={isPlaying}
+                    speed={speed}
+                    onPlayPause={() => setIsPlaying(!isPlaying)}
+                />
+            );
+        }
+        
+        // Check if it's a sorting algorithm
+        if (algorithmCategories[1].algorithms.some(algo => algo.name === selectedAlgorithm.name)) {
+            return (
+                <SortingVisualizer
+                    algorithm={selectedAlgorithm}
+                    theme={theme}
+                    isPlaying={isPlaying}
+                    speed={speed}
+                    onPlayPause={() => setIsPlaying(!isPlaying)}
+                />
+            );
+        }
+        
+        // Default fallback for other algorithms
+        return (
+            <div className={`w-full h-full ${theme.cardBg} rounded-lg flex items-center justify-center text-xl ${theme.cardText}`}>
+                <div className="text-center">
+                    <div className="text-6xl mb-4">🚀</div>
+                    <h3 className={`text-2xl font-bold mb-2 ${theme.highlight}`}>
+                        {selectedAlgorithm.name}
+                    </h3>
+                    <p className={`${theme.cardText} mb-4`}>
+                        Visualization Coming Soon
+                    </p>
+                    <div className={`text-sm ${theme.cardText} space-y-2`}>
+                        <p>Algorithm: <span className={`${theme.highlight} font-mono`}>{selectedAlgorithm.name}</span></p>
+                        <p>Complexity: <span className={`${theme.infoColor} font-mono`}>{selectedAlgorithm.complexity}</span></p>
+                        <p>Difficulty: <span className={`${getDifficultyColor(selectedAlgorithm.difficulty)} font-mono`}>{selectedAlgorithm.difficulty}</span></p>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
-        <div className={`min-h-screen ${theme.background} ${theme.text} overflow-hidden`}>
+        <div className={`min-h-screen flex flex-col ${theme.background} ${theme.text}`}>
             {/* Animated background elements */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+            <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute -top-4 -right-4 w-72 h-72 bg-cyan-500/5 rounded-full blur-3xl animate-pulse"></div>
                 <div className="absolute top-1/2 -left-4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
                 <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-2000"></div>
@@ -234,166 +280,150 @@ const VisualizerPage = () => {
 
             <Header />
 
-            <div className="flex flex-col lg:flex-row min-h-[calc(100vh-80px)] relative z-10">
-                {/* Left Sidebar */}
-                <aside className={`w-full lg:w-80 p-6 border-r ${theme.border} ${theme.cardBg} lg:min-h-full overflow-y-auto backdrop-blur-sm transition-all duration-300 ease-in-out`}>
-                    <div className="sticky top-0 bg-gray-800/60 backdrop-blur-sm p-4 -m-4 mb-6 rounded-lg">
-                        <h2 className={`text-2xl font-bold mb-4 ${theme.highlight} flex items-center`}>
-                            <FaRocket className="mr-3 text-cyan-400 animate-bounce" />
-                            Algorithm Visualizer
-                        </h2>
+            <div className="flex flex-1 relative z-10">
+                {/* Left Sidebar - Fixed Width */}
+                <aside className={`w-80 flex-shrink-0 border-r ${theme.border} ${theme.cardBg} backdrop-blur-sm`}>
+                    <div className="h-full flex flex-col">
+                        {/* Sidebar Header - Fixed Height */}
+                        <div className={`${theme.cardBg} p-4 border-b ${theme.border} flex-shrink-0`}>
+                            <h2 className={`text-xl font-bold mb-3 ${theme.highlight} flex items-center`}>
+                                <FaRocket className="mr-2 text-cyan-400" />
+                                Algorithm Visualizer
+                            </h2>
 
-                        {/* Search Bar */}
-                        <div className="relative mb-4">
-                            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search algorithms..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className={`w-full pl-10 pr-4 py-2 rounded-lg bg-gray-700/50 border ${theme.border} ${theme.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all duration-200`}
-                            />
+                            {/* Search Bar */}
+                            <div className="relative">
+                                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
+                                <input
+                                    type="text"
+                                    placeholder="Search algorithms..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className={`w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-gray-700/50 border ${theme.border} ${theme.text} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500`}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Scrollable Algorithm List */}
+                        <div className="flex-1 overflow-y-auto p-4">
+                            <nav className="space-y-2">
+                                {filteredCategories.map((category, index) => (
+                                    <div key={category.name} className="transform transition-all duration-300">
+                                        <button
+                                            onClick={() => toggleCategory(category.name)}
+                                            className={`flex items-center justify-between w-full py-3 px-3 rounded-lg text-sm font-semibold transition-all duration-300 ${theme.cardText} hover:bg-gray-700/50 hover:text-white group`}
+                                        >
+                                            <span className="flex items-center">
+                                                <div className={`p-1.5 rounded-lg ${category.bgColor} mr-2`}>
+                                                    <category.icon className={`${category.color} text-sm`} />
+                                                </div>
+                                                <span className="truncate">{category.name}</span>
+                                                <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-600/50 ${theme.cardText}`}>
+                                                    {category.algorithms.length}
+                                                </span>
+                                            </span>
+                                            {expandedCategory === category.name ? (
+                                                <FaChevronDown className="text-xs" />
+                                            ) : (
+                                                <FaChevronRight className="text-xs" />
+                                            )}
+                                        </button>
+
+                                        <div className={`overflow-hidden transition-all duration-300 ${expandedCategory === category.name ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                            <ul className="ml-4 mt-1 space-y-1">
+                                                {category.algorithms.map((algorithm) => (
+                                                    <li key={algorithm.name}>
+                                                        <button
+                                                            onClick={() => handleAlgorithmSelect(algorithm)}
+                                                            className={`w-full text-left py-2 px-3 rounded-lg text-xs transition-all duration-300 hover:bg-gray-700/30 ${selectedAlgorithm?.name === algorithm.name
+                                                                ? `${theme.highlight} bg-cyan-500/10 border-l-2 border-cyan-500`
+                                                                : theme.cardText
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="font-medium truncate pr-2">{algorithm.name}</span>
+                                                                <span className={`text-xs px-1.5 py-0.5 rounded ${getDifficultyColor(algorithm.difficulty)} bg-current/10 flex-shrink-0`}>
+                                                                    {algorithm.difficulty}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between mt-1">
+                                                                <span className="text-xs text-gray-400">
+                                                                    {algorithm.complexity}
+                                                                </span>
+                                                                {selectedAlgorithm?.name === algorithm.name && (
+                                                                    <FaBolt className="text-cyan-400 text-xs" />
+                                                                )}
+                                                            </div>
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                ))}
+                            </nav>
                         </div>
                     </div>
-
-                    <nav className="space-y-2">
-                        {filteredCategories.map((category, index) => (
-                            <div
-                                key={category.name}
-                                className="transform transition-all duration-300 ease-in-out hover:scale-[1.02]"
-                                style={{ animationDelay: `${index * 100}ms` }}
-                            >
-                                <button
-                                    onClick={() => toggleCategory(category.name)}
-                                    className={`flex items-center justify-between w-full py-4 px-4 rounded-xl text-lg font-semibold transition-all duration-300 ${theme.cardText} hover:bg-gray-700/50 hover:text-white group relative overflow-hidden`}
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                                    <span className="flex items-center relative z-10">
-                                        <div className={`p-2 rounded-lg ${category.bgColor} mr-3 transition-all duration-300 group-hover:scale-110`}>
-                                            <category.icon className={`${category.color} text-lg`} />
-                                        </div>
-                                        {category.name}
-                                        <span className={`ml-2 text-xs px-2 py-1 rounded-full bg-gray-600/50 ${theme.cardText}`}>
-                                            {category.algorithms.length}
-                                        </span>
-                                    </span>
-                                    <div className="relative z-10">
-                                        {expandedCategory === category.name ? (
-                                            <FaChevronDown className="text-sm transition-transform duration-300 transform rotate-180" />
-                                        ) : (
-                                            <FaChevronRight className="text-sm transition-transform duration-300" />
-                                        )}
-                                    </div>
-                                </button>
-
-                                <div className={`overflow-hidden transition-all duration-500 ease-in-out ${expandedCategory === category.name ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                                    }`}>
-                                    <ul className="ml-6 mt-2 space-y-1">
-                                        {category.algorithms.map((algorithm, algIndex) => (
-                                            <li
-                                                key={algorithm.name}
-                                                className="transform transition-all duration-300"
-                                                style={{ animationDelay: `${algIndex * 50}ms` }}
-                                            >
-                                                <button
-                                                    onClick={() => handleAlgorithmSelect(algorithm)}
-                                                    className={`w-full text-left py-3 px-4 rounded-lg text-sm transition-all duration-300 hover:bg-gray-700/30 group relative overflow-hidden ${selectedAlgorithm?.name === algorithm.name
-                                                        ? `${theme.highlight} bg-cyan-500/10 border-l-4 border-cyan-500 font-medium`
-                                                        : theme.cardText
-                                                        }`}
-                                                >
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="font-medium">{algorithm.name}</span>
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className={`text-xs px-2 py-1 rounded ${getDifficultyColor(algorithm.difficulty)} bg-current/10`}>
-                                                                {algorithm.difficulty}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center justify-between mt-1">
-                                                        <span className="text-xs text-gray-400">
-                                                            Time: {algorithm.complexity}
-                                                        </span>
-                                                        {selectedAlgorithm?.name === algorithm.name && (
-                                                            <FaBolt className="text-cyan-400 text-xs animate-pulse" />
-                                                        )}
-                                                    </div>
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        ))}
-                    </nav>
                 </aside>
 
-                {/* Main Content / Visualization Area */}
-                <main className="flex-1 p-8 overflow-auto">
-
+                {/* Main Content Area - Takes Remaining Space */}
+                <main className="flex-1 flex flex-col">
                     {selectedAlgorithm ? (
                         <>
-                            <h1 className={`text-4xl font-extrabold mb-6 ${theme.highlight}`}>
-                                {selectedAlgorithm.name} Visualizer
-                            </h1>
-
-                            {/* Check if it's a searching algorithm */}
-                            {algorithmCategories[0].algorithms.some(algo => algo.name === selectedAlgorithm.name) ? (
-                                <SearchingVisualizer
-                                    algorithm={selectedAlgorithm}
-                                    theme={theme}
-                                    isPlaying={isPlaying}
-                                    speed={speed}
-                                    onPlayPause={() => setIsPlaying(!isPlaying)}
-                                />
-                            ) : (
-                                <div className={`w-full h-96 ${theme.cardBg} rounded-lg flex items-center justify-center text-xl ${theme.cardText}`}>
-                                    [ {selectedAlgorithm.name} Visualization Coming Soon ]
-                                </div>
-                            )}
-                        </>
-                    )
-                        : (
-                            <div className="flex flex-col items-center justify-center h-full text-center animate-fadeIn">
-                                <div className="relative mb-8">
-                                    <FaCodeBranch className={`text-9xl ${theme.primary} opacity-30 animate-pulse`} />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <FaNetworkWired className={`text-4xl ${theme.highlight} animate-spin-slow`} />
-                                    </div>
-                                </div>
-                                <h1 className={`text-5xl font-extrabold mb-6 ${theme.highlight} bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent`}>
-                                    Algorithm Visualizer
+                            {/* Header - Fixed Height */}
+                            <div className="flex-shrink-0 p-4 border-b border-gray-700">
+                                <h1 className={`text-2xl font-bold ${theme.highlight}`}>
+                                    {selectedAlgorithm.name} Visualizer
                                 </h1>
-                                <p className={`${theme.cardText} text-xl max-w-3xl mb-8 leading-relaxed`}>
-                                    Explore the fascinating world of algorithms and data structures through interactive 3D visualizations.
-                                    Select any algorithm from the sidebar to watch it come to life with real-time animations,
-                                    complexity analysis, and step-by-step execution.
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 w-full max-w-4xl">
-                                    <div className={`${theme.cardBg} rounded-xl p-6 border ${theme.border} backdrop-blur-sm transform hover:scale-105 transition-all duration-300`}>
-                                        <FaRocket className="text-3xl text-cyan-400 mb-3 mx-auto" />
-                                        <h3 className="text-lg font-semibold mb-2">Interactive Learning</h3>
-                                        <p className={`${theme.cardText} text-sm`}>
-                                            Step through algorithms at your own pace with interactive controls
-                                        </p>
-                                    </div>
-                                    <div className={`${theme.cardBg} rounded-xl p-6 border ${theme.border} backdrop-blur-sm transform hover:scale-105 transition-all duration-300`}>
-                                        <FaCube className="text-3xl text-blue-400 mb-3 mx-auto" />
-                                        <h3 className="text-lg font-semibold mb-2">3D Visualizations</h3>
-                                        <p className={`${theme.cardText} text-sm`}>
-                                            Experience algorithms in immersive 3D environments
-                                        </p>
-                                    </div>
-                                    <div className={`${theme.cardBg} rounded-xl p-6 border ${theme.border} backdrop-blur-sm transform hover:scale-105 transition-all duration-300`}>
-                                        <FaChartLine className="text-3xl text-green-400 mb-3 mx-auto" />
-                                        <h3 className="text-lg font-semibold mb-2">Performance Analysis</h3>
-                                        <p className={`${theme.cardText} text-sm`}>
-                                            Real-time complexity analysis and performance metrics
-                                        </p>
-                                    </div>
+                            </div>
+
+                            {/* Visualization Content - Auto Height */}
+                            <div className="flex-1 p-4">
+                                <div className="w-full h-auto min-h-[600px]">
+                                    {getVisualizerComponent(selectedAlgorithm)}
                                 </div>
                             </div>
-                        )}
+                        </>
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                            <div className="relative mb-6">
+                                <FaCodeBranch className={`text-7xl ${theme.primary} opacity-30`} />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <FaNetworkWired className={`text-3xl ${theme.highlight}`} />
+                                </div>
+                            </div>
+                            <h1 className={`text-4xl font-bold mb-4 ${theme.highlight}`}>
+                                Algorithm Visualizer
+                            </h1>
+                            <p className={`${theme.cardText} text-lg max-w-2xl mb-6`}>
+                                Explore algorithms through interactive visualizations.
+                                Select any algorithm from the sidebar to begin.
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl">
+                                <div className={`${theme.cardBg} rounded-lg p-4 border ${theme.border}`}>
+                                    <FaRocket className="text-2xl text-cyan-400 mb-2 mx-auto" />
+                                    <h3 className="text-sm font-semibold mb-1">Interactive Learning</h3>
+                                    <p className={`${theme.cardText} text-xs`}>
+                                        Step through algorithms with controls
+                                    </p>
+                                </div>
+                                <div className={`${theme.cardBg} rounded-lg p-4 border ${theme.border}`}>
+                                    <FaCube className="text-2xl text-blue-400 mb-2 mx-auto" />
+                                    <h3 className="text-sm font-semibold mb-1">Visual Learning</h3>
+                                    <p className={`${theme.cardText} text-xs`}>
+                                        Watch algorithms in action
+                                    </p>
+                                </div>
+                                <div className={`${theme.cardBg} rounded-lg p-4 border ${theme.border}`}>
+                                    <FaChartLine className="text-2xl text-green-400 mb-2 mx-auto" />
+                                    <h3 className="text-sm font-semibold mb-1">Performance Analysis</h3>
+                                    <p className={`${theme.cardText} text-xs`}>
+                                        Real-time complexity analysis
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </main>
             </div>
         </div>

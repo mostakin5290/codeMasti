@@ -286,7 +286,7 @@ const ContestOverview = () => {
                     return (
                         <div
                             key={contest._id}
-                            className={`p-7 rounded-2xl border ${appTheme.border}/30 shadow-xl transition-all duration-300 ${appTheme.cardBg} hover:shadow-2xl hover:scale-[1.02] transform hover:-translate-y-1 relative group
+                            className={`p-7 w-100 rounded-2xl border ${appTheme.border}/30 shadow-xl transition-all duration-300 ${appTheme.cardBg} hover:shadow-2xl hover:scale-[1.02] transform hover:-translate-y-1 relative group
                                 animate-in fade-in-0 slide-in-from-bottom-2 duration-500`} // Added entrance animation for each card
                             style={{ animationDelay: `${index * 0.08}s` }} // Staggered animation
                         >

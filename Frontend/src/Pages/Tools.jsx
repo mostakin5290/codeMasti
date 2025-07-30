@@ -6,8 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FaBug, FaCodeBranch, FaPlay, FaProjectDiagram } from 'react-icons/fa';
 import { GiCircuitry } from 'react-icons/gi';
-import CodeDubgger from '../components/Tools/CodeDubgger';
-// REMOVED: AlgorithmSelectionModal, BubbleSortVisualizer, etc.
+import CodeDubgger from '../components/Tools/CodeDubgger'; // This component will likely be used on the new route
 
 const defaultTheme = {
     background: 'bg-gray-900',
@@ -40,15 +39,19 @@ const Tools = () => {
     const theme = { ...defaultTheme, ...themeFromContext };
 
     const mountRef = useRef(null);
-    const mousePosition = useRef({ x: 0, y: 0 }); // Note: mousePosition is declared but not used in the provided code.
-    const [showDebugger, setShowDebugger] = useState(false);
+    const mousePosition = useRef({ x: 0, y: 0 });
+    const [showDebugger, setShowDebugger] = useState(false); // This state will no longer control routing, but can still control background animations
     const [activeTab, setActiveTab] = useState('debugger');
 
     // --- Background Animations ---
     // The background animations should ONLY run when the debugger is not active.
     // The visualizer part is now handled by a separate route/page.
     useEffect(() => {
-        if (showDebugger) return; // Modified condition
+        // The condition here should ideally check the current route if the animations are global,
+        // but for this component, we keep it as is, assuming 'showDebugger' might implicitly
+        // represent being on the 'Tools' overview page vs. a dedicated debugger route.
+        // If the debugger is moved to a new route, then `showDebugger` should always be false here.
+        if (showDebugger) return;
 
         const container = document.createElement('div');
         container.className = 'fixed inset-0 -z-10 overflow-hidden pointer-events-none';
@@ -143,11 +146,11 @@ const Tools = () => {
             window.removeEventListener('resize', handleResize);
             container.remove();
         };
-    }, [showDebugger]); // Dependency updated
+    }, [showDebugger]);
 
     // Three.js initialization (simplified version)
     useEffect(() => {
-        if (showDebugger) return; // Modified condition
+        if (showDebugger) return;
 
         let scene, camera, renderer, controls;
         let cubes = [];
@@ -242,7 +245,7 @@ const Tools = () => {
             if (renderer) renderer.dispose();
             if (controls) controls.dispose();
         };
-    }, [showDebugger]); // Dependency updated
+    }, [showDebugger]);
     // --- End Background Animations ---
 
     const sectionClasses = `backdrop-blur-lg border ${theme.border}/30 shadow-2xl rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-${theme.primary.replace('bg-', '')}/20`;
@@ -252,15 +255,14 @@ const Tools = () => {
             <Header />
 
             {/* Conditional Rendering of Main Content */}
-            {showDebugger ? (
-                // Renders ONLY the AlgoVisualiser (Debugger) component
+            {/* The CodeDubgger component should now be rendered on its own route, e.g., /tools/debug */}
+            {/* So, we remove the direct conditional rendering here */}
+            {/* {showDebugger ? (
                 <CodeDubgger appTheme={theme} onClose={() => setShowDebugger(false)} />
-            ) : (
-                // This block is the default landing page for 'Tools',
-                // showing the main heading, description, and tab navigation.
+            ) : ( */}
                 <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
-                    <div className="text-center mb-12">
-                        <h1 className={`text-4xl sm:text-6xl font-extrabold mb-6 bg-gradient-to-r ${theme.primary} ${theme.highlight} bg-clip-text text-transparent`}>
+                    <div className="text-center mb-8">
+                        <h1 className={`text-4xl sm:text-6xl font-extrabold mb-4 bg-gradient-to-r ${theme.primary} ${theme.highlight} bg-clip-text text-transparent`}>
                             Code Visualization Studio
                         </h1>
                         <p className={`text-xl ${theme.cardText} max-w-3xl mx-auto leading-relaxed`}>
@@ -269,14 +271,13 @@ const Tools = () => {
                     </div>
 
                     {/* Tab navigation */}
-                    <div className={`flex mb-8 p-1 rounded-xl ${theme.cardBg} border ${theme.border}`}>
+                    <div className={`flex mb-4 p-1 rounded-xl ${theme.cardBg} border ${theme.border}`}>
                         {['debugger', 'visualizer'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => {
                                     setActiveTab(tab);
-                                    // Ensure debugger is off when switching tabs
-                                    setShowDebugger(false);
+                                    // setShowDebugger(false); // No longer strictly needed if debugger is on its own route
                                 }}
                                 className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === tab ? `${theme.buttonPrimary} ${theme.buttonText}` : `${theme.cardText} hover:${theme.background}`}`}
                             >
@@ -288,7 +289,7 @@ const Tools = () => {
                     </div>
 
                     {/* Tab content (initial state for debugger or visualizer) */}
-                    <div className="w-full max-w-6xl">
+                    <div className="w-full max-w-5xl">
                         {activeTab === 'debugger' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className={`${sectionClasses} p-8 flex flex-col items-center text-center group`}>
@@ -301,12 +302,13 @@ const Tools = () => {
                                     <p className={`${theme.cardText} mb-6`}>
                                         Execute your code line by line with visual variable tracking and call stack visualization.
                                     </p>
-                                    <button
-                                        onClick={() => setShowDebugger(true)}
+                                    {/* MODIFIED: Changed button to Link */}
+                                    <Link
+                                        to="/tools/debug" // Target route for the debugger
                                         className={`px-8 py-3 rounded-lg ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} font-semibold transition-all flex items-center`}
                                     >
                                         <FaPlay className="mr-2" /> Start Debug Session
-                                    </button>
+                                    </Link>
                                 </div>
 
                                 <div className={`${sectionClasses} p-8 flex flex-col`}>
@@ -344,7 +346,7 @@ const Tools = () => {
                                         <p className={`${theme.cardText} mb-6`}>
                                             Watch your data structures and algorithms come to life with animated 3D representations.
                                         </p>
-                                        <Link // Changed from button to Link
+                                        <Link
                                             to="/tools/visualizer"
                                             className={`px-8 py-3 rounded-lg ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} font-semibold transition-all flex items-center`}
                                         >
@@ -376,7 +378,7 @@ const Tools = () => {
                         )}
                     </div>
                 </div>
-            )}
+            {/* ) // Closing the conditional rendering block */}
 
             {/* Three.js Canvas Container - More subtle background */}
             <div ref={mountRef} className="fixed inset-0 -z-10 opacity-20 pointer-events-none" />

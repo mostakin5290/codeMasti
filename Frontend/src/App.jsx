@@ -23,7 +23,6 @@ import TermsPage from "./components/FooterPage/Legal/TermsPage";
 import PrivacyPolicyPage from "./components/FooterPage/Legal/PrivacyPolicyPage";
 import CookiePolicyPage from "./components/FooterPage/Legal/CookiePolicyPage";
 import CreateDiscussPost from "./features/discuss/CreateDiscussPost";
-import DiscussPostDetail from "./features/discuss/DiscussPostDetail";
 import GitHubCallback from './features/auth/GitHubCallback';
 import ExplorePremium from "./components/Premium/ExplorePremium";
 
@@ -69,7 +68,7 @@ import GameRoomDetailsPage from "./Pages/GameRoomDetailsPage";
 import Tools from "./Pages/Tools";
 import SplashCursor from "./components/animation/SplashCursor"
 import VisualizerPage from "./Pages/VisualizerPage";
-
+import CodeDubgger from "./components/Tools/CodeDubgger"
 
 const AppRoutes = () => {
     const { theme } = useTheme();
@@ -135,7 +134,6 @@ const AppRoutes = () => {
                 <Route path="/discuss" element={isAuthenticated ? <DiscussPage /> : <Navigate to="/" />} />
                 <Route path="/discuss/new" element={isAuthenticated ? <CreateDiscussPost /> : <Navigate to="/" />} />
                 <Route path="/discuss/edit/:slug" element={isAuthenticated ? <CreateDiscussPost /> : <Navigate to="/" />} />
-                <Route path="/discuss/:slug" element={isAuthenticated ? <DiscussPostDetail /> : <Navigate to="/" />} />
                 <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/" />} />
                 <Route path="/profile/edit" element={isAuthenticated ? <EditProfile /> : <Navigate to="/" />} />
                 <Route path="/profile/:userId" element={<ProfilePage />} />
@@ -156,8 +154,9 @@ const AppRoutes = () => {
                 <Route path="/test" element={<PremiumWelcomePage />} />
                 <Route path="/coming" element={<ComingSoonPage />} />
                 <Route path="/world-rank" element={<RankPage />} />
- <Route path="/tools/visualizer" element={<VisualizerPage/> }/>
-                {/* NEW GAME ROUTES */}
+                <Route path="/tools/debug" element={<CodeDubgger appTheme={theme}/>} />
+                <Route path="/tools/visualizer" element={<VisualizerPage />} />
+                {/* GAME ROUTES */}
                 <Route path="/game" element={isAuthenticated ? <GamePage /> : <Navigate to="/" />} />
                 <Route path="/game/room/:roomId" element={isAuthenticated ? <GameRoomDetailsPage /> : <Navigate to="/" />} />
                 <Route path="/game/room/:roomId/play" element={isAuthenticated ? <GameCodefield /> : <Navigate to="/" />} />

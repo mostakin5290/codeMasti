@@ -60,8 +60,6 @@ const FrontPage = () => {
             "name": 'LinkedIn',
             "link": "https://www.linkedin.com/company/107868597/admin/dashboard"
         },
-
-
     ]
 
     return (

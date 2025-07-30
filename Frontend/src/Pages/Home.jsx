@@ -4,7 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FiStar, FiArrowRight } from 'react-icons/fi';
+import { FiStar, FiArrowRight, FiCode, FiZap, FiTrendingUp } from 'react-icons/fi';
 import { fetchUser } from '../features/auth/authSlice';
 import { useTheme } from '../context/ThemeContext';
 import Lottie from 'lottie-react';
@@ -13,7 +13,8 @@ import celebrationAnimation from '../assets/lotties/celebration.json';
 import codingAnimation from '../assets/lotties/coding.json';
 import ideaAnimation from '../assets/lotties/Idea.json';
 import successAnimation from '../assets/lotties/success.json';
-import Aurora from '../components/animation/Aurora'
+import Aurora from '../components/animation/Aurora';
+
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
     primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
@@ -66,7 +67,6 @@ const tailwindColorMap = {
     'black': '#000000',
     'white': '#FFFFFF',
 };
-
 
 const Home = () => {
     const { theme: themeFromContext } = useTheme();
@@ -149,8 +149,76 @@ const Home = () => {
         );
     };
 
+    // Modern Animated Border Component
+    const AnimatedBorderCard = ({ children, className = '' }) => {
+        return (
+            <div className={`relative ${className}`}>
+                {/* Animated Border */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-xl blur opacity-40 group-hover:opacity-75 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-xl opacity-40 animate-pulse"></div>
+                {/* Content */}
+                <div className="relative bg-gray-900 rounded-xl">
+                    {children}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className={`min-h-screen ${theme.background} ${theme.text} font-sans scroll-smooth overflow-x-hidden`}>
+            {/* Add custom CSS for animations */}
+            <style jsx>{`
+                @keyframes tilt {
+                    0%, 50%, 100% {
+                        transform: rotate(0deg);
+                    }
+                    25% {
+                        transform: rotate(0.5deg);
+                    }
+                    75% {
+                        transform: rotate(-0.5deg);
+                    }
+                }
+                .animate-tilt {
+                    animation: tilt 10s infinite linear;
+                }
+                @keyframes gradient-x {
+                    0%, 100% {
+                        background-position: 0% 50%;
+                    }
+                    50% {
+                        background-position: 100% 50%;
+                    }
+                }
+                .animate-gradient-x {
+                    animation: gradient-x 15s ease infinite;
+                    background-size: 400% 400%;
+                }
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px); }
+                    50% { transform: translateY(-20px); }
+                }
+                .animate-float {
+                    animation: float 6s ease-in-out infinite;
+                }
+                @keyframes glow {
+                    0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+                    50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.6), 0 0 60px rgba(59, 130, 246, 0.4); }
+                }
+                .animate-glow {
+                    animation: glow 2s ease-in-out infinite alternate;
+                }
+                @keyframes border-flow {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                .animate-border-flow {
+                    animation: border-flow 3s ease infinite;
+                    background-size: 200% 200%;
+                }
+            `}</style>
+
             {/* Celebration animation (hidden until triggered) */}
             <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
                 <Lottie
@@ -169,12 +237,16 @@ const Home = () => {
 
             <Header />
 
-            <section className="relative overflow-hidden py-20 md:py-32 lg:py-40 flex items-center justify-center">
-                <div className="absolute inset-0 z-0"> {/* Changed z-1 to z-0 to put Aurora behind content */}
+            {/* Hero Section - Enhanced */}
+            <section className="relative overflow-hidden py-15 md:py-28 lg:py-15 flex items-center justify-center">
+                <div className="absolute inset-0 z-0">
+                    {/* Enhanced floating elements */}
+                    <div className={`absolute top-1/4 left-1/4 w-20 h-20 rounded-full ${theme.highlightSecondary.replace('text-', 'bg-')}/20 blur-xl animate-float`}></div>
+                    <div className={`absolute top-1/3 right-1/4 w-32 h-32 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/20 blur-xl animate-float`} style={{ animationDelay: '2s' }}></div>
+                    <div className={`absolute bottom-1/4 right-1/3 w-24 h-24 rounded-full ${theme.highlight.replace('text-', 'bg-')}/20 blur-xl animate-float`} style={{ animationDelay: '4s' }}></div>
 
-                    <div className={`absolute top-1/4 left-1/4 w-16 h-16 rounded-full ${theme.highlightSecondary.replace('text-', 'bg-')}/20 blur-xl animate-float-and-rotate`}></div>
-                    <div className={`absolute top-1/3 right-1/4 w-24 h-24 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/20 blur-xl animate-float-and-rotate animation-delay-2000`}></div>
-                    <div className={`absolute bottom-1/4 right-1/3 w-20 h-20 rounded-full ${theme.highlight.replace('text-', 'bg-')}/20 blur-xl animate-float-and-rotate animation-delay-4000`}></div>
+                    {/* Gradient orbs */}
+                    <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-gradient-to-r from-purple-400/10 via-pink-400/10 to-cyan-400/10 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
 
                     {auroraColorStops.length >= 3 && (
                         <Aurora
@@ -188,8 +260,8 @@ const Home = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     <div className="text-center lg:text-left animate-fade-in-up">
                         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight">
-                            <span className="block">Master Modern</span>
-                            <span className={`block ${getPrimaryGradient()} bg-clip-text text-transparent mt-2`}>
+                            <span className="block bg-gradient-to-r from-white to-gray-300 bg-clip-text ">Master Modern</span>
+                            <span className={`block bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')} bg-clip-text  mt-2 animate-gradient-x`}>
                                 Coding Challenges
                             </span>
                         </h1>
@@ -197,40 +269,36 @@ const Home = () => {
                             Join our platform where developers sharpen their skills through interactive coding exercises,
                             real-world projects, and competitive programming.
                         </p>
+
+                        {/* Enhanced CTA Buttons */}
                         <div className="mt-10 flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-4 animate-fade-in-up delay-400">
                             <Link
                                 to="/problems"
-                                className={`px-8 py-3 rounded-lg ${getSolidPrimaryButtonClasses()}`}
+                                className={`group relative px-8 py-4 rounded-xl ${getSolidPrimaryButtonClasses()} overflow-hidden`}
                             >
-                                Start Coding Now
+                                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                                <span className="relative flex items-center gap-2">
+                                    <FiCode className="w-5 h-5" />
+                                    Start Coding Now
+                                </span>
                             </Link>
-                            {isUserPremium ? (
-                                <Link
-                                    to="/profile"
-                                    className={`px-8 py-3 rounded-lg border-2 ${theme.border} hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-all duration-300 font-semibold bg-transparent transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${theme.highlight.replace('text-', 'focus:ring-')}`}
-                                >
-                                    Manage Premium
-                                </Link>
-                            ) : (
-                                <Link
-                                    to="/contests"
-                                    className={`px-8 py-3 rounded-lg border-2 ${theme.border} hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-all duration-300 font-semibold bg-transparent transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${theme.highlight.replace('text-', 'focus:ring-')}`}
-                                >
-                                    Join a Contest
-                                </Link>
-                            )}
+
                         </div>
                     </div>
                     <div className="hidden lg:block animate-fade-in-up delay-300">
-                        <Lottie
-                            animationData={codingAnimation}
-                            loop={true}
-                            className="w-full h-full max-w-xl mx-auto transform hover:scale-105 transition-transform duration-500"
-                        />
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
+                            <Lottie
+                                animationData={codingAnimation}
+                                loop={true}
+                                className="relative w-full h-full max-w-xl mx-auto transform hover:scale-105 transition-transform duration-500"
+                            />
+                        </div>
                     </div>
                 </div>
             </section>
 
+            {/* Why Choose Us Section - Enhanced */}
             <section className="py-20 relative">
                 <div className="absolute inset-0 overflow-hidden">
                     <div className={`absolute top-0 right-0 w-64 h-64 rounded-full ${theme.highlightSecondary.replace('text-', 'bg-')}/10 blur-3xl -mr-32 -mt-32`}></div>
@@ -239,7 +307,7 @@ const Home = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold">
-                            Why <span className={theme.highlight}>Choose Us</span>
+                            Why <span className={`${theme.highlight} bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')} bg-clip-text `}>Choose Us</span>
                         </h2>
                         <p className={`mt-4 max-w-2xl mx-auto ${theme.cardText}`}>
                             Our platform offers unique features that set us apart from the competition
@@ -251,56 +319,55 @@ const Home = () => {
                             {
                                 title: "AI-Powered Feedback",
                                 description: "Get instant, personalized feedback on your code with our advanced AI analysis system.",
-                                icon: (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                    </svg>
-                                ),
+                                icon: <FiZap className="h-8 w-8" />,
                                 iconColor: theme.highlight,
-                                animation: ideaAnimation
+                                animation: ideaAnimation,
+                                gradient: "from-yellow-400 to-orange-500"
                             },
                             {
                                 title: "Real-World Projects",
                                 description: "Work on projects that simulate actual industry challenges from top tech companies.",
-                                icon: (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                    </svg>
-                                ),
+                                icon: <FiCode className="h-8 w-8" />,
                                 iconColor: theme.highlightSecondary,
-                                animation: animationData
+                                animation: animationData,
+                                gradient: "from-blue-400 to-purple-500"
                             },
                             {
                                 title: "Personalized Learning Paths",
                                 description: "Customized learning journeys based on your skill level and career goals.",
-                                icon: (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                                    </svg>
-                                ),
+                                icon: <FiTrendingUp className="h-8 w-8" />,
                                 iconColor: theme.highlightTertiary,
-                                animation: successAnimation
+                                animation: successAnimation,
+                                gradient: "from-green-400 to-cyan-500"
                             }
                         ].map((feature, i) => (
-                            <Card3D key={i} className={`${theme.cardBg} p-8 rounded-xl border ${theme.border} hover:shadow-xl`}>
-                                <div className="flex flex-col h-full">
-                                    <div className="h-48 mb-6 overflow-hidden rounded-lg">
-                                        <Lottie
-                                            animationData={feature.animation}
-                                            loop={true}
-                                            className="w-full h-full"
-                                        />
-                                    </div>
-                                    <div className={`w-16 h-16 mx-auto ${theme.iconBg} rounded-full flex items-center justify-center ${feature.iconColor} mb-6`}>
-                                        {feature.icon}
-                                    </div>
-                                    <h3 className="mt-4 text-xl font-semibold text-center">{feature.title}</h3>
-                                    <p className={`mt-2 ${theme.cardText} text-center flex-grow`}>{feature.description}</p>
-                                    <div className="mt-6 text-center">
-                                        <span className={`inline-flex items-center ${theme.highlight} group`}>
-                                            Learn more
-                                            <FiArrowRight className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
-                                        </span>
+                            <Card3D key={i} className="group">
+                                <div className={`relative ${theme.cardBg} rounded-xl border ${theme.border} hover:shadow-xl overflow-hidden`}>
+                                    {/* Animated border effect */}
+                                    <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-xl`}></div>
+                                    <div className={`absolute inset-[1px] ${theme.cardBg} rounded-xl`}></div>
+
+                                    <div className="relative p-8 flex flex-col h-full">
+                                        <div className="h-48 mb-6 overflow-hidden rounded-lg relative">
+                                            <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-10 rounded-lg`}></div>
+                                            <Lottie
+                                                animationData={feature.animation}
+                                                loop={true}
+                                                className="w-full h-full relative z-10"
+                                            />
+                                        </div>
+                                        <div className={`w-16 h-16 mx-auto ${theme.iconBg} rounded-full flex items-center justify-center ${feature.iconColor} mb-6 relative overflow-hidden group-hover:animate-glow`}>
+                                            <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-full`}></div>
+                                            <span className="relative z-10">{feature.icon}</span>
+                                        </div>
+                                        <h3 className="mt-4 text-xl font-semibold text-center">{feature.title}</h3>
+                                        <p className={`mt-2 ${theme.cardText} text-center flex-grow`}>{feature.description}</p>
+                                        <div className="mt-6 text-center">
+                                            <span className={`inline-flex items-center ${theme.highlight} group-hover:${theme.highlightSecondary} transition-colors duration-300`}>
+                                                Learn more
+                                                <FiArrowRight className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </Card3D>
@@ -309,7 +376,7 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* IDE Showcase Section */}
+            {/* IDE Showcase Section - Enhanced with Animated Border */}
             <section className={`py-20 ${theme.cardBg}/30 relative`}>
                 <div className="absolute inset-0">
                     <div className={`absolute top-1/3 left-1/4 w-32 h-32 rounded-full ${theme.highlight.replace('text-', 'bg-')}/10 blur-xl animate-pulse`}></div>
@@ -318,98 +385,112 @@ const Home = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold">
-                            <span className={theme.highlight}>Modern</span> Development Environment
+                            <span className={`bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')} bg-clip-text `}>Modern</span> Development Environment
                         </h2>
                         <p className={`mt-4 max-w-2xl mx-auto ${theme.cardText}`}>
                             Experience cutting-edge coding with our advanced IDE featuring AI assistance and real-time collaboration
                         </p>
                     </div>
 
-                    <Card3D className="rounded-xl overflow-hidden shadow-2xl">
-                        <div className={`${theme.cardBg} p-4 flex items-center justify-between border-b ${theme.border}`}>
-                            <div className="flex items-center space-x-4">
-                                <div className="flex space-x-2">
-                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 630 630">
-                                        <rect width="630" height="630" fill="#f7df1e" />
-                                        <path d="m423.2 492.19c12.69 20.72 29.2 35.95 58.4 35.95 24.53 0 40.2-12.26 40.2-29.2 0-20.3-16.1-27.49-43.1-39.3l-14.8-6.35c-42.72-18.2-71.1-41-71.1-89.2 0-44.4 33.83-78.2 86.7-78.2 37.64 0 64.7 13.1 84.2 47.4l-46.1 29.6c-10.15-18.2-21.1-25.37-38.1-25.37-17.34 0-28.33 11-28.33 25.37 0 17.76 11 24.95 36.4 35.95l14.8 6.34c50.3 21.57 78.7 43.56 78.7 93 0 53.3-41.87 82.5-98.1 82.5-54.98 0-90.5-26.2-107.88-60.54zm-209.13 5.13c9.3 16.5 17.76 30.45 38.1 30.45 19.45 0 31.72-7.61 31.72-37.2v-201.3h59.2v202.1c0 61.3-35.94 89.2-88.4 89.2-47.4 0-74.85-24.53-88.81-54.075z" />
-                                    </svg>
-                                    <span className={`text-sm font-medium ${theme.cardText}`}>welcome.js</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center space-x-3">
-                                <div className={`px-2 py-1 rounded text-xs bg-green-500/10 text-green-500 font-medium`}>
-                                    Live
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className={`bg-gray-900 text-gray-100 relative`}>
-                            <div className="p-6 font-mono text-sm overflow-x-auto">
-                                <div className="flex">
-                                    <div className="text-gray-500 mr-6 select-none text-right" style={{ minWidth: '2rem' }}>
-                                        {Array.from({ length: 15 }, (_, i) => <div key={i} className="leading-6">{i + 1}</div>)}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="leading-6"><span className="text-gray-500">/**</span></div>
-                                        <div className="leading-6"><span className="text-gray-500"> * Welcome to CodeMaster Platform</span></div>
-                                        <div className="leading-6"><span className="text-gray-500"> * Your journey to coding excellence starts here!</span></div>
-                                        <div className="leading-6"><span className="text-gray-500"> */</span></div>
-                                        <div className="leading-6"></div>
-                                        <div className="leading-6"><span className="text-purple-400">const</span> <span className="text-blue-300">welcome</span> = <span className="text-yellow-300">async</span> () <span className="text-purple-400"></span> {'{'}</div>
-                                        <div className="leading-6 ml-4"><span className="text-purple-400">const</span> user = <span className="text-purple-400">await</span> <span className="text-blue-300">getCurrentUser</span>();</div>
-                                        <div className="leading-6 ml-4"><span className="text-purple-400">const</span> achievements = <span className="text-purple-400">await</span> <span className="text-blue-300">getUserAchievements</span>(user.id);</div>
-                                        <div className="leading-6 ml-4"></div>
-                                        <div className="leading-6 ml-4"><span className="text-blue-300">console</span>.<span className="text-yellow-300">log</span>(<span className="text-green-400">`Welcome back, </span><span className="text-orange-400">${user ? user.firstName : 'Guest'} {user ? user.lastName : ''}</span><span className="text-green-400">!`</span>);</div>
-                                        <div className="leading-6 ml-4"></div>
-                                        <div className="leading-6 ml-4"><span className="text-purple-400">return</span> {'{'}</div>
-                                        <div className="leading-6 ml-8">message: <span className="text-green-400">"Ready to tackle new challenges?"</span>,</div>
-                                        <div className="leading-6 ml-8">nextLevel: <span className="text-blue-300">calculateNextLevel</span>(achievements)</div>
-                                        <div className="leading-6 ml-4">{'}'}</div>
-                                        <div className="leading-6">{'}'}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className={`${theme.cardBg} border-t ${theme.border}`}>
-                            <div className="p-4 flex items-center justify-between">
+                    {/* Enhanced IDE Showcase with Animated Border */}
+                    <div className="group">
+                        <AnimatedBorderCard className="rounded-xl overflow-hidden shadow-2xl">
+                            {/* IDE Header */}
+                            <div className={`${theme.cardBg} p-4 flex items-center justify-between border-b ${theme.border}`}>
                                 <div className="flex items-center space-x-4">
-                                    <div className={`text-sm font-medium ${theme.cardText}`}>Terminal</div>
+                                    <div className="flex space-x-2">
+                                        <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                                        <div className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                                        <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                                    </div>
                                     <div className="flex items-center space-x-2">
-                                        <div className={`w-2 h-2 ${theme.successColor.replace('text-', 'bg-')} rounded-full`}></div>
-                                        <span className={`text-xs ${theme.successColor}`}>Connected</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 630 630">
+                                            <rect width="630" height="630" fill="#f7df1e" />
+                                            <path d="m423.2 492.19c12.69 20.72 29.2 35.95 58.4 35.95 24.53 0 40.2-12.26 40.2-29.2 0-20.3-16.1-27.49-43.1-39.3l-14.8-6.35c-42.72-18.2-71.1-41-71.1-89.2 0-44.4 33.83-78.2 86.7-78.2 37.64 0 64.7 13.1 84.2 47.4l-46.1 29.6c-10.15-18.2-21.1-25.37-38.1-25.37-17.34 0-28.33 11-28.33 25.37 0 17.76 11 24.95 36.4 35.95l14.8 6.34c50.3 21.57 78.7 43.56 78.7 93 0 53.3-41.87 82.5-98.1 82.5-54.98 0-90.5-26.2-107.88-60.54zm-209.13 5.13c9.3 16.5 17.76 30.45 38.1 30.45 19.45 0 31.72-7.61 31.72-37.2v-201.3h59.2v202.1c0 61.3-35.94 89.2-88.4 89.2-47.4 0-74.85-24.53-88.81-54.075z" />
+                                        </svg>
+                                        <span className={`text-sm font-medium ${theme.cardText}`}>welcome.js</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center space-x-3">
-                                    <div className={`text-xs ${theme.highlight}`}>Ready</div>
-                                </div>
-                            </div>
-                            <div className="px-4 pb-4">
-                                <div className={`bg-black/80 rounded p-3 font-mono text-sm`}>
-                                    <div className={`${theme.successColor}`}>$ npm run dev</div>
-                                    <div className={`${theme.cardText}`}>✓ Code compiled successfully</div>
-                                    <div className={`${theme.successColor}`}>✓ All tests passed</div>
-                                    <div className={`mt-2 ${theme.infoColor} animate-typing overflow-hidden whitespace-nowrap border-r-2 ${theme.infoColor.replace('text-', 'border-r-')} pr-2`}>
-                                        Welcome back, {user ? `${user.firstName} ${user.lastName}` : 'Guest'}!
-                                    </div>
-                                    <div className={`mt-1 ${theme.successColor} `}>
-                                        {`{ message: "Ready to tackle new challenges?", nextLevel: ${user ? 'true' : 'false'} }`}
-                                    </div>
-                                    <div className={`mt-2 ${theme.warningColor} `}>
-                                        Process completed in 1.2s
+                                    <div className={`px-3 py-1 rounded-full text-xs bg-gradient-to-r from-green-400 to-emerald-500 text-white font-medium animate-pulse`}>
+                                        Live
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </Card3D>
+
+                            {/* Enhanced Code Editor */}
+                            <div className="bg-gray-900 text-gray-100 relative">
+                                <div className="p-6 font-mono text-sm overflow-x-auto">
+                                    <div className="flex">
+                                        <div className="text-gray-500 mr-6 select-none text-right" style={{ minWidth: '2rem' }}>
+                                            {Array.from({ length: 15 }, (_, i) => <div key={i} className="leading-6">{i + 1}</div>)}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="leading-6"><span className="text-gray-500">/**</span></div>
+                                            <div className="leading-6"><span className="text-gray-500"> * Welcome to CodeMaster Platform</span></div>
+                                            <div className="leading-6"><span className="text-gray-500"> * Your journey to coding excellence starts here!</span></div>
+                                            <div className="leading-6"><span className="text-gray-500"> */</span></div>
+                                            <div className="leading-6"></div>
+                                            <div className="leading-6"><span className="text-purple-400">const</span> <span className="text-blue-300">welcome</span> = <span className="text-yellow-300">async</span> () <span className="text-purple-400">{`=>`} </span> {'{'}</div>
+                                            <div className="leading-6 ml-4"><span className="text-purple-400">const</span> user = <span className="text-purple-400">await</span> <span className="text-blue-300">getCurrentUser</span>();</div>
+                                            <div className="leading-6 ml-4"><span className="text-purple-400">const</span> achievements = <span className="text-purple-400">await</span> <span className="text-blue-300">getUserAchievements</span>(user.id);</div>
+                                            <div className="leading-6 ml-4"></div>
+                                            <div className="leading-6 ml-4"><span className="text-blue-300">console</span>.<span className="text-yellow-300">log</span>(<span className="text-green-400">`Welcome back, </span><span className="text-orange-400">${user ? user.firstName : 'Guest'} {user ? user.lastName : ''}</span><span className="text-green-400">!`</span>);</div>
+                                            <div className="leading-6 ml-4"></div>
+                                            <div className="leading-6 ml-4"><span className="text-purple-400">return</span> {'{'}</div>
+                                            <div className="leading-6 ml-8">message: <span className="text-green-400">"Ready to tackle new challenges?"</span>,</div>
+                                            <div className="leading-6 ml-8">nextLevel: <span className="text-blue-300">calculateNextLevel</span>(achievements)</div>
+                                            <div className="leading-6 ml-4">{'}'}</div>
+                                            <div className="leading-6">{'}'}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Enhanced Terminal */}
+                            <div className={`${theme.cardBg} border-t ${theme.border}`}>
+                                <div className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center space-x-4">
+                                        <div className={`text-sm font-medium ${theme.cardText} flex items-center gap-2`}>
+                                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                            Terminal
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <div className={`w-2 h-2 ${theme.successColor.replace('text-', 'bg-')} rounded-full animate-pulse`}></div>
+                                            <span className={`text-xs ${theme.successColor}`}>Connected</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-3">
+                                        <div className={`text-xs ${theme.highlight} bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')} bg-clip-text  font-semibold`}>Ready</div>
+                                    </div>
+                                </div>
+                                <div className="px-4 pb-4">
+                                    <div className="bg-black/90 rounded-lg p-4 font-mono text-sm border border-gray-700/50">
+                                        <div className={`${theme.successColor} flex items-center gap-2`}>
+                                            <span>$</span>
+                                            <span className="animate-pulse">npm run dev</span>
+                                        </div>
+                                        <div className={`${theme.cardText} mt-1`}>✓ Code compiled successfully</div>
+                                        <div className={`${theme.successColor} mt-1`}>✓ All tests passed</div>
+                                        <div className={`mt-3 ${theme.infoColor} overflow-hidden whitespace-nowrap`}>
+                                            <span className="animate-pulse">Welcome back, {user ? `${user.firstName} ${user.lastName}` : 'Guest'}!</span>
+                                        </div>
+                                        <div className={`mt-2 ${theme.successColor} bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text `}>
+                                            {`{ message: "Ready to tackle new challenges?", nextLevel: ${user ? 'true' : 'false'} }`}
+                                        </div>
+                                        <div className={`mt-2 ${theme.warningColor} flex items-center gap-2`}>
+                                            <div className="w-1 h-1 bg-yellow-400 rounded-full animate-ping"></div>
+                                            Process completed in 1.2s
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </AnimatedBorderCard>
+                    </div>
                 </div>
             </section>
 
-            {/* Learning Paths Section */}
+            {/* Learning Paths Section - Enhanced */}
             <section className="py-20 relative">
                 <div className="absolute inset-0 overflow-hidden">
                     <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/10 blur-3xl -ml-32 -mb-32`}></div>
@@ -418,7 +499,7 @@ const Home = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold">
-                            Structured <span className={theme.highlightSecondary}>Learning Paths</span>
+                            Structured <span className={`bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')} bg-clip-text `}>Learning Paths</span>
                         </h2>
                         <p className={`mt-4 max-w-2xl mx-auto ${theme.cardText}`}>
                             Follow our expert-curated paths to master specific skills and technologies
@@ -431,7 +512,7 @@ const Home = () => {
                                 title: "Frontend Mastery",
                                 description: "Master modern frontend development with React, Vue, and state management",
                                 progress: 65,
-                                color: `${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')}`,
+                                color: `from-cyan-400 to-blue-500`,
                                 icon: (
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -442,7 +523,7 @@ const Home = () => {
                                 title: "Backend Expertise",
                                 description: "Build scalable backend systems with Node.js, Django, and database design",
                                 progress: 40,
-                                color: `${theme.highlightTertiary.replace('text-', 'from-')} ${theme.highlight.replace('text-', 'to-')}`,
+                                color: `from-purple-400 to-pink-500`,
                                 icon: (
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
@@ -453,7 +534,7 @@ const Home = () => {
                                 title: "Data Structures & Algorithms",
                                 description: "Master the fundamentals to ace technical interviews at top companies",
                                 progress: 85,
-                                color: `${theme.successColor.replace('text-', 'from-')} ${theme.highlightSecondary.replace('text-', 'to-')}`,
+                                color: `from-green-400 to-emerald-500`,
                                 icon: (
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
@@ -461,33 +542,42 @@ const Home = () => {
                                 )
                             }
                         ].map((path, i) => (
-                            <Card3D key={i} className={`${theme.cardBg} rounded-xl border ${theme.border} overflow-hidden hover:shadow-xl`}>
-                                <div className={`h-2 bg-gradient-to-r ${path.color}`}></div>
-                                <div className="p-6">
-                                    <div className={`w-12 h-12 ${theme.iconBg} rounded-lg flex items-center justify-center ${theme.highlight} mb-4`}>
-                                        {path.icon}
-                                    </div>
-                                    <h3 className="text-xl font-semibold">{path.title}</h3>
-                                    <p className={`mt-2 ${theme.cardText}`}>{path.description}</p>
-                                    <div className="mt-6">
-                                        <div className="flex justify-between text-sm mb-1">
-                                            <span>Progress</span>
-                                            <span>{path.progress}%</span>
+                            <Card3D key={i} className="group">
+                                <div className={`relative ${theme.cardBg} rounded-xl border ${theme.border} overflow-hidden hover:shadow-xl`}>
+                                    {/* Animated progress bar at top */}
+                                    <div className={`h-2 bg-gradient-to-r ${path.color} animate-border-flow`}></div>
+
+                                    <div className="p-6">
+                                        <div className={`w-12 h-12 ${theme.iconBg} rounded-lg flex items-center justify-center ${theme.highlight} mb-4 relative overflow-hidden group-hover:animate-glow`}>
+                                            <div className={`absolute inset-0 bg-gradient-to-r ${path.color} opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-lg`}></div>
+                                            <span className="relative z-10">{path.icon}</span>
                                         </div>
-                                        <div className="w-full ${theme.border.replace('border-', 'bg-')} rounded-full h-2">
-                                            <div
-                                                className={`h-2 rounded-full bg-gradient-to-r ${path.color}`}
-                                                style={{ width: `${path.progress}%` }}
-                                            ></div>
+                                        <h3 className="text-xl font-semibold">{path.title}</h3>
+                                        <p className={`mt-2 ${theme.cardText}`}>{path.description}</p>
+                                        <div className="mt-6">
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span>Progress</span>
+                                                <span className={`font-semibold bg-gradient-to-r ${path.color} bg-clip-text `}>{path.progress}%</span>
+                                            </div>
+                                            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                                                <div
+                                                    className={`h-2 rounded-full bg-gradient-to-r ${path.color} transition-all duration-1000 ease-out`}
+                                                    style={{ width: `${path.progress}%` }}
+                                                ></div>
+                                            </div>
                                         </div>
+                                        <Link
+                                            to={`/paths/${path.title.toLowerCase().replace(' ', '-')}`}
+                                            className={`mt-6 inline-flex items-center justify-center w-full px-4 py-3 border-2 border-transparent bg-gradient-to-r ${path.color} p-[2px] rounded-lg transition-all duration-300 group-hover:scale-105`}
+                                        >
+                                            <div className={`${theme.cardBg} rounded-md px-4 py-2 w-full text-center group-hover:bg-transparent group-hover:text-white transition-all duration-300`}>
+                                                <span className="flex items-center justify-center gap-2">
+                                                    Explore Path
+                                                    <FiArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
+                                                </span>
+                                            </div>
+                                        </Link>
                                     </div>
-                                    <Link
-                                        to={`/paths/${path.title.toLowerCase().replace(' ', '-')}`}
-                                        className={`mt-6 inline-flex items-center justify-center w-full px-4 py-2 border-2 ${theme.border} rounded-lg hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-colors duration-300 group`}
-                                    >
-                                        Explore Path
-                                        <FiArrowRight className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
-                                    </Link>
                                 </div>
                             </Card3D>
                         ))}
@@ -495,51 +585,58 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* CTA Section */}
+            {/* Enhanced CTA Section */}
             <section className={`py-20 bg-gradient-to-r ${theme.gradientFrom} ${theme.gradientTo} relative overflow-hidden`}>
                 <div className="absolute inset-0">
-                    <div className={`absolute top-0 left-0 w-full h-full ${theme.highlight.replace('text-', 'bg-')}/5`}></div>
-                    <div className={`absolute top-1/4 left-1/4 w-32 h-32 rounded-full ${theme.highlight.replace('text-', 'bg-')}/10 blur-xl animate-float-slow`}></div>
-                    <div className={`absolute bottom-1/4 right-1/4 w-40 h-40 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/10 blur-xl animate-float-slow animation-delay-3000`}></div>
+                    <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10 animate-gradient-x`}></div>
+                    <div className={`absolute top-1/4 left-1/4 w-32 h-32 rounded-full ${theme.highlight.replace('text-', 'bg-')}/10 blur-xl animate-float`}></div>
+                    <div className={`absolute bottom-1/4 right-1/4 w-40 h-40 rounded-full ${theme.highlightTertiary.replace('text-', 'bg-')}/10 blur-xl animate-float`} style={{ animationDelay: '3s' }}></div>
                 </div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
                     <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                        Ready to <span className={theme.highlight}>Transform</span> Your Career?
+                        Ready to <span className={`bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text `}>Transform</span> Your Career?
                     </h2>
                     <p className={`text-xl ${theme.cardText} max-w-3xl mx-auto mb-10`}>
                         Join thousands of developers who've accelerated their careers with our platform.
                     </p>
-                    <div className="flex flex-col sm:flex-row justify-center gap-4">
+                    <div className="flex flex-col sm:flex-row justify-center gap-6">
                         {user?.isPremium ? (
                             <Link
                                 to="/explore-premium"
-                                className={`inline-flex items-center justify-center px-8 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${theme.buttonText} transform hover:scale-105 active:scale-95`}
+                                className={`group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl text-white transform hover:scale-105 active:scale-95 relative overflow-hidden`}
                             >
-                                Explore Premium <FiStar className="ml-2 text-yellow-400" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-orange-400 opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
+                                <span className="relative flex items-center gap-2">
+                                    Explore Premium <FiStar className="text-yellow-200" />
+                                </span>
                             </Link>
                         ) : (
                             <Link
                                 to="/premium"
-                                className={`inline-flex items-center justify-center px-8 py-4 ${getPrimaryGradient()} ${getPrimaryGradientHover()} rounded-lg transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${theme.buttonText} transform hover:scale-105 active:scale-95`}
+                                className={`group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')} rounded-xl transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-2xl ${theme.buttonText} transform hover:scale-105 active:scale-95 relative overflow-hidden`}
                             >
-                                Upgrade to Premium
+                                <div className="absolute inset-0 bg-gradient-to-r from-cyan-300 to-blue-400 opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
+                                <span className="relative">Upgrade to Premium</span>
                             </Link>
                         )}
                         <Link
                             to="https://youtu.be/mc6xfVDaLeE?si=yyaNJR4XFEQCEw_V"
                             target='_blank'
-                            className={`inline-flex items-center justify-center px-8 py-4 border-2 ${theme.border} rounded-lg hover:border-${theme.highlight.split('-')[1]}-400 hover:${theme.highlight} transition-colors duration-300 font-semibold text-lg bg-transparent transform hover:scale-105 active:scale-95 group`}
+                            className={`group inline-flex items-center justify-center px-8 py-4 border-2 border-transparent bg-gradient-to-r from-cyan-400 to-purple-500 p-[2px] rounded-xl transition-all duration-300 font-semibold text-lg transform hover:scale-105 active:scale-95`}
                         >
-                            Watch Demo
-                            <FiArrowRight className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
+                            <div className={`${theme.background} rounded-lg px-6 py-2 group-hover:bg-transparent group-hover:text-white transition-all duration-300`}>
+                                <span className="flex items-center gap-2">
+                                    Watch Demo
+                                    <FiArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
+                                </span>
+                            </div>
                         </Link>
                     </div>
                 </div>
             </section>
 
             <Footer />
-
         </div>
     );
 };
