@@ -13,9 +13,7 @@ import celebrationAnimation from '../assets/lotties/celebration.json';
 import codingAnimation from '../assets/lotties/coding.json';
 import ideaAnimation from '../assets/lotties/Idea.json';
 import successAnimation from '../assets/lotties/success.json';
-import Aurora from '../components/ui/Aurora'
-import RippleCursor from '../components/animation/RippleCursor';
-import SplashCursor from '../components/animation/SplashCursor';
+import Aurora from '../components/animation/Aurora'
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
     primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',

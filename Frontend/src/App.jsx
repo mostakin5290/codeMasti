@@ -68,11 +68,11 @@ import GameCodefield from "./Pages/GameCodefield";
 import GameRoomDetailsPage from "./Pages/GameRoomDetailsPage";
 import Tools from "./Pages/Tools";
 import SplashCursor from "./components/animation/SplashCursor"
+import VisualizerPage from "./Pages/VisualizerPage";
 
 
 const AppRoutes = () => {
     const { theme } = useTheme();
-    // Destructure user from auth state
     const { isAuthenticated, loading, user } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const location = useLocation();
@@ -156,7 +156,7 @@ const AppRoutes = () => {
                 <Route path="/test" element={<PremiumWelcomePage />} />
                 <Route path="/coming" element={<ComingSoonPage />} />
                 <Route path="/world-rank" element={<RankPage />} />
-
+ <Route path="/tools/visualizer" element={<VisualizerPage/> }/>
                 {/* NEW GAME ROUTES */}
                 <Route path="/game" element={isAuthenticated ? <GamePage /> : <Navigate to="/" />} />
                 <Route path="/game/room/:roomId" element={isAuthenticated ? <GameRoomDetailsPage /> : <Navigate to="/" />} />

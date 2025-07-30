@@ -1,31 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom'; // Import Link
 import Header from '../components/layout/Header';
 import { useTheme } from '../context/ThemeContext';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FaBug, FaCodeBranch, FaPlay, FaProjectDiagram } from 'react-icons/fa';
 import { GiCircuitry } from 'react-icons/gi';
-import AlgoVisualiser from '../components/Tools/AlgoVisualiser';
+import CodeDubgger from '../components/Tools/CodeDubgger';
+// REMOVED: AlgorithmSelectionModal, BubbleSortVisualizer, etc.
 
 const defaultTheme = {
-    background: 'bg-gray-900', 
-    text: 'text-white', 
+    background: 'bg-gray-900',
+    text: 'text-white',
     primary: 'bg-cyan-500',
-    primaryHover: 'bg-cyan-600', 
-    secondary: 'bg-blue-600', 
+    primaryHover: 'bg-cyan-600',
+    secondary: 'bg-blue-600',
     secondaryHover: 'bg-blue-700',
-    cardBg: 'bg-gray-800/80', 
-    cardText: 'text-gray-300', 
+    cardBg: 'bg-gray-800/80',
+    cardText: 'text-gray-300',
     border: 'border-gray-700',
-    buttonPrimary: 'bg-indigo-600', 
+    buttonPrimary: 'bg-indigo-600',
     buttonPrimaryHover: 'bg-indigo-700',
-    buttonText: 'text-white', 
-    highlight: 'text-cyan-400', 
+    buttonText: 'text-white',
+    highlight: 'text-cyan-400',
     highlightSecondary: 'text-blue-400',
-    highlightTertiary: 'text-purple-400', 
+    highlightTertiary: 'text-purple-400',
     iconBg: 'bg-cyan-500/10',
-    gradientFrom: 'from-gray-900', 
+    gradientFrom: 'from-gray-900',
     gradientTo: 'to-gray-800',
     successColor: 'text-emerald-400',
     warningColor: 'text-amber-400',
@@ -39,19 +40,20 @@ const Tools = () => {
     const theme = { ...defaultTheme, ...themeFromContext };
 
     const mountRef = useRef(null);
-    const mousePosition = useRef({ x: 0, y: 0 });
+    const mousePosition = useRef({ x: 0, y: 0 }); // Note: mousePosition is declared but not used in the provided code.
     const [showDebugger, setShowDebugger] = useState(false);
     const [activeTab, setActiveTab] = useState('debugger');
 
-    // Enhanced background animation with floating nodes and connections
+    // --- Background Animations ---
+    // The background animations should ONLY run when the debugger is not active.
+    // The visualizer part is now handled by a separate route/page.
     useEffect(() => {
-        if (showDebugger) return;
+        if (showDebugger) return; // Modified condition
 
         const container = document.createElement('div');
         container.className = 'fixed inset-0 -z-10 overflow-hidden pointer-events-none';
         document.body.appendChild(container);
 
-        // Create a canvas for the background animation
         const canvas = document.createElement('canvas');
         canvas.className = 'absolute inset-0 w-full h-full';
         container.appendChild(canvas);
@@ -60,7 +62,6 @@ const Tools = () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // Node class for the background animation
         class Node {
             constructor() {
                 this.x = Math.random() * canvas.width;
@@ -93,25 +94,21 @@ const Tools = () => {
             }
         }
 
-        // Create nodes
         const nodes = [];
         const nodeCount = Math.floor(window.innerWidth / 10);
         for (let i = 0; i < nodeCount; i++) {
             nodes.push(new Node());
         }
 
-        // Animation loop
         let animationId;
         const animate = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Update and draw nodes
             nodes.forEach(node => {
                 node.update();
                 node.draw();
             });
 
-            // Draw connections between nearby nodes
             for (let i = 0; i < nodes.length; i++) {
                 for (let j = i + 1; j < nodes.length; j++) {
                     const dx = nodes[i].x - nodes[j].x;
@@ -146,11 +143,11 @@ const Tools = () => {
             window.removeEventListener('resize', handleResize);
             container.remove();
         };
-    }, [showDebugger]);
+    }, [showDebugger]); // Dependency updated
 
     // Three.js initialization (simplified version)
     useEffect(() => {
-        if (showDebugger) return;
+        if (showDebugger) return; // Modified condition
 
         let scene, camera, renderer, controls;
         let cubes = [];
@@ -161,14 +158,14 @@ const Tools = () => {
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.z = 25;
 
-            renderer = new THREE.WebGLRenderer({ 
-                antialias: true, 
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
                 alpha: true,
                 powerPreference: "high-performance"
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            
+
             if (mountRef.current) {
                 mountRef.current.innerHTML = '';
                 mountRef.current.appendChild(renderer.domElement);
@@ -217,7 +214,7 @@ const Tools = () => {
 
         const animate = () => {
             requestAnimationFrame(animate);
-            
+
             cubes.forEach(cube => {
                 cube.rotation.x += 0.01;
                 cube.rotation.y += 0.01;
@@ -245,7 +242,8 @@ const Tools = () => {
             if (renderer) renderer.dispose();
             if (controls) controls.dispose();
         };
-    }, [showDebugger]);
+    }, [showDebugger]); // Dependency updated
+    // --- End Background Animations ---
 
     const sectionClasses = `backdrop-blur-lg border ${theme.border}/30 shadow-2xl rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-${theme.primary.replace('bg-', '')}/20`;
 
@@ -253,10 +251,13 @@ const Tools = () => {
         <div className={`min-h-screen relative overflow-hidden ${theme.text} bg-gradient-to-br ${theme.gradientFrom} ${theme.gradientTo}`}>
             <Header />
 
-            {/* Main content */}
+            {/* Conditional Rendering of Main Content */}
             {showDebugger ? (
-                <AlgoVisualiser appTheme={theme} onClose={() => setShowDebugger(false)} />
+                // Renders ONLY the AlgoVisualiser (Debugger) component
+                <CodeDubgger appTheme={theme} onClose={() => setShowDebugger(false)} />
             ) : (
+                // This block is the default landing page for 'Tools',
+                // showing the main heading, description, and tab navigation.
                 <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
                     <div className="text-center mb-12">
                         <h1 className={`text-4xl sm:text-6xl font-extrabold mb-6 bg-gradient-to-r ${theme.primary} ${theme.highlight} bg-clip-text text-transparent`}>
@@ -272,7 +273,11 @@ const Tools = () => {
                         {['debugger', 'visualizer'].map((tab) => (
                             <button
                                 key={tab}
-                                onClick={() => setActiveTab(tab)}
+                                onClick={() => {
+                                    setActiveTab(tab);
+                                    // Ensure debugger is off when switching tabs
+                                    setShowDebugger(false);
+                                }}
                                 className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === tab ? `${theme.buttonPrimary} ${theme.buttonText}` : `${theme.cardText} hover:${theme.background}`}`}
                             >
                                 {tab === 'debugger' && <FaBug className="inline mr-2" />}
@@ -282,7 +287,7 @@ const Tools = () => {
                         ))}
                     </div>
 
-                    {/* Tab content */}
+                    {/* Tab content (initial state for debugger or visualizer) */}
                     <div className="w-full max-w-6xl">
                         {activeTab === 'debugger' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -327,52 +332,54 @@ const Tools = () => {
                         )}
 
                         {activeTab === 'visualizer' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className={`${sectionClasses} p-8 flex flex-col items-center text-center group`}>
-                                    <div className={`p-5 rounded-full ${theme.iconBg} mb-6 transition-all duration-500 group-hover:bg-${theme.secondary.replace('bg-', '')}/20`}>
-                                        <FaProjectDiagram className={`h-12 w-12 ${theme.highlightSecondary} group-hover:${theme.secondary} transition-colors duration-500`} />
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className={`${sectionClasses} p-8 flex flex-col items-center text-center group`}>
+                                        <div className={`p-5 rounded-full ${theme.iconBg} mb-6 transition-all duration-500 group-hover:bg-${theme.secondary.replace('bg-', '')}/20`}>
+                                            <FaProjectDiagram className={`h-12 w-12 ${theme.highlightSecondary} group-hover:${theme.secondary} transition-colors duration-500`} />
+                                        </div>
+                                        <h2 className={`text-2xl font-bold mb-4 ${theme.text}`}>
+                                            Data Structure & Algorithm Visualizer
+                                        </h2>
+                                        <p className={`${theme.cardText} mb-6`}>
+                                            Watch your data structures and algorithms come to life with animated 3D representations.
+                                        </p>
+                                        <Link // Changed from button to Link
+                                            to="/tools/visualizer"
+                                            className={`px-8 py-3 rounded-lg ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} font-semibold transition-all flex items-center`}
+                                        >
+                                            <FaPlay className="mr-2" /> Explore Visualizations
+                                        </Link>
                                     </div>
-                                    <h2 className={`text-2xl font-bold mb-4 ${theme.text}`}>
-                                        Data Structure Visualizer
-                                    </h2>
-                                    <p className={`${theme.cardText} mb-6`}>
-                                        Watch your data structures come to life with animated 3D representations.
-                                    </p>
-                                    <Link
-                                        to="#"
-                                        className={`px-8 py-3 rounded-lg ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} font-semibold transition-all flex items-center`}
-                                    >
-                                        <FaPlay className="mr-2" /> Explore Visualizations
-                                    </Link>
-                                </div>
 
-                                <div className={`${sectionClasses} p-8 flex flex-col`}>
-                                    <h3 className={`text-xl font-semibold mb-4 ${theme.highlightSecondary} flex items-center`}>
-                                        <GiCircuitry className="mr-2" /> Supported Structures
-                                    </h3>
-                                    <ul className="space-y-4">
-                                        {[
-                                            "Arrays & Matrices",
-                                            "Linked Lists (Single/Double)",
-                                            "Trees (Binary, AVL, Red-Black)",
-                                            "Graphs (Weighted/Unweighted)",
-                                            "Hash Tables & Dictionaries"
-                                        ].map((structure, index) => (
-                                            <li key={index} className="flex items-start">
-                                                <span className={`inline-block mr-3 mt-1 ${theme.successColor}`}>✓</span>
-                                                <span className={theme.cardText}>{structure}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    <div className={`${sectionClasses} p-8 flex flex-col`}>
+                                        <h3 className={`text-xl font-semibold mb-4 ${theme.highlightSecondary} flex items-center`}>
+                                            <GiCircuitry className="mr-2" /> Supported Visualizations
+                                        </h3>
+                                        <ul className="space-y-4">
+                                            {[
+                                                "Sorting Algorithms (e.g., Bubble, Quick, Merge)",
+                                                "Searching Algorithms (e.g., Linear, Binary)",
+                                                "Tree Structures (e.g., Binary Search Tree, AVL)",
+                                                "Graph Algorithms (e.g., BFS, DFS, Dijkstra's)",
+                                                "Linked Lists & Stacks/Queues"
+                                            ].map((structure, index) => (
+                                                <li key={index} className="flex items-start">
+                                                    <span className={`inline-block mr-3 mt-1 ${theme.successColor}`}>✓</span>
+                                                    <span className={theme.cardText}>{structure}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 </div>
-                            </div>
+                            </>
                         )}
                     </div>
-
-                    {/* Three.js Canvas Container - More subtle background */}
-                    <div ref={mountRef} className="fixed inset-0 -z-10 opacity-20 pointer-events-none" />
                 </div>
             )}
+
+            {/* Three.js Canvas Container - More subtle background */}
+            <div ref={mountRef} className="fixed inset-0 -z-10 opacity-20 pointer-events-none" />
         </div>
     );
 };
