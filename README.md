@@ -323,9 +323,9 @@ const analytics = {
 |:--:|:--:|:--:|
 | ![Landing](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952559/Screenshot_2025-07-31_133853_hifqdy.png) | ![Home](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952700/Screenshot_2025-07-31_134152_zapngc.png) | ![Profile](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952789/Screenshot_2025-07-31_134349_nwrymw.png) |
 
-| 🤖 AI Assistant | 📊 Analytics | 🎨 Theme Gallery |
+| Code Field | Problem Page | Admin Panel |
 |:--:|:--:|:--:|
-| ![AI](https://via.placeholder.com/300x200/7C3AED/FFFFFF?text=AI+Helper) | ![Analytics](https://via.placeholder.com/300x200/EA580C/FFFFFF?text=Smart+Analytics) | ![Themes](https://via.placeholder.com/300x200/0891B2/FFFFFF?text=Dynamic+Themes) |
+| ![Code](https://via.placeholder.com/300x200/7C3AED/FFFFFF?text=AI+Helperhttps://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952886/Screenshot_2025-07-31_134225_e4m40b.png) | ![Problem](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952966/Screenshot_2025-07-31_134152_lbfact.png) | ![Themes](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753953019/Screenshot_2025-07-31_134402_i2bwhk.png) |
 
 ---
 
