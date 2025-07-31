@@ -2,14 +2,12 @@
 node_modules/
 
 # Build outputs
-build/
-dist/
+
 .next/
 .out/
 
 # Environment variables
-.env
-.env.*
+
 
 # Logs
 npm-debug.log*
