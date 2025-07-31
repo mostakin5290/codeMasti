@@ -18,7 +18,7 @@ const dailyChallengeScheduler = require('./src/utils/dailyChallengeScheduler');
 const frontendUrl = process.env.FRONTEND_URL;
 
 const allowedOrigins = [
-    frontendUrl,
+    frontendUrl, 
     "http://localhost:5173", 
 ];
 
