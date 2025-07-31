@@ -259,8 +259,8 @@ const SettingPage = () => {
                 </div>
 
                 <div className="relative z-10 flex flex-col lg:flex-row min-h-screen">
-                    {/* Enhanced Left Sidebar */}
-                    <aside className={`w-full lg:w-80 xl:w-96 py-8 px-6 border-r ${appTheme.border} ${appTheme.cardBg} backdrop-blur-xl transition-all duration-300 ease-in-out shadow-2xl`}>
+                    {/* Enhanced Left Sidebar - FIXED LAYOUT ISSUE */}
+                    <aside className={`w-full mt-20 lg:w-80 xl:w-96 lg:fixed lg:left-0 lg:top-0 py-8 px-6 border-r ${appTheme.border} ${appTheme.cardBg} backdrop-blur-xl transition-all duration-300 ease-in-out shadow-2xl overflow-y-auto`}>
                         <div className="flex flex-col h-full">
                             {/* Enhanced Profile Section */}
                             <div className="text-center mb-8">
@@ -297,7 +297,7 @@ const SettingPage = () => {
                             </div>
 
                             {/* Enhanced Navigation */}
-                            <nav className="flex-1 space-y-3">
+                            <nav className="flex-1 space-y-3 mb-8">
                                 {navigationItems.map((item) => (
                                     <button
                                         key={item.id}
@@ -330,8 +330,8 @@ const SettingPage = () => {
                                 ))}
                             </nav>
 
-                            {/* Enhanced Logout Button */}
-                            <div className="mt-8 pt-6 border-t border-gray-700/50">
+                            {/* Enhanced Logout Button - FIXED: Removed mt-8 and pt-6 classes that were pushing it down */}
+                            <div className="border-t border-gray-700/50 pt-6">
                                 <button
                                     onClick={() => {
                                         dispatch(logoutUser());
@@ -346,8 +346,8 @@ const SettingPage = () => {
                         </div>
                     </aside>
 
-                    {/* Enhanced Main Content Area */}
-                    <main className="flex-1 p-8 lg:p-12 overflow-y-auto">
+                    {/* Enhanced Main Content Area - ADJUSTED MARGINS */}
+                    <main className="flex-1 lg:ml-80 xl:ml-96 p-8 lg:p-12 overflow-y-auto min-h-screen">
                         {/* Profile Tab */}
                         {activeSettingTab === 'profile' && (
                             <div className="max-w-4xl mx-auto space-y-8">
@@ -543,7 +543,7 @@ const SettingPage = () => {
                                             <div
                                                 key={t.name}
                                                 className={`group relative rounded-2xl border-2 transition-all duration-500 cursor-pointer overflow-hidden ${
-                                                    theme.name === t.name 
+                                                    theme?.name === t.name 
                                                         ? `border-cyan-400 scale-105 shadow-2xl shadow-cyan-500/25 ring-4 ring-cyan-500/20` 
                                                         : `${t.border} hover:border-cyan-500/50 hover:scale-102 hover:shadow-xl`
                                                 } ${t.cardBg} backdrop-blur-xl ${
@@ -581,7 +581,7 @@ const SettingPage = () => {
                                                             )}
                                                         </div>
                                                         <div className="flex flex-col items-end gap-2">
-                                                            {theme.name === t.name && (
+                                                            {theme?.name === t.name && (
                                                                 <div className="p-2 rounded-full bg-green-500/20">
                                                                     <CheckIcon className="w-5 h-5 text-green-400" />
                                                                 </div>
@@ -639,14 +639,14 @@ const SettingPage = () => {
                                                         onClick={() => handleThemeSelect(t)}
                                                         disabled={t.isPremium && !currentUser?.isPremium}
                                                         className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${
-                                                            theme.name === t.name
+                                                            theme?.name === t.name
                                                                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                                                 : t.isPremium && !currentUser?.isPremium
                                                                     ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
                                                                     : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white border border-gray-600/50 hover:border-gray-500/50'
                                                         }`}
                                                     >
-                                                        {theme.name === t.name ? 'Active Theme' : 'Apply Theme'}
+                                                        {theme?.name === t.name ? 'Active Theme' : 'Apply Theme'}
                                                     </button>
                                                 </div>
                                             </div>
@@ -728,7 +728,6 @@ const SettingPage = () => {
                                                     required
                                                 />
                                             </div>
-
                                             <div className="group">
                                                 <label className={`block text-sm font-semibold ${appTheme.cardText} mb-2 group-focus-within:text-cyan-400 transition-colors duration-200`}>
                                                     Confirm New Password
@@ -879,8 +878,6 @@ const SettingPage = () => {
                     </div>
                 </div>
             )}
-
-            <Footer />
         </>
     );
 };
