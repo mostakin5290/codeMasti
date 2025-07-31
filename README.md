@@ -323,7 +323,7 @@ const analytics = {
 
 | 🏠 Landing Page | 💻 Code Editor | ⚡ Live Battle |
 |:--:|:--:|:--:|
-| ![Landing](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSAhjotqr6GJvCR2bT_V4lMdTBnk3cg_3ev-A&s) | ![Editor](https://via.placeholder.com/300x200/059669/FFFFFF?text=Code+Editor) | ![Battle](https://via.placeholder.com/300x200/DC2626/FFFFFF?text=Live+Battle) |
+| ![Landing](https://via.placeholder.com/300x200/4F46E5/FFFFFF?text=Modern+Landing) | ![Editor](https://via.placeholder.com/300x200/059669/FFFFFF?text=Code+Editor) | ![Battle](https://via.placeholder.com/300x200/DC2626/FFFFFF?text=Live+Battle) |
 
 | 🤖 AI Assistant | 📊 Analytics | 🎨 Theme Gallery |
 |:--:|:--:|:--:|
@@ -393,7 +393,7 @@ git push origin feature/amazing-feature
 [![GitHub Forks](https://img.shields.io/github/forks/mostakin5290/codeMasti?style=social)](https://github.com/mostakin5290/codeMasti)
 [![GitHub Issues](https://img.shields.io/github/issues/mostakin5290/codeMasti)](https://github.com/mostakin5290/codeMasti/issues)
 
-**[⭐ Star this repository](https://github.com/codeMasti/codeMasti)** • 
+**[⭐ Star this repository](https://github.com/mostakin5290/codeMasti)** • 
 **[🐦 Follow the journey](#)** • 
 **[💬 Join our Discord](#)**
 
