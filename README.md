@@ -3,8 +3,6 @@
 
 <div align="center">
 
-![CodeMasti Banner](https://via.placeholder.com/800x200/4F46E5/FFFFFF?text=CodeMasti+-+Code+Your+Way+to+Success)
-
 [![Build Status](https://img.shields.io/badge/build-production--ready-brightgreen.svg)](https://github.com/codeMasti/codeMasti)
 [![Version](https://img.shields.io/badge/version-v1.0-orange.svg)](https://github.com/codeMasti/codeMasti)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-7289da.svg)](https://discord.gg/codeMasti)
@@ -323,7 +321,7 @@ const analytics = {
 
 | 🏠 Landing Page | 💻 Code Editor | ⚡ Live Battle |
 |:--:|:--:|:--:|
-| ![Landing](https://via.placeholder.com/300x200/4F46E5/FFFFFF?text=Modern+Landing) | ![Editor](https://via.placeholder.com/300x200/059669/FFFFFF?text=Code+Editor) | ![Battle](https://via.placeholder.com/300x200/DC2626/FFFFFF?text=Live+Battle) |
+| ![Landing](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952559/Screenshot_2025-07-31_133853_hifqdy.png) | ![Editor](https://via.placeholder.com/300x200/059669/FFFFFF?text=Code+Editor) | ![Battle](https://via.placeholder.com/300x200/DC2626/FFFFFF?text=Live+Battle) |
 
 | 🤖 AI Assistant | 📊 Analytics | 🎨 Theme Gallery |
 |:--:|:--:|:--:|
