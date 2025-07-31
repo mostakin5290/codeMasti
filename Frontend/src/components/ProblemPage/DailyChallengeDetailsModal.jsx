@@ -50,7 +50,7 @@ const DailyChallengeDetailsModal = ({ isOpen, onClose, challengeDetails, appThem
                         {problem.tags?.map(tag => (
                             <span
                                 key={tag}
-                                className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${appTheme.iconBg} ${appTheme.highlightSecondary} border ${appTheme.accent.replace('bg-', 'border-')}/20`}
+                                className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${appTheme.iconBg} ${appTheme.highlightSecondary} border ${appTheme.accent}`}
                             >
                                 <FaTag className="w-3 h-3 mr-1" />
                                 {capitalizeFirstLetter(tag)}
@@ -72,7 +72,7 @@ const DailyChallengeDetailsModal = ({ isOpen, onClose, challengeDetails, appThem
                             updateRecentlyViewed(problem._id);
                             onClose();
                         }}
-                        className={`inline-flex items-center px-6 py-2 ${appTheme.buttonPrimary} hover:${appTheme.buttonPrimaryHover} ${appTheme.buttonText} rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-${appTheme.accent.replace('bg-', '')}-500 focus:ring-opacity-50`}
+                        className={`inline-flex items-center px-6 py-2 ${appTheme.buttonPrimary} hover:${appTheme.buttonPrimaryHover} ${appTheme.buttonText} rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-${appTheme.accent}-500 focus:ring-opacity-50`}
                     >
                         <FaExternalLinkAlt className="mr-2 h-4 w-4" />
                         Go to Problem

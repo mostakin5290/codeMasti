@@ -1,11 +1,11 @@
 const GameRoom = require('../models/gameRoomSchema');
-const User = require('../models/user'); // Ensure User model is imported
+const User = require('../models/user');
 const Problem = require('../models/problem');
 const Submission = require('../models/submission');
 const mongoose = require('mongoose');
 const { submitCodeInternal } = require('./submitControllers');
 
-const matchingQueue = []; 
+const matchingQueue = [];
 
 const generateRoomId = (length = 6) => {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -29,6 +29,7 @@ async function getRandomProblems(difficulty, count = 3) {
     }
 }
 
+// [Keep your existing endGame function - no changes needed]
 async function endGame(io, roomId, reason, winnerUserId = null) {
     const gameRoom = await GameRoom.findOne({ roomId });
     if (!gameRoom) {
@@ -54,12 +55,12 @@ async function endGame(io, roomId, reason, winnerUserId = null) {
     const gameDifficulty = gameRoom.difficulty;
 
     const playersSortedBySolvedTime = playersInRoom
-        .filter(p => p.gameStats?.problemsSolvedCount > 0) 
+        .filter(p => p.gameStats?.problemsSolvedCount > 0)
         .sort((a, b) => a.gameStats.timeTakenToSolve - b.gameStats.timeTakenToSolve);
 
-    let finalWinnerId = winnerUserId; 
+    let finalWinnerId = winnerUserId;
     if (!finalWinnerId && playersSortedBySolvedTime.length > 0) {
-        finalWinnerId = playersSortedBySolvedTime[0].userId; 
+        finalWinnerId = playersSortedBySolvedTime[0].userId;
     } else if (!finalWinnerId && reason === 'Opponent Left' && playersInRoom.length > 0) {
         const remainingActivePlayers = playersInRoom.filter(p => p.status === 'playing' || p.status === 'ready' || p.status === 'solved');
         if (initialStatus === 'in-progress' && remainingActivePlayers.length === 1 && playersInRoom.length === 2) {
@@ -78,7 +79,7 @@ async function endGame(io, roomId, reason, winnerUserId = null) {
     for (const player of playersInRoom) {
         const userProfile = await User.findById(player.userId);
         if (userProfile) {
-            const initialElo = userProfile.stats.eloRating || 1000; // Store ELO before update
+            const initialElo = userProfile.stats.eloRating || 1000;
 
             userProfile.stats.gamesPlayed = (userProfile.stats.gamesPlayed || 0) + 1;
 
@@ -112,9 +113,9 @@ async function endGame(io, roomId, reason, winnerUserId = null) {
                 userId: player.userId,
                 timeTaken: player.gameStats.timeTakenToSolve || null,
                 problemsSolvedCount: player.gameStats.problemsSolvedCount,
-                eloBeforeGame: initialElo, 
+                eloBeforeGame: initialElo,
                 eloChange: eloChange,
-                eloAfterGame: userProfile.stats.eloRating, 
+                eloAfterGame: userProfile.stats.eloRating,
                 outcome: outcome
             });
         }
@@ -125,7 +126,7 @@ async function endGame(io, roomId, reason, winnerUserId = null) {
 
     await gameRoom.populate('players.userId', 'firstName lastName avatar');
     await gameRoom.populate('gameResults.winner', 'firstName lastName avatar');
-    await gameRoom.populate('gameResults.solvedOrder.userId', 'firstName lastName avatar'); // Ensure this populates the solvedOrder user details
+    await gameRoom.populate('gameResults.solvedOrder.userId', 'firstName lastName avatar');
     await gameRoom.populate('problemIds', 'title difficulty');
 
     io.to(roomId).emit('gameEnd', {
@@ -133,12 +134,13 @@ async function endGame(io, roomId, reason, winnerUserId = null) {
         reason,
         winnerId: gameRoom.gameResults.winner,
         room: gameRoom,
-        results: gameRoom.gameResults 
+        results: gameRoom.gameResults
     });
 
     console.log(`Game room ${roomId} ended. Reason: ${reason}. Winner: ${gameRoom.gameResults.winner?.firstName || 'N/A'}`);
 }
 
+// FIXED findRandomOpponent function
 const findRandomOpponent = async (req, res) => {
     try {
         const currentUserId = req.user._id;
@@ -181,11 +183,11 @@ const findRandomOpponent = async (req, res) => {
                 return res.status(500).json({ message: "No problems found for the selected difficulty." });
             }
 
-            // --- CRUCIAL CHANGE HERE: Set status to 'in-progress' immediately ---
+            // Create game room with both players
             const newGameRoom = await GameRoom.create({
                 roomId,
                 maxPlayers: 2,
-                gameMode: '1v1-coding', // Quick matches are 1v1
+                gameMode: '1v1-coding',
                 difficulty,
                 timeLimit,
                 problemIds: problemIds,
@@ -193,8 +195,8 @@ const findRandomOpponent = async (req, res) => {
                     {
                         userId: new mongoose.Types.ObjectId(currentUserId),
                         socketId: currentUserSocketId,
-                        isCreator: true, // Assign creator to current user for consistency
-                        status: 'playing', // Set to 'playing' directly
+                        isCreator: true,
+                        status: 'playing',
                         gameStats: { problemsSolvedCount: 0, totalSubmissions: 0, timeTakenToSolve: null, firstAcceptedSubmissionId: null },
                         problemsCompleted: []
                     },
@@ -202,43 +204,49 @@ const findRandomOpponent = async (req, res) => {
                         userId: new mongoose.Types.ObjectId(matchedOpponent.userId),
                         socketId: matchedOpponent.socketId,
                         isCreator: false,
-                        status: 'playing', // Set to 'playing' directly
+                        status: 'playing',
                         gameStats: { problemsSolvedCount: 0, totalSubmissions: 0, timeTakenToSolve: null, firstAcceptedSubmissionId: null },
                         problemsCompleted: []
                     }
                 ],
-                status: 'in-progress', // Directly set game status to in-progress
-                startTime: new Date(), // Set start time
-                endTime: new Date(Date.now() + timeLimit * 60 * 1000), // Set end time
-                currentProblemIndex: 0 // Start with the first problem
+                status: 'in-progress',
+                startTime: new Date(),
+                endTime: new Date(Date.now() + timeLimit * 60 * 1000),
+                currentProblemIndex: 0
             });
 
-            // Populate the room object to send back to frontend
+            // Populate the room data
             await newGameRoom.populate('players.userId', 'firstName lastName emailId avatar');
             await newGameRoom.populate('problemIds', 'title difficulty tags description starterCode visibleTestCases executionConfig');
 
-            // --- Emit gameStart to both players directly from here ---
-            // The 'problem' field in gameStart should be the first problem
             const firstProblem = newGameRoom.problemIds[newGameRoom.currentProblemIndex];
 
-            // Use req.io to get the socket.io instance
+            // **KEY FIX: Emit gameStart to BOTH players from the controller**
+            // This ensures both players receive the event and can navigate to the game
+            console.log(`🎮 Emitting gameStart to both players for room ${roomId}`);
+            console.log(`📡 Current user socket: ${currentUserSocketId}`);
+            console.log(`📡 Matched opponent socket: ${matchedOpponent.socketId}`);
+
+            // Emit to current user (who just made the request)
             req.io.to(currentUserSocketId).emit('gameStart', {
                 room: newGameRoom,
                 message: `Quick Match found! Game starting now in room ${roomId}.`,
                 problem: firstProblem
             });
+
+            // Emit to matched opponent (who was waiting in queue)
             req.io.to(matchedOpponent.socketId).emit('gameStart', {
                 room: newGameRoom,
                 message: `Quick Match found! Game starting now in room ${roomId}.`,
                 problem: firstProblem
             });
 
-            console.log(`Quick match room ${roomId} created and gameStart emitted.`);
+            console.log(`✅ Quick match room ${roomId} created and gameStart emitted to both players.`);
 
-            // Return 200 OK for immediate match
+            // Return success response for the current user
             return res.status(200).json({
                 message: "Match found and game started!",
-                room: newGameRoom // Send the full room data with populated players/problems
+                room: newGameRoom
             });
 
         } else {
@@ -251,10 +259,13 @@ const findRandomOpponent = async (req, res) => {
                 timestamp: new Date()
             });
 
-            // Cleanup old queue entries (optional, but good practice)
+            console.log(`🔍 User ${currentUserId} added to matchmaking queue. Queue size: ${matchingQueue.length}`);
+
+            // Cleanup old queue entries (older than 30 seconds)
             const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
             for (let i = matchingQueue.length - 1; i >= 0; i--) {
                 if (matchingQueue[i].timestamp < thirtySecondsAgo) {
+                    console.log(`🧹 Removing expired queue entry for user ${matchingQueue[i].userId}`);
                     matchingQueue.splice(i, 1);
                 }
             }
@@ -266,11 +277,12 @@ const findRandomOpponent = async (req, res) => {
         }
 
     } catch (error) {
-        console.error("Error finding random opponent:", error);
+        console.error("❌ Error finding random opponent:", error);
         res.status(500).json({ message: "Server error while finding opponent", error: error.message });
     }
 };
 
+// [Keep all other functions unchanged]
 const createGameRoom = async (req, res) => {
     try {
         const { maxPlayers = 2, gameMode = '1v1-coding', difficulty, timeLimit } = req.body;
@@ -341,24 +353,23 @@ const joinGameRoom = async (req, res) => {
         const { roomId, socketId } = req.body;
         const userId = req.user._id;
 
-        console.log(`[Join Room] Received request to join roomId: '${roomId}', socketId: '${socketId}', userId: '${userId}'`); // DEBUG 1
+        console.log(`[Join Room] Received request to join roomId: '${roomId}', socketId: '${socketId}', userId: '${userId}'`);
 
         if (!roomId || !socketId) {
             return res.status(400).json({ message: "Room ID and Socket ID are required." });
         }
 
         const normalizedRoomId = roomId.toUpperCase();
-        console.log(`[Join Room] Normalized roomId for query: '${normalizedRoomId}'`); // DEBUG 2
-
+        console.log(`[Join Room] Normalized roomId for query: '${normalizedRoomId}'`);
 
         const gameRoom = await GameRoom.findOne({ roomId: normalizedRoomId });
 
         if (!gameRoom) {
-            console.warn(`[Join Room] Game room '${normalizedRoomId}' not found in DB during join attempt.`); // DEBUG 3
+            console.warn(`[Join Room] Game room '${normalizedRoomId}' not found in DB during join attempt.`);
             return res.status(404).json({ message: "Game room not found." });
         }
 
-        console.log(`[Join Room] Found game room: ${gameRoom.roomId}. Status: ${gameRoom.status}`); // DEBUG 4
+        console.log(`[Join Room] Found game room: ${gameRoom.roomId}. Status: ${gameRoom.status}`);
 
         if (gameRoom.status !== 'waiting') {
             return res.status(400).json({ message: `Cannot join room. Game is already ${gameRoom.status}.` });
@@ -413,20 +424,20 @@ const joinGameRoom = async (req, res) => {
 const getGameRoomDetails = async (req, res) => {
     try {
         const { roomId } = req.params;
-        console.log(`Attempting to fetch room details for roomId: ${roomId}`); 
+        console.log(`Attempting to fetch room details for roomId: ${roomId}`);
 
         const gameRoom = await GameRoom.findOne({ roomId: roomId })
             .populate('players.userId', 'firstName lastName emailId avatar')
             .populate('problemIds', 'title difficulty tags description starterCode visibleTestCases executionConfig')
             .populate('gameResults.winner', 'firstName lastName avatar')
-            .populate('gameResults.solvedOrder.userId', 'firstName lastName avatar'); // Ensure userId is populated here
+            .populate('gameResults.solvedOrder.userId', 'firstName lastName avatar');
 
         if (!gameRoom) {
             console.warn(`Game room ${roomId} not found in DB.`);
             return res.status(404).json({ message: "Game room not found." });
         }
 
-        console.log(`Found game room: ${gameRoom.roomId}`); 
+        console.log(`Found game room: ${gameRoom.roomId}`);
         res.status(200).json({
             message: "Game room details fetched successfully",
             room: gameRoom
@@ -439,15 +450,15 @@ const getGameRoomDetails = async (req, res) => {
 
 const getMyActiveGameRoom = async (req, res) => {
     try {
-        const userId = req.user._id; 
+        const userId = req.user._id;
 
         const activeRoom = await GameRoom.findOne({
             'players.userId': userId,
             status: 'in-progress'
         })
-        .select('roomId maxPlayers gameMode difficulty timeLimit startTime endTime problemIds currentProblemIndex') // Select only necessary fields
-        .populate('players.userId', 'firstName lastName avatar') 
-        .lean(); 
+        .select('roomId maxPlayers gameMode difficulty timeLimit startTime endTime problemIds currentProblemIndex')
+        .populate('players.userId', 'firstName lastName avatar')
+        .lean();
 
         if (activeRoom) {
             return res.status(200).json({
@@ -455,14 +466,13 @@ const getMyActiveGameRoom = async (req, res) => {
                 room: activeRoom
             });
         } else {
-            return res.status(204).json({ message: "User is not in an active game." }); // 204 No Content
+            return res.status(204).json({ message: "User is not in an active game." });
         }
     } catch (error) {
         console.error("Error getting user's active game room:", error);
         res.status(500).json({ message: "Server error checking active game room", error: error.message });
     }
 };
-
 
 module.exports = {
     findRandomOpponent,

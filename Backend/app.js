@@ -12,6 +12,9 @@ const axios = require('axios');
 const app = express();
 const server = http.createServer(app);
 
+// Import the daily challenge scheduler
+const dailyChallengeScheduler = require('./src/utils/dailyChallengeScheduler');
+
 const frontendUrl = process.env.FRONTEND_URL;
 
 const allowedOrigins = [
@@ -19,20 +22,17 @@ const allowedOrigins = [
     "http://localhost:5173", 
 ];
 
-
 const keepAlive = async () => {
     try {
         await axios.get('https://keepalive404.netlify.app/.netlify/functions/keepalive');
-
         await axios.get(`https://codemasti.onrender.com/keep-alive`);
-
     } catch (err) {
         console.error('Keep-alive failed:', err.message);
     }
 };
 
+// Keep-alive interval
 setInterval(keepAlive, 14 * 60 * 1000);
-
 
 const io = new Server(server, {
     cors: {
@@ -86,12 +86,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Import required models and controllers
 const GameRoom = require('./src/models/gameRoomSchema');
 const Problem = require('./src/models/problem');
 const User = require('./src/models/user');
 const { submitCodeInternal, runCodeInternal } = require('./src/controllers/submitControllers');
 const { endGame } = require('./src/controllers/gameController');
 
+// Import routes
 const userRouter = require('./src/routes/userRoute');
 const problemRouter = require('./src/routes/problemRoute');
 const submitRoute = require('./src/routes/submitRoutes');
@@ -106,6 +108,17 @@ const playlistRouter = require('./src/routes/playlistRoutes');
 const premiumRouter = require('./src/routes/premiumRouter');
 const gameRoutes = require('./src/routes/gameRoutes');
 
+// Keep-alive endpoint
+app.get('/keep-alive', (req, res) => {
+    res.status(200).json({ 
+        status: 'alive', 
+        timestamp: new Date().toISOString(),
+        message: 'Server is running',
+        dailyScheduler: dailyChallengeScheduler.getStatus()
+    });
+});
+
+// Use routes
 app.use('/user', userRouter);
 app.use('/problem', problemRouter);
 app.use('/submission', submitRoute);
@@ -120,8 +133,10 @@ app.use('/playlist', playlistRouter);
 app.use('/premium', premiumRouter);
 app.use('/game', gameRoutes); 
 
+// Game timers for multiplayer games
 const gameTimers = new Map();
 
+// Socket.IO connection handling
 io.on('connection', (socket) => {
     const userId = socket.handshake.query.userId;
 
@@ -379,10 +394,8 @@ io.on('connection', (socket) => {
             const leftPlayer = gameRoom.players[playerIndex];
             const leftUserName = (await User.findById(userId))?.firstName || 'A player';
 
-
             gameRoom.players.splice(playerIndex, 1);
             await gameRoom.save();
-
 
             io.to(roomId).emit('playerLeftRoom', { room: gameRoom, leftPlayerId: userId, message: `${leftUserName} left the room.` });
 
@@ -420,6 +433,7 @@ io.on('connection', (socket) => {
                             await GameRoom.findByIdAndDelete(latestRoomState._id);
                             io.to(latestRoomState.roomId).emit('roomDeleted', { roomId: latestRoomState.roomId, message: "Room is empty and has been deleted." });
                         } else if (latestRoomState) {
+                            console.log(`Socket.IO: Room ${latestRoomState.roomId} re-populated during grace period. Not deleting.`);
                         }
                     }, 60 * 1000);
                 } else {
@@ -434,7 +448,6 @@ io.on('connection', (socket) => {
             }
         }
     });
-
 
     socket.on('disconnect', async (reason) => {
         try {
@@ -489,7 +502,7 @@ io.on('connection', (socket) => {
                                     await GameRoom.findByIdAndDelete(latestRoomState._id);
                                     io.to(latestRoomState.roomId).emit('roomDeleted', { roomId: latestRoomState.roomId, message: "Room is empty and has been deleted." });
                                 } else if (latestRoomState) {
-                                    console.lg(`Socket.IO: Room ${latestRoomState.roomId} re-populated during grace period. Not deleting.`);
+                                    console.log(`Socket.IO: Room ${latestRoomState.roomId} re-populated during grace period. Not deleting.`);
                                 }
                             }, 60 * 1000);
                         } else {
@@ -497,6 +510,7 @@ io.on('connection', (socket) => {
                         }
                     }
                 } else {
+                    console.log('Socket.IO: Disconnected socket not found in any game room player list.');
                 }
             }
         } catch (error) {
@@ -508,24 +522,86 @@ io.on('connection', (socket) => {
     });
 });
 
+// Global error handler
 app.use((err, req, res, next) => {
     console.error('Express App Error:', err.stack);
     res.status(500).send('Something broke!');
 });
 
-const InitalizeConnection = async () => {
+// Initialize server connection and start daily challenge scheduler
+const InitializeConnection = async () => {
     try {
+        console.log('🚀 Starting server initialization...');
+        
+        // Connect to database and Redis
         await Promise.all([
             main(),
             redisClient.connect()
         ]);
-        server.listen(process.env.PORT, () => {
-            console.log("server start")
+        
+        console.log('✅ Database and Redis connections established');
+        
+        // Start the daily challenge scheduler
+        console.log('🕛 Starting daily challenge scheduler...');
+        dailyChallengeScheduler.start();
+        
+        // Start the server
+        server.listen(process.env.PORT || 5000, () => {
+            console.log(`✅ Server started on port ${process.env.PORT || 5000}`);
+            console.log('🎯 Daily challenge automation is active');
+            console.log(`📊 Scheduler status: ${JSON.stringify(dailyChallengeScheduler.getStatus(), null, 2)}`);
         });
+        
     } catch (err) {
-        console.error("Error during server initialization:", err);
+        console.error("❌ Error during server initialization:", err);
         process.exit(1);
     }
 };
 
-InitalizeConnection();
+// Graceful shutdown handlers
+process.on('SIGTERM', () => {
+    console.log('📡 SIGTERM received, shutting down gracefully...');
+    
+    // Stop the daily challenge scheduler
+    dailyChallengeScheduler.stop();
+    
+    // Close server
+    server.close(() => {
+        console.log('✅ Server closed gracefully');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('⚡ SIGINT received, shutting down gracefully...');
+    
+    // Stop the daily challenge scheduler
+    dailyChallengeScheduler.stop();
+    
+    // Close server
+    server.close(() => {
+        console.log('✅ Server closed gracefully');
+        process.exit(0);
+    });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+    console.error('💥 Uncaught Exception:', err);
+    
+    // Stop scheduler before exiting
+    dailyChallengeScheduler.stop();
+    process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('🔥 Unhandled Rejection at:', promise, 'reason:', reason);
+    
+    // Stop scheduler before exiting
+    dailyChallengeScheduler.stop();
+    process.exit(1);
+});
+
+// Start the server
+InitializeConnection();

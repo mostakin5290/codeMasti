@@ -4,7 +4,7 @@ import { FaPlay, FaStop, FaRandom, FaEdit, FaCheck, FaTimes } from 'react-icons/
 
 const SearchingVisualizer = ({ algorithm, theme, isPlaying, speed, onPlayPause }) => {
     const [array, setArray] = useState([]);
-    const [arraySize, setArraySize] = useState(12);
+    const [arraySize, setArraySize] = useState(10);
     const [currentIndex, setCurrentIndex] = useState(-1);
     const [foundIndex, setFoundIndex] = useState(-1);
     const [searchValue, setSearchValue] = useState(42);
@@ -17,6 +17,11 @@ const SearchingVisualizer = ({ algorithm, theme, isPlaying, speed, onPlayPause }
     const [isCustomInput, setIsCustomInput] = useState(false);
     const [customArrayInput, setCustomArrayInput] = useState('');
     const intervalRef = useRef(null);
+    
+    // Add ref for the search log container
+    const searchLogRef = useRef(null);
+    // Add ref for the main visualization area to prevent auto-scroll
+    const visualizationRef = useRef(null);
 
     // Initialize array when component mounts or algorithm changes
     useEffect(() => {
@@ -27,6 +32,19 @@ const SearchingVisualizer = ({ algorithm, theme, isPlaying, speed, onPlayPause }
     useEffect(() => {
         setAnimationSpeed(1100 - speed * 10);
     }, [speed]);
+
+    // Auto-scroll to bottom when search log updates (only for search log)
+    useEffect(() => {
+        if (searchLogRef.current && searchLog.length > 0) {
+            // Small delay to ensure DOM is updated
+            setTimeout(() => {
+                searchLogRef.current.scrollTo({
+                    top: searchLogRef.current.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        }
+    }, [searchLog]);
 
     const generateArray = () => {
         const newArray = [];
@@ -224,11 +242,11 @@ const SearchingVisualizer = ({ algorithm, theme, isPlaying, speed, onPlayPause }
     const requiresSortedArray = algorithm.name === 'Binary Search';
 
     return (
-        <div className="h-full flex gap-6">
+        <div className="h-full flex gap-6 overflow-hidden">
             {/* Main Visualization Area */}
-            <div className="flex-1 flex flex-col">
-                {/* Controls */}
-                <div className={`${theme.cardBg} rounded-lg p-6 mb-6 border ${theme.border}`}>
+            <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Controls - Fixed */}
+                <div className={`${theme.cardBg} rounded-lg p-6 mb-6 border ${theme.border} flex-shrink-0`}>
                     <div className="flex flex-wrap items-center gap-4 mb-4">
                         {!isCustomInput ? (
                             <>
@@ -355,76 +373,92 @@ const SearchingVisualizer = ({ algorithm, theme, isPlaying, speed, onPlayPause }
                     )}
                 </div>
 
-                {/* Array Visualization */}
-                <div className="flex-1 flex flex-col items-center justify-center">
-                    <h3 className={`${theme.highlight} text-xl font-semibold mb-6`}>
-                        {algorithm.name} - Array Visualization
-                    </h3>
-                    
-                    {/* Current Array Display */}
-                    <div className={`mb-4 text-sm ${theme.cardText}`}>
-                        Current Array: [{array.join(', ')}]
-                    </div>
-                    
-                    {/* Array Elements */}
-                    <div className="flex gap-1 mb-4 overflow-x-auto p-4">
-                        {array.map((value, index) => (
-                            <div key={index} className="flex flex-col items-center">
-                                <div
-                                    className={`
-                                        w-16 h-16 flex items-center justify-center rounded-lg border-2
-                                        font-bold text-lg transition-all duration-300 transform hover:scale-105
-                                        ${getCellColor(index)}
-                                    `}
-                                >
-                                    {value}
+                {/* Array Visualization - Fixed Position, No Auto Scroll */}
+                <div 
+                    ref={visualizationRef}
+                    className="flex-1 flex flex-col items-center justify-center overflow-hidden"
+                >
+                    <div className="w-full h-full flex flex-col items-center justify-center">
+                        <h3 className={`${theme.highlight} text-xl font-semibold mb-6`}>
+                            {algorithm.name} - Array Visualization
+                        </h3>
+                        
+                        {/* Current Array Display */}
+                        <div className={`mb-4 text-sm ${theme.cardText}`}>
+                            Current Array: [{array.join(', ')}]
+                        </div>
+                        
+                        {/* Array Elements - Fixed Center Position */}
+                        <div className="flex gap-1 mb-4 flex-wrap justify-center items-center px-4">
+                            {array.map((value, index) => (
+                                <div key={index} className="flex flex-col items-center">
+                                    <div
+                                        className={`
+                                            w-16 h-16 flex items-center justify-center rounded-lg border-2
+                                            font-bold text-lg transition-all duration-300 transform hover:scale-105
+                                            ${getCellColor(index)}
+                                        `}
+                                    >
+                                        {value}
+                                    </div>
+                                    <div className={`mt-2 text-xs ${theme.cardText} font-mono`}>
+                                        [{index}]
+                                    </div>
                                 </div>
-                                <div className={`mt-2 text-xs ${theme.cardText} font-mono`}>
-                                    [{index}]
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
 
-                    {/* Algorithm Info */}
-                    <div className={`${theme.cardBg} rounded-lg p-4 border ${theme.border} w-full max-w-2xl`}>
-                        <h3 className={`${theme.highlight} font-semibold mb-2`}>{algorithm.name}</h3>
-                        <p className={`${theme.cardText} text-sm mb-2`}>
-                            Time Complexity: <span className={`${theme.infoColor} font-mono`}>{algorithm.complexity}</span>
-                        </p>
-                        <p className={`${theme.cardText} text-sm mb-2`}>
-                            Requires Sorted Array: <span className={`${requiresSortedArray ? theme.successColor : theme.cardText} font-mono`}>
-                                {requiresSortedArray ? 'Yes' : 'No'}
-                            </span>
-                        </p>
-                        <div className="flex items-center gap-4 text-xs">
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                                <span className={theme.cardText}>Current</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                                <span className={theme.cardText}>Found</span>
-                            </div>
-                            {requiresSortedArray && (
+                        {/* Algorithm Info */}
+                        <div className={`${theme.cardBg} rounded-lg p-4 border ${theme.border} w-full max-w-2xl`}>
+                            <h3 className={`${theme.highlight} font-semibold mb-2`}>{algorithm.name}</h3>
+                            <p className={`${theme.cardText} text-sm mb-2`}>
+                                Time Complexity: <span className={`${theme.infoColor} font-mono`}>{algorithm.complexity}</span>
+                            </p>
+                            <p className={`${theme.cardText} text-sm mb-2`}>
+                                Requires Sorted Array: <span className={`${requiresSortedArray ? theme.successColor : theme.cardText} font-mono`}>
+                                    {requiresSortedArray ? 'Yes' : 'No'}
+                                </span>
+                            </p>
+                            <div className="flex items-center gap-4 text-xs">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 bg-blue-500/30 rounded"></div>
-                                    <span className={theme.cardText}>Search Range</span>
+                                    <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                                    <span className={theme.cardText}>Current</span>
                                 </div>
-                            )}
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 bg-green-500 rounded"></div>
+                                    <span className={theme.cardText}>Found</span>
+                                </div>
+                                {requiresSortedArray && (
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-4 h-4 bg-blue-500/30 rounded"></div>
+                                        <span className={theme.cardText}>Search Range</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Search Log Sidebar */}
-            <div className={`w-80 ${theme.cardBg} rounded-lg border ${theme.border} flex flex-col`}>
-                <div className="p-4 border-b border-gray-700">
+            {/* Search Log Sidebar - FIXED HEIGHT */}
+            <div className={`w-80 ${theme.cardBg} rounded-lg border ${theme.border} flex flex-col flex-shrink-0 h-full`}>
+                {/* Fixed Header */}
+                <div className="p-4 border-b border-gray-700 flex-shrink-0">
                     <h3 className={`${theme.highlight} font-semibold`}>
                         Search Log
                     </h3>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4">
+                
+                {/* Fixed Height Scrollable Content */}
+                <div 
+                    ref={searchLogRef}
+                    className="flex-1 overflow-y-auto overflow-x-hidden p-4"
+                    style={{ 
+                        scrollBehavior: 'smooth',
+                        maxHeight: 'calc(100vh - 200px)', // Prevent growing beyond screen
+                        minHeight: '400px' // Minimum height
+                    }}
+                >
                     <div className="space-y-2">
                         {searchLog.length === 0 ? (
                             <div className={`text-center ${theme.cardText} text-sm py-8`}>
@@ -435,7 +469,7 @@ const SearchingVisualizer = ({ algorithm, theme, isPlaying, speed, onPlayPause }
                             searchLog.map((log, index) => (
                                 <div 
                                     key={index} 
-                                    className={`text-sm p-2 rounded border-l-4 ${
+                                    className={`text-sm p-2 rounded border-l-4 transition-all duration-300 flex-shrink-0 ${
                                         log.action === 'found' ? 'border-green-500 bg-green-500/10' :
                                         log.action === 'notfound' ? 'border-red-500 bg-red-500/10' :
                                         log.action === 'compare' ? 'border-yellow-500 bg-yellow-500/10' :

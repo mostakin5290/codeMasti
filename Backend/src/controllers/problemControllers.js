@@ -307,61 +307,78 @@ const getTodayChallenge = async (req, res) => {
         const today = new Date();
         today.setUTCHours(0, 0, 0, 0);
 
-        let challengeProblem = null;
-        let challengeHistoryEntry = null;
+        // First, try to get from history
+        let challengeHistoryEntry = await DailyChallengeHistory.findOne({ 
+            challengeDate: today 
+        });
 
-        challengeHistoryEntry = await DailyChallengeHistory.findOne({ challengeDate: today });
+        let challengeProblem = null;
 
         if (challengeHistoryEntry) {
             challengeProblem = await Problem.findById(challengeHistoryEntry.problemId)
-                .select('-hiddenTestCases -referenceSolution'); // Exclude sensitive data for users
+                .select('-hiddenTestCases -referenceSolution');
 
-            if (!challengeProblem) {
-                console.warn(`Problem ${challengeHistoryEntry.problemId} not found for daily challenge on ${today.toISOString().split('T')[0]}. Removing history entry.`);
-                await DailyChallengeHistory.deleteOne({ _id: challengeHistoryEntry._id });
+            if (challengeProblem) {
+                // Ensure problem flags are correct
+                await Problem.updateMany(
+                    { isDailyChallenge: true, _id: { $ne: challengeProblem._id } },
+                    { $set: { isDailyChallenge: false, dailyChallengeDate: null } }
+                );
+
+                await Problem.findByIdAndUpdate(challengeProblem._id, {
+                    $set: { isDailyChallenge: true, dailyChallengeDate: today }
+                });
+
+                challengeProblem.isDailyChallenge = true;
+                challengeProblem.dailyChallengeDate = today;
             } else {
-                if (!challengeProblem.isDailyChallenge ||
-                    !challengeProblem.dailyChallengeDate ||
-                    new Date(challengeProblem.dailyChallengeDate).getTime() !== today.getTime()) {
-
-                    await Problem.updateMany(
-                        { isDailyChallenge: true, _id: { $ne: challengeProblem._id } }, 
-                        { $set: { isDailyChallenge: false, dailyChallengeDate: null } }
-                    );
-
-                    await Problem.findByIdAndUpdate(challengeProblem._id, {
-                        $set: { isDailyChallenge: true, dailyChallengeDate: today }
-                    });
-
-                    challengeProblem.isDailyChallenge = true;
-                    challengeProblem.dailyChallengeDate = today;
-                }
+                // Problem was deleted, remove from history
+                await DailyChallengeHistory.deleteOne({ _id: challengeHistoryEntry._id });
+                challengeHistoryEntry = null;
             }
-        } else {
-            await Problem.updateMany(
-                { isDailyChallenge: true },
-                { $set: { isDailyChallenge: false, dailyChallengeDate: null } }
-            );
+        }
+
+        // If no challenge exists, trigger the scheduler to create one
+        if (!challengeHistoryEntry || !challengeProblem) {
+            console.log('No daily challenge found, triggering scheduler...');
+            const dailyChallengeScheduler = require('../utils/dailyChallengeScheduler');
+            await dailyChallengeScheduler.setTodayChallenge();
+
+            // Try again after scheduler runs
+            challengeHistoryEntry = await DailyChallengeHistory.findOne({ 
+                challengeDate: today 
+            });
+
+            if (challengeHistoryEntry) {
+                challengeProblem = await Problem.findById(challengeHistoryEntry.problemId)
+                    .select('-hiddenTestCases -referenceSolution');
+            }
         }
 
         if (!challengeProblem) {
             return res.status(404).json({
-                message: "No daily challenge found for today",
-                suggestion: "Check back tomorrow or contact admin"
+                message: "No daily challenge available for today",
+                suggestion: "Please contact support if this issue persists"
             });
         }
 
+        // Check if user has solved it
         const submission = req.user ? await Submission.findOne({
             userId: req.user._id,
             problemId: challengeProblem._id,
             status: 'Accepted'
         }) : null;
 
+        // Get user streak
+        const user = req.user ? await User.findById(req.user._id)
+            .select('dailyChallenges') : null;
+
         res.status(200).json({
             challenge: challengeProblem,
             alreadySolved: !!submission,
-            streak: req.user?.dailyChallenges?.currentStreak || 0
+            streak: user?.dailyChallenges?.currentStreak || 0
         });
+
     } catch (err) {
         console.error("Error fetching today's challenge:", err);
         res.status(500).json({

@@ -15,32 +15,16 @@ import { useTheme } from '../../../context/ThemeContext';
 
 const { Option } = Select;
 
-const defaultTheme = {
-    background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
-    primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
-    cardBg: 'bg-gray-800', cardText: 'text-gray-300', border: 'border-gray-700',
-    buttonPrimary: 'bg-indigo-600',
-    buttonPrimaryHover: 'bg-indigo-700',
-    buttonText: 'text-white', highlight: 'text-cyan-400', highlightSecondary: 'text-blue-400',
-    highlightTertiary: 'text-purple-400', iconBg: 'bg-cyan-500/10',
-    gradientFrom: 'from-gray-900', gradientTo: 'to-gray-800',
-    successColor: 'text-emerald-400',
-    warningColor: 'text-amber-400',
-    errorColor: 'text-red-400',
-    infoColor: 'text-blue-400',
-};
-
 const DailyChallengeAdmin = () => {
-    const { theme: themeFromContext } = useTheme();
-    const theme = { ...defaultTheme, ...themeFromContext };
+    const { theme } = useTheme();
 
     const [challenges, setChallenges] = useState([]);
     const [problems, setProblems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedProblemId, setSelectedProblemId] = useState(null);
-    // State now explicitly holds a moment object
-    const [selectedDate, setSelectedDate] = useState(moment().startOf('day')); // Initialize with local today's midnight
+    // Use plain date string instead of moment object to avoid timezone issues
+    const [selectedDate, setSelectedDate] = useState('');
     const [isEditing, setIsEditing] = useState(false);
 
     // Custom Ant Design styles for dark theme integration
@@ -49,44 +33,44 @@ const DailyChallengeAdmin = () => {
         style.id = 'ant-table-custom-styles';
         style.innerHTML = `
             .ant-table {
-                background-color: ${theme.cardBg.replace('bg-', '')};
-                border: 1px solid ${theme.border.replace('border-', '')};
+                background-color: ${theme.cardBg?.replace('bg-', '') || '#1f2937'};
+                border: 1px solid ${theme.border?.replace('border-', '') || '#374151'};
                 border-radius: 0.75rem;
                 overflow: hidden;
             }
             .ant-table-wrapper {
-                background-color: ${theme.cardBg.replace('bg-', '')};
+                background-color: ${theme.cardBg?.replace('bg-', '') || '#1f2937'};
             }
             .ant-table-thead > tr > th {
-                background-color: ${theme.cardBg.replace('bg-', '')};
-                color: ${theme.highlightSecondary.replace('text-', '')};
-                border-bottom: 1px solid ${theme.border.replace('border-', '')};
+                background-color: ${theme.cardBg?.replace('bg-', '') || '#1f2937'};
+                color: ${theme.highlightSecondary?.replace('text-', '') || '#60a5fa'};
+                border-bottom: 1px solid ${theme.border?.replace('border-', '') || '#374151'};
                 font-weight: 600;
                 text-align: left;
             }
             .ant-table-tbody > tr.ant-table-row:hover > td {
-                background-color: ${theme.background.replace('bg-', '')} !important;
+                background-color: ${theme.background?.replace('bg-', '') || '#111827'} !important;
             }
             .ant-table-tbody > tr > td {
-                color: ${theme.cardText.replace('text-', '')};
-                border-bottom: 1px solid ${theme.border.replace('border-', '')};
+                color: ${theme.cardText?.replace('text-', '') || '#d1d5db'};
+                border-bottom: 1px solid ${theme.border?.replace('border-', '') || '#374151'};
             }
             .ant-pagination-item-link,
             .ant-pagination-item {
-                background-color: ${theme.background.replace('bg-', '')} !important;
-                border: 1px solid ${theme.border.replace('border-', '')} !important;
-                color: ${theme.cardText.replace('text-', '')} !important;
+                background-color: ${theme.background?.replace('bg-', '') || '#111827'} !important;
+                border: 1px solid ${theme.border?.replace('border-', '') || '#374151'} !important;
+                color: ${theme.cardText?.replace('text-', '') || '#d1d5db'} !important;
             }
             .ant-pagination-item-active {
-                background-color: ${theme.primary.replace('bg-', '')} !important;
-                border-color: ${theme.primary.replace('bg-', '')} !important;
-                color: ${theme.buttonText.replace('text-', '')} !important;
+                background-color: ${theme.primary?.replace('bg-', '') || '#3b82f6'} !important;
+                border-color: ${theme.primary?.replace('bg-', '') || '#3b82f6'} !important;
+                color: ${theme.buttonText?.replace('text-', '') || '#ffffff'} !important;
             }
             .ant-pagination-prev .ant-pagination-item-link,
             .ant-pagination-next .ant-pagination-item-link {
-                background-color: ${theme.background.replace('bg-', '')} !important;
-                border: 1px solid ${theme.border.replace('border-', '')} !important;
-                color: ${theme.cardText.replace('text-', '')} !important;
+                background-color: ${theme.background?.replace('bg-', '') || '#111827'} !important;
+                border: 1px solid ${theme.border?.replace('border-', '') || '#374151'} !important;
+                color: ${theme.cardText?.replace('text-', '') || '#d1d5db'} !important;
             }
             .ant-pagination-disabled .ant-pagination-item-link,
             .ant-pagination-disabled .ant-pagination-item {
@@ -94,46 +78,46 @@ const DailyChallengeAdmin = () => {
                 cursor: not-allowed;
             }
             .ant-table-filter-trigger {
-                color: ${theme.text.replace('text-', '')};
+                color: ${theme.text?.replace('text-', '') || '#ffffff'};
             }
             .ant-table-column-sorter-up, .ant-table-column-sorter-down {
-                color: ${theme.highlight.replace('text-', '')};
+                color: ${theme.highlight?.replace('text-', '') || '#22d3ee'};
             }
 
             /* Antd Select Dropdown Custom Styles */
             .ant-select-dropdown {
-                background-color: ${theme.cardBg.replace('bg-', '')} !important;
-                border: 1px solid ${theme.border.replace('border-', '')} !important;
+                background-color: ${theme.cardBg?.replace('bg-', '') || '#1f2937'} !important;
+                border: 1px solid ${theme.border?.replace('border-', '') || '#374151'} !important;
                 border-radius: 0.5rem !important;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
             }
             .ant-select-item-option-content {
-                color: ${theme.text.replace('text-', '')} !important;
+                color: ${theme.text?.replace('text-', '') || '#ffffff'} !important;
             }
             .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
-                background-color: ${theme.primary.replace('bg-', '')} !important;
-                color: ${theme.buttonText.replace('text-', '')} !important;
+                background-color: ${theme.primary?.replace('bg-', '') || '#3b82f6'} !important;
+                color: ${theme.buttonText?.replace('text-', '') || '#ffffff'} !important;
             }
             .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
-                background-color: ${theme.primaryHover.replace('bg-', '')} !important;
-                color: ${theme.buttonText.replace('text-', '')} !important;
+                background-color: ${theme.primaryHover?.replace('bg-', '') || '#2563eb'} !important;
+                color: ${theme.buttonText?.replace('text-', '') || '#ffffff'} !important;
             }
             .ant-select-selector {
-                background-color: ${theme.cardBg.replace('bg-', '')} !important;
-                border: 1px solid ${theme.border.replace('border-', '')} !important;
-                color: ${theme.text.replace('text-', '')} !important;
+                background-color: ${theme.cardBg?.replace('bg-', '') || '#1f2937'} !important;
+                border: 1px solid ${theme.border?.replace('border-', '') || '#374151'} !important;
+                color: ${theme.text?.replace('text-', '') || '#ffffff'} !important;
             }
             .ant-select-arrow {
-                color: ${theme.cardText.replace('text-', '')} !important;
+                color: ${theme.cardText?.replace('text-', '') || '#d1d5db'} !important;
             }
             /* Basic styling for HTML date input to blend with theme */
             input[type="date"] {
                 appearance: none;
                 -webkit-appearance: none;
                 -moz-appearance: none;
-                background-color: ${theme.cardBg.replace('bg-', '')};
-                border: 2px solid ${theme.border.replace('border-', '')};
-                color: ${theme.text.replace('text-', '')};
+                background-color: ${theme.cardBg?.replace('bg-', '') || '#1f2937'};
+                border: 2px solid ${theme.border?.replace('border-', '') || '#374151'};
+                color: ${theme.text?.replace('text-', '') || '#ffffff'};
                 padding: 0.75rem 1rem;
                 border-radius: 0.5rem;
                 font-size: 1rem;
@@ -144,11 +128,11 @@ const DailyChallengeAdmin = () => {
             }
             input[type="date"]:focus {
                 outline: none;
-                border-color: ${theme.highlight.replace('text-', '')};
-                box-shadow: 0 0 0 2px ${theme.highlight.replace('text-', '')}60;
+                border-color: ${theme.highlight?.replace('text-', '') || '#22d3ee'};
+                box-shadow: 0 0 0 2px ${theme.highlight?.replace('text-', '') || '#22d3ee'}60;
             }
             input[type="date"]::-webkit-calendar-picker-indicator {
-                filter: ${theme.text.includes('white') ? 'invert(1)' : 'none'};
+                filter: ${theme.text?.includes('white') ? 'invert(1)' : 'none'};
                 cursor: pointer;
             }
         `;
@@ -162,7 +146,6 @@ const DailyChallengeAdmin = () => {
         };
     }, [theme]);
 
-
     const columns = [
         {
             title: 'Date',
@@ -170,15 +153,14 @@ const DailyChallengeAdmin = () => {
             key: 'date',
             render: (date, record) => (
                 <div className="flex items-center">
-                    <CalendarOutlined className={`mr-2 ${theme.infoColor}`} />
-                    {/* Convert backend UTC date to local for display */}
-                    <span>{moment.utc(date).local().format('MMMM Do, YYYY')}</span>
+                    <CalendarOutlined className={`mr-2 ${theme.infoColor || 'text-blue-400'}`} />
+                    {/* Display date as YYYY-MM-DD format to avoid timezone confusion */}
+                    <span>{moment.utc(date).format('YYYY-MM-DD')}</span>
                     {record.isCurrentActive && (
                         <Tag color="cyan" className="ml-2">TODAY</Tag>
                     )}
                 </div>
             ),
-            // Sorter should use UTC values for consistent sorting
             sorter: (a, b) => moment.utc(a.dailyChallengeDate).valueOf() - moment.utc(b.dailyChallengeDate).valueOf(),
             defaultSortOrder: 'descend',
         },
@@ -206,14 +188,14 @@ const DailyChallengeAdmin = () => {
                     <Button
                         icon={<EditOutlined />}
                         onClick={() => handleEdit(record)}
-                        className={`flex items-center justify-center ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText}`}
+                        className={`flex items-center justify-center ${theme.buttonPrimary || 'bg-indigo-600'} hover:${theme.buttonPrimaryHover || 'bg-indigo-700'} ${theme.buttonText || 'text-white'}`}
                     >
                         Edit
                     </Button>
                     <Button
                         icon={<DeleteOutlined />}
                         onClick={() => handleDelete(record._id, record.title)}
-                        className={`flex items-center justify-center bg-red-600 hover:bg-red-700 ${theme.buttonText} border-red-600`}
+                        className={`flex items-center justify-center bg-red-600 hover:bg-red-700 ${theme.buttonText || 'text-white'} border-red-600`}
                     >
                         Delete
                     </Button>
@@ -254,25 +236,23 @@ const DailyChallengeAdmin = () => {
         setIsEditing(false);
         setSelectedProblemId(null);
 
-        let nextDate = moment().startOf('day');
-        console.log(moment().startOf('day'));
-
+        // Get next available date in YYYY-MM-DD format
+        let nextDate = moment().format('YYYY-MM-DD');
 
         if (challenges.length > 0) {
+            // Find the latest challenge date
             const latestChallengeDate = challenges.reduce((latest, current) => {
-                const currentDateLocal = moment.utc(current.dailyChallengeDate).local().startOf('day');
-                return currentDateLocal.isAfter(latest) ? currentDateLocal : latest;
-            }, moment().subtract(2, 'day').startOf('day'));
+                const currentDate = moment.utc(current.dailyChallengeDate).format('YYYY-MM-DD');
+                return currentDate > latest ? currentDate : latest;
+            }, moment().subtract(1, 'day').format('YYYY-MM-DD'));
 
-            if (latestChallengeDate.isSameOrAfter(moment().startOf('day'), 'day')) {
-                nextDate = latestChallengeDate.add(2, 'day').startOf('day');
-                console.log(nextDate);
-
-            } else {
-                nextDate = moment().startOf('day');
+            // If latest date is today or in the future, suggest next day
+            if (latestChallengeDate >= moment().format('YYYY-MM-DD')) {
+                nextDate = moment(latestChallengeDate).add(1, 'day').format('YYYY-MM-DD');
             }
         }
-        setSelectedDate(nextDate); // Set as moment object
+
+        setSelectedDate(nextDate);
         setModalVisible(true);
     };
 
@@ -282,26 +262,32 @@ const DailyChallengeAdmin = () => {
             return;
         }
 
-        // SelectedDate is already a moment object from the state
-        if (!selectedDate || selectedDate.isBefore(moment().startOf('day'), 'day')) {
+        if (!selectedDate || selectedDate < moment().format('YYYY-MM-DD')) {
             message.warning('Please select today\'s date or a future date.');
             return;
         }
 
         setLoading(true);
         try {
+            // Create a UTC date object from the selected date string
+            // This ensures the date is sent as the exact date selected, not shifted by timezone
+            const utcDate = moment.utc(selectedDate + ' 00:00:00', 'YYYY-MM-DD HH:mm:ss');
+            
             const payload = {
                 problemId: selectedProblemId,
-                // Convert the moment object (local time, start of day) to ISO UTC string for backend.
-                date: selectedDate.toISOString()
+                date: utcDate.toISOString() // Send as UTC ISO string
             };
 
+            console.log('Sending payload:', payload);
+            console.log('Selected date:', selectedDate);
+            console.log('UTC date being sent:', utcDate.format('YYYY-MM-DD HH:mm:ss UTC'));
+
             await axiosClient.post('/problem/daily/set', payload);
-            message.success(`Daily challenge set successfully for ${selectedDate.format('YYYY-MM-DD')}!`);
+            message.success(`Daily challenge set successfully for ${selectedDate}!`);
 
             setModalVisible(false);
             setSelectedProblemId(null);
-            setSelectedDate(moment().startOf('day')); // Reset to today's local start of day
+            setSelectedDate('');
             fetchScheduledAndHistoricalChallenges();
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Failed to set daily challenge. Please check console for details.';
@@ -315,7 +301,7 @@ const DailyChallengeAdmin = () => {
     const handleDelete = async (historyRecordId, challengeTitle) => {
         Modal.confirm({
             title: 'Confirm Removal',
-            icon: <QuestionCircleOutlined className={`${theme.warningColor}`} />,
+            icon: <QuestionCircleOutlined className={`${theme.warningColor || 'text-amber-400'}`} />,
             content: `Are you sure you want to remove the daily challenge record for "${challengeTitle}"? This will delete its history entry and unset it if it's the current active challenge.`,
             okText: 'Remove',
             okType: 'danger',
@@ -336,36 +322,36 @@ const DailyChallengeAdmin = () => {
             onCancel() {
                 console.log('Cancel removing daily challenge');
             },
-            okButtonProps: { className: `bg-red-600 hover:bg-red-700 ${theme.buttonText}` },
-            cancelButtonProps: { className: `${theme.cardBg} ${theme.text} border-${theme.border.replace('border-', '')} hover:${theme.cardBg}/80` }
+            okButtonProps: { className: `bg-red-600 hover:bg-red-700 ${theme.buttonText || 'text-white'}` },
+            cancelButtonProps: { className: `${theme.cardBg || 'bg-gray-800'} ${theme.text || 'text-white'} border-${theme.border?.replace('border-', '') || 'gray-700'} hover:${theme.cardBg || 'bg-gray-800'}/80` }
         });
     };
 
     const handleEdit = (record) => {
         setIsEditing(true);
         setSelectedProblemId(record.problemId);
-        // Convert backend UTC date to local moment object for pre-population
-        setSelectedDate(moment.utc(record.dailyChallengeDate).local().startOf('day'));
+        // Extract just the date part from the UTC date to avoid timezone issues
+        setSelectedDate(moment.utc(record.dailyChallengeDate).format('YYYY-MM-DD'));
         setModalVisible(true);
     };
 
     const filterProblemOption = (input, option) =>
         option.children && option.children.toLowerCase().includes(input.toLowerCase());
 
-    const todayForMinAttribute = moment().format('YYYY-MM-DD'); // Only used for the min attribute
+    const todayForMinAttribute = moment().format('YYYY-MM-DD');
 
     return (
-        <div className={`daily-challenge-admin p-6 ${theme.background} ${theme.text}`}>
+        <div className={`daily-challenge-admin p-6 ${theme.background || 'bg-gray-900'} ${theme.text || 'text-white'}`}>
             <div className="flex justify-between items-center mb-6">
-                <h2 className={`text-3xl font-bold flex items-center ${theme.text}`}>
-                    <FireOutlined className={`mr-2 ${theme.highlight}`} />
+                <h2 className={`text-3xl font-bold flex items-center ${theme.text || 'text-white'}`}>
+                    <FireOutlined className={`mr-2 ${theme.highlight || 'text-cyan-400'}`} />
                     Daily Challenges Management
                 </h2>
                 <Button
                     type="primary"
                     icon={<PlusOutlined />}
                     onClick={handleCreate}
-                    className={`flex items-center justify-center ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText}`}
+                    className={`flex items-center justify-center ${theme.buttonPrimary || 'bg-indigo-600'} hover:${theme.buttonPrimaryHover || 'bg-indigo-700'} ${theme.buttonText || 'text-white'}`}
                     size="large"
                 >
                     Set New Challenge
@@ -375,15 +361,15 @@ const DailyChallengeAdmin = () => {
             <Card
                 title={
                     <div className="flex items-center">
-                        <CalendarOutlined className={`mr-2 text-lg ${theme.infoColor}`} />
-                        <span className={`text-xl font-semibold ${theme.highlightTertiary}`}>
+                        <CalendarOutlined className={`mr-2 text-lg ${theme.infoColor || 'text-blue-400'}`} />
+                        <span className={`text-xl font-semibold ${theme.highlightTertiary || 'text-purple-400'}`}>
                             Scheduled & Historical Daily Challenges
                         </span>
                     </div>
                 }
                 bordered={false}
-                className={`shadow-lg rounded-xl ${theme.cardBg} ${theme.border}`}
-                headStyle={{ borderBottom: `1px solid ${theme.border.replace('border-', '')}` }}
+                className={`shadow-lg rounded-xl ${theme.cardBg || 'bg-gray-800'} ${theme.border || 'border-gray-700'}`}
+                headStyle={{ borderBottom: `1px solid ${theme.border?.replace('border-', '') || '#374151'}` }}
                 bodyStyle={{ padding: 0 }}
             >
                 <Table
@@ -396,8 +382,8 @@ const DailyChallengeAdmin = () => {
                         className: 'mt-4',
                         showSizeChanger: false,
                         itemRender: (current, type, originalElement) => {
-                            if (type === 'prev') return <a className={`${theme.cardText}`}>Previous</a>;
-                            if (type === 'next') return <a className={`${theme.cardText}`}>Next</a>;
+                            if (type === 'prev') return <a className={`${theme.cardText || 'text-gray-300'}`}>Previous</a>;
+                            if (type === 'next') return <a className={`${theme.cardText || 'text-gray-300'}`}>Next</a>;
                             return originalElement;
                         }
                     }}
@@ -408,12 +394,12 @@ const DailyChallengeAdmin = () => {
             <Modal
                 title={isEditing ? (
                     <div className="flex items-center">
-                        <EditOutlined className={`mr-2 text-lg ${theme.infoColor}`} />
+                        <EditOutlined className={`mr-2 text-lg ${theme.infoColor || 'text-blue-400'}`} />
                         <span className="text-xl font-semibold">Edit Daily Challenge</span>
                     </div>
                 ) : (
                     <div className="flex items-center">
-                        <PlusOutlined className={`mr-2 text-lg ${theme.successColor}`} />
+                        <PlusOutlined className={`mr-2 text-lg ${theme.successColor || 'text-emerald-400'}`} />
                         <span className="text-xl font-semibold">Set New Daily Challenge</span>
                     </div>
                 )}
@@ -423,54 +409,57 @@ const DailyChallengeAdmin = () => {
                     setModalVisible(false);
                     setIsEditing(false);
                     setSelectedProblemId(null);
-                    setSelectedDate(moment().startOf('day')); // Reset to today's local start of day
+                    setSelectedDate('');
                 }}
                 confirmLoading={loading}
                 width={600}
                 okText={isEditing ? "Update Challenge" : "Set Challenge"}
                 okButtonProps={{
-                    className: `flex items-center justify-center ${loading ? 'opacity-50 cursor-not-allowed' : theme.buttonPrimary} ${loading ? '' : `hover:${theme.buttonPrimaryHover}`} ${theme.buttonText} shadow-md`,
+                    className: `flex items-center justify-center ${loading ? 'opacity-50 cursor-not-allowed' : theme.buttonPrimary || 'bg-indigo-600'} ${loading ? '' : `hover:${theme.buttonPrimaryHover || 'bg-indigo-700'}`} ${theme.buttonText || 'text-white'} shadow-md`,
                     size: 'large'
                 }}
-                cancelButtonProps={{ size: 'large', className: `${theme.cardBg} ${theme.text} border-${theme.border.replace('border-', '')} hover:${theme.cardBg}/80` }}
+                cancelButtonProps={{ 
+                    size: 'large', 
+                    className: `${theme.cardBg || 'bg-gray-800'} ${theme.text || 'text-white'} border-${theme.border?.replace('border-', '') || 'gray-700'} hover:${theme.cardBg || 'bg-gray-800'}/80` 
+                }}
                 centered
-                className={`${theme.cardBg} ${theme.text} ${theme.border} rounded-xl`}
+                className={`${theme.cardBg || 'bg-gray-800'} ${theme.text || 'text-white'} ${theme.border || 'border-gray-700'} rounded-xl`}
                 wrapClassName="daily-challenge-modal-wrapper"
             >
                 <div className="space-y-6">
                     <div>
-                        <label className={`block mb-2 ${theme.successColor} font-medium`}>
+                        <label className={`block mb-2 ${theme.successColor || 'text-emerald-400'} font-medium`}>
                             Select Date
                         </label>
                         <input
                             type="date"
-                            // If selectedDate is a moment object, format it for the input's value
-                            value={selectedDate ? selectedDate.format('YYYY-MM-DD') : ''}
+                            value={selectedDate}
                             onChange={(e) => {
-                                const newDateValue = e.target.value; // This is the YYYY-MM-DD string
-                                if (!newDateValue) { // Handle clearing the input
-                                    setSelectedDate(null);
+                                const newDateValue = e.target.value;
+                                console.log('Date selected:', newDateValue);
+                                
+                                if (!newDateValue) {
+                                    setSelectedDate('');
                                     return;
                                 }
-                                const dateMoment = moment(newDateValue); // Parse the string into a moment object (local time)
 
-                                // Validate against local 'today'
-                                if (dateMoment.isSameOrAfter(moment().startOf('day'))) {
-                                    setSelectedDate(dateMoment); // Update state with the moment object
+                                // Validate against today's date
+                                if (newDateValue >= todayForMinAttribute) {
+                                    setSelectedDate(newDateValue);
                                 } else {
                                     message.warning('Cannot select a date in the past.');
-                                    // Optionally, revert the input value display here if you want to visually enforce
-                                    // For now, it will keep the invalid date in the input until a valid one is picked
-                                    // or the modal is closed. This is browser-dependent behavior for type="date".
                                 }
                             }}
-                            min={todayForMinAttribute} // Disable dates before today
-                            className={`w-full border-2 ${theme.border} ${theme.cardBg} ${theme.text} rounded-lg focus:ring-${theme.highlight.replace('text-', '')} focus:border-${theme.highlight.replace('text-', '')} w-full h-[45px] px-3`}
+                            min={todayForMinAttribute}
+                            className={`w-full border-2 ${theme.border || 'border-gray-700'} ${theme.cardBg || 'bg-gray-800'} ${theme.text || 'text-white'} rounded-lg focus:ring-${theme.highlight?.replace('text-', '') || 'cyan'} focus:border-${theme.highlight?.replace('text-', '') || 'cyan'} w-full h-[45px] px-3`}
                         />
+                        <div className="mt-1 text-sm text-gray-400">
+                            Selected: {selectedDate ? selectedDate : 'No date selected'}
+                        </div>
                     </div>
 
                     <div>
-                        <label className={`block mb-2 ${theme.successColor} font-medium`}>Select Problem</label>
+                        <label className={`block mb-2 ${theme.successColor || 'text-emerald-400'} font-medium`}>Select Problem</label>
                         <Select
                             showSearch
                             style={{
@@ -482,7 +471,7 @@ const DailyChallengeAdmin = () => {
                             onChange={setSelectedProblemId}
                             value={selectedProblemId}
                             filterOption={filterProblemOption}
-                            className={`border ${theme.border} rounded-lg`}
+                            className={`border ${theme.border || 'border-gray-700'} rounded-lg`}
                         >
                             {problems.map(problem => (
                                 <Option
