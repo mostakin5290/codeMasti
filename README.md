@@ -319,9 +319,9 @@ const analytics = {
 
 ## 🎨 **Screenshots & Demo**
 
-| 🏠 Landing Page | 💻 Code Editor | ⚡ Live Battle |
+| Landing Page | Home Page | Profile Page |
 |:--:|:--:|:--:|
-| ![Landing](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952559/Screenshot_2025-07-31_133853_hifqdy.png) | ![Editor](https://via.placeholder.com/300x200/059669/FFFFFF?text=Code+Editor) | ![Battle](https://via.placeholder.com/300x200/DC2626/FFFFFF?text=Live+Battle) |
+| ![Landing](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952559/Screenshot_2025-07-31_133853_hifqdy.png) | ![Home](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952700/Screenshot_2025-07-31_134152_zapngc.png) | ![Profile](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952789/Screenshot_2025-07-31_134349_nwrymw.png) |
 
 | 🤖 AI Assistant | 📊 Analytics | 🎨 Theme Gallery |
 |:--:|:--:|:--:|
