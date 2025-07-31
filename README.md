@@ -325,7 +325,11 @@ const analytics = {
 
 | Code Field | Problem Page | Admin Panel |
 |:--:|:--:|:--:|
-| ![Code](https://via.placeholder.com/300x200/7C3AED/FFFFFF?text=AI+Helperhttps://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952886/Screenshot_2025-07-31_134225_e4m40b.png) | ![Problem](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952966/Screenshot_2025-07-31_134152_lbfact.png) | ![Themes](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753953019/Screenshot_2025-07-31_134402_i2bwhk.png) |
+| ![Code](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952886/Screenshot_2025-07-31_134225_e4m40b.png) | ![Problem](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753952966/Screenshot_2025-07-31_134152_lbfact.png) | ![Themes](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753953019/Screenshot_2025-07-31_134402_i2bwhk.png) |
+
+| Setting | Visualizer | Debugger |
+|:--:|:--:|:--:|
+| ![Setting](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753953262/Screenshot_2025-07-31_134425_febmpn.png) | ![Visualizer](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753953316/Screenshot_2025-07-31_134322_uc2s04.png) | ![Debugger](https://res.cloudinary.com/dcmzfn5oq/image/upload/v1753953350/Screenshot_2025-07-31_134302_ntzqun.png) |
 
 ---
 
