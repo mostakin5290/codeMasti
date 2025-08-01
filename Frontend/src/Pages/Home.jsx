@@ -255,7 +255,7 @@ const Home = () => {
                         </h1>
 
                         <TextType
-                            className={`text-xl mt-10 mb-10 ${theme.text}`}
+                            className={`text-l mt-10 mb-10 ${theme.text}`}
                             text={["Join our platform where developers sharpen their skills...",
                                 "through interactive coding exercises, real-world projects...",
                                 "and competitive programming..."]}
