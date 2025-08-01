@@ -950,7 +950,8 @@ const DiscussPage = () => {
                                                                                 <div className="flex items-center justify-between mb-2">
                                                                                     <div className="flex items-center gap-2">
                                                                                         <span className={`font-medium ${appTheme.text} text-sm`}>
-                                                                                            {comment?.author?.username}
+                                                                                            {comment?.author?.firstName}
+                                                                                            {console.log(comment)}
                                                                                         </span>
                                                                                         <time className={`${appTheme.cardText} text-xs`}>
                                                                                             {formatDateTime(comment?.createdAt)}

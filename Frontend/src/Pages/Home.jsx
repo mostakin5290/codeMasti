@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import { ArrowRight } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { FiStar, FiArrowRight, FiCode, FiZap, FiTrendingUp } from 'react-icons/fi';
@@ -14,6 +15,8 @@ import codingAnimation from '../assets/lotties/coding.json';
 import ideaAnimation from '../assets/lotties/Idea.json';
 import successAnimation from '../assets/lotties/success.json';
 import Aurora from '../components/animation/Aurora';
+import TextType from '../components/ui/TextType';
+import SplitText from '../components/ui/SplitText'
 
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
@@ -31,14 +34,12 @@ const defaultTheme = {
 };
 
 const tailwindColorMap = {
-    // Grays/Zincs/Slates/Neutrals/Stones
     'gray-50': '#F9FAFB', 'gray-100': '#F3F4F6', 'gray-200': '#E5E7EB', 'gray-300': '#D1D5DB', 'gray-400': '#9CA3AF', 'gray-500': '#6B7280', 'gray-600': '#4B5563', 'gray-700': '#374151', 'gray-800': '#1F2937', 'gray-900': '#111827', 'gray-950': '#0A0A0A',
     'zinc-50': '#FAFAFA', 'zinc-100': '#F4F4F5', 'zinc-200': '#E4E4E7', 'zinc-300': '#D4D4D8', 'zinc-400': '#A1A1AA', 'zinc-500': '#71717A', 'zinc-600': '#52525B', 'zinc-700': '#3F3F46', 'zinc-800': '#27272A', 'zinc-900': '#18181B', 'zinc-950': '#09090B',
     'slate-50': '#F8FAFC', 'slate-100': '#F1F5F9', 'slate-200': '#E2E8F0', 'slate-300': '#CBD5E1', 'slate-400': '#94A3B8', 'slate-500': '#64748B', 'slate-600': '#475569', 'slate-700': '#334155', 'slate-800': '#1E293B', 'slate-900': '#0F172A', 'slate-950': '#020617',
     'neutral-50': '#FAFAFA', 'neutral-100': '#F5F5F5', 'neutral-200': '#E5E5E5', 'neutral-300': '#D4D4D4', 'neutral-400': '#A3A3A3', 'neutral-500': '#737373', 'neutral-600': '#525252', 'neutral-700': '#404040', 'neutral-800': '#262626', 'neutral-900': '#171717', 'neutral-950': '#0A0A0A',
     'stone-50': '#FAFAF9', 'stone-100': '#F5F5EE', 'stone-200': '#E7E5E4', 'stone-300': '#D6D3D1', 'stone-400': '#A8A29E', 'stone-500': '#78716C', 'stone-600': '#57534E', 'stone-700': '#44403C', 'stone-800': '#292524', 'stone-900': '#1C1917', 'stone-950': '#0C0A09',
 
-    // Reds/Roses/Pinks/Fuchsias
     'red-50': '#FEF2F2', 'red-100': '#FEE2E2', 'red-200': '#FECACA', 'red-300': '#FCA5A5', 'red-400': '#F87171', 'red-500': '#EF4444', 'red-600': '#DC2626', 'red-700': '#B91C1C', 'red-800': '#991B1B', 'red-900': '#7F1D1D', 'red-950': '#450A0A',
     'rose-50': '#FFF1F2', 'rose-100': '#FFE4E6', 'rose-200': '#FECDD3', 'rose-300': '#FDA4AF', 'rose-400': '#FB7185', 'rose-500': '#F43F5E', 'rose-600': '#E11D48', 'rose-700': '#BE123C', 'rose-800': '#9F1239', 'rose-900': '#881337', 'rose-950': '#450A0A',
     'pink-50': '#FFF1F2', 'pink-100': '#FCE7F3', 'pink-200': '#FBCFE8', 'pink-300': '#F9A8D4', 'pink-400': '#F472B6', 'pink-500': '#EC4899', 'pink-600': '#DB2777', 'pink-700': '#BE185D', 'pink-800': '#9D174D', 'pink-900': '#831843', 'pink-950': '#450A0A',
@@ -259,31 +260,76 @@ const Home = () => {
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     <div className="text-center lg:text-left animate-fade-in-up">
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight">
-                            <span className="block bg-gradient-to-r from-white to-gray-300 bg-clip-text ">Master Modern</span>
-                            <span className={`block bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')} bg-clip-text  mt-2 animate-gradient-x`}>
-                                Coding Challenges
-                            </span>
-                        </h1>
-                        <p className={`mt-6 max-w-3xl mx-auto lg:mx-0 text-lg md:text-xl ${theme.cardText} animate-fade-in-up delay-200`}>
-                            Join our platform where developers sharpen their skills through interactive coding exercises,
-                            real-world projects, and competitive programming.
-                        </p>
+                        <div className='mb-2'>
+                            <SplitText
+                                text="Master Modern"
+                                className="text-7xl font-semibold "
+                                delay={100}
+                                duration={0.6}
+                                ease="power3.out"
+                                splitType="chars"
+                                from={{ opacity: 0, y: 40 }}
+                                to={{ opacity: 1, y: 0 }}
+                                threshold={0.1}
+                                rootMargin="-100px"
+                                textAlign="center"
+                            />
+                        </div>
+                        <div className='mb-2'>
+                            <SplitText
+                                text="Coding"
+                                className="text-7xl font-semibold"
+                                delay={100}
+                                duration={0.6}
+                                ease="power3.out"
+                                splitType="chars"
+                                from={{ opacity: 0, y: 40 }}
+                                to={{ opacity: 1, y: 0 }}
+                                threshold={0.1}
+                                rootMargin="-100px"
+                                textAlign="center"
+                            />
+                        </div>
+                        <div>
+                            <SplitText
+                                text="Challenges"
+                                className="text-7xl font-semibold"
+                                delay={100}
+                                duration={0.6}
+                                ease="power3.out"
+                                splitType="chars"
+                                from={{ opacity: 0, y: 40 }}
+                                to={{ opacity: 1, y: 0 }}
+                                threshold={0.1}
+                                rootMargin="-100px"
+                                textAlign="center"
+                            />
+                        </div>
 
-                        {/* Enhanced CTA Buttons */}
-                        <div className="mt-10 flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-4 animate-fade-in-up delay-400">
-                            <Link
-                                to="/problems"
-                                className={`group relative px-8 py-4 rounded-xl ${getSolidPrimaryButtonClasses()} overflow-hidden`}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                                <span className="relative flex items-center gap-2">
-                                    <FiCode className="w-5 h-5" />
+                        <TextType
+                            className={`text-l mt-10 mb-10 ${theme.text}`}
+                            text={["Join our platform where developers sharpen their skills...",
+                                "through interactive coding exercises, real-world projects...",
+                                "and competitive programming..."]}
+                            typingSpeed={100}
+                            pauseDuration={1500}
+                            showCursor={true}
+                            cursorCharacter="|"
+                            textColors = {theme.text}
+                        />
+
+                        <Link to="/problems">
+                            <div className={`group relative cursor-pointer p-2.5 w-40  ${theme.buttonPrimary} rounded-full overflow-hidden text-black text-center font-semibold`}>
+                                <span className="translate-x-1 group-hover:translate-x-12 group-hover:opacity-0 transition-all duration-300 inline-block">
                                     Start Coding Now
                                 </span>
-                            </Link>
-
-                        </div>
+                                <div className="flex gap-2 text-white z-10 items-center absolute top-0 h-full w-full justify-center translate-x-12 opacity-0 group-hover:-translate-x-1 group-hover:opacity-100 transition-all duration-300">
+                                    <span>Start Coding</span>
+                                    <ArrowRight />
+                                </div>
+                                <div className={`absolute top-[40%] bg-transparent left-[20%] h-2 w-2 group-hover:h-full group-hover:w-full rounded-lg  scale-[1]  ${theme.buttonPrimaryHover} group-hover:scale-[1.8] transition-all duration-300 group-hover:top-[0%] group-hover:left-[0%] `}></div>
+                            </div>
+                        </Link>
                     </div>
                     <div className="hidden lg:block animate-fade-in-up delay-300">
                         <div className="relative">
