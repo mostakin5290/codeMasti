@@ -23,6 +23,18 @@ const allowedOrigins = [
     "https://www.codemasti.fun"
 ];
 
+const keepAlive = async () => {
+    try {
+        await axios.get('https://keepalive404.netlify.app/.netlify/functions/keepalive');
+
+        await axios.get('https://codemasti.onrender.com/keep-alive');
+
+    } catch (err) {
+        console.error('Keep-alive failed:', err.message);
+    }
+};
+
+setInterval(keepAlive, 14 * 60 * 1000);
 
 const io = new Server(server, {
     cors: {
@@ -41,7 +53,6 @@ app.use(cors({
 
         if (allowedOrigins.indexOf(origin) === -1) {
             const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            console.error('Express CORS Blocked:', msg, 'Origin:', origin);
             return callback(new Error(msg), false);
         }
         return callback(null, true);
@@ -62,7 +73,6 @@ app.use((req, res, next) => {
             try {
                 req.body = JSON.parse(rawBody);
             } catch (e) {
-                console.error('Error parsing webhook JSON:', e);
                 return res.status(400).send('Invalid JSON');
             }
             next();
