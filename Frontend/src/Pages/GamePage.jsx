@@ -5,53 +5,203 @@ import axiosClient from '../api/axiosClient'
 import io from 'socket.io-client';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-toastify';
-import { FaTrophy, FaCalendarAlt, FaClock } from 'react-icons/fa';
+import { 
+    FaTrophy, 
+    FaCalendarAlt, 
+    FaClock, 
+    FaBolt, 
+    FaHome, 
+    FaDoorOpen,
+    FaUser,
+    FaGamepad,
+    FaCog,
+    FaSearch,
+    FaPlus,
+    FaSignInAlt,
+    FaSpinner,
+    FaUsers,
+    FaChartLine
+} from 'react-icons/fa';
 import Header from '../components/layout/Header';
 
+// Dynamic default theme that can be overridden
 const defaultTheme = {
-    background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
-    primaryHover: 'bg-cyan-600', secondary: 'bg-blue-600', secondaryHover: 'bg-blue-700',
-    cardBg: 'bg-gray-800', cardText: 'text-gray-300', border: 'border-gray-700',
-    buttonText: 'text-white', highlight: 'text-cyan-400', highlightSecondary: 'text-blue-400',
-    highlightTertiary: 'text-purple-400', iconBg: 'bg-cyan-500/10',
-    gradientFrom: 'from-gray-900', gradientTo: 'to-gray-800',
-    buttonPrimary: 'bg-blue-600',
-    buttonPrimaryHover: 'bg-blue-700',
-    successColor: 'text-emerald-500',
-    errorColor: 'text-red-500',
-    warningColor: 'text-amber-500',
-    infoColor: 'text-blue-500',
+    background: 'bg-gray-900', 
+    text: 'text-white', 
+    primary: 'bg-cyan-500',
+    primaryHover: 'bg-cyan-600', 
+    secondary: 'bg-blue-600', 
+    secondaryHover: 'bg-blue-700',
+    cardBg: 'bg-gray-800', 
+    cardText: 'text-gray-300', 
+    border: 'border-gray-700',
+    buttonPrimary: 'bg-indigo-600',
+    buttonPrimaryHover: 'bg-indigo-700',
+    buttonText: 'text-white', 
+    highlight: 'text-cyan-400', 
+    highlightSecondary: 'text-blue-400',
+    highlightTertiary: 'text-purple-400', 
+    iconBg: 'bg-cyan-500/10',
+    gradientFrom: 'from-gray-900', 
+    gradientTo: 'to-gray-800',
+    successColor: 'text-emerald-400',
+    errorColor: 'text-red-400',
+    warningColor: 'text-amber-400',
+    infoColor: 'text-blue-400',
     accent: 'bg-cyan-500',
 };
 
-// Re-using the Loader component (no changes needed here)
+// Enhanced Loader component with dynamic theming
 const Loader = ({ message = "Loading...", size = "md", appTheme }) => {
     const theme = { ...defaultTheme, ...appTheme };
+    
+    const sizeClasses = {
+        sm: 'w-4 h-4',
+        md: 'w-6 h-6',
+        lg: 'w-8 h-8'
+    };
+
     return (
-        <div className="flex flex-col items-center justify-center h-3.5 space-y-6">
-            <div className="relative">
-                <div className={`animate-spin rounded-full border-4 border-transparent ${theme.primary.replace('bg-', 'bg-gradient-to-r from-')} ${theme.highlight.replace('text-', 'via-')} ${theme.highlightSecondary.replace('text-', 'to-')} h-3 w-3
-                    }`} style={{ clipPath: 'circle(50% at 50% 50%)' }}>
-                    <div className={`absolute inset-1 rounded-full ${theme.background} h-3 w-3'
-                        }`}></div>
+        <div className="flex items-center justify-center space-x-2">
+            <FaSpinner className={`${sizeClasses[size]} ${theme.highlight} animate-spin`} />
+            {message && <span className={`text-sm ${theme.cardText}`}>{message}</span>}
+        </div>
+    );
+};
+
+// Dynamic Statistics Card Component
+const StatCard = ({ icon: Icon, label, value, theme, delay = 0 }) => (
+    <div 
+        className={`${theme.cardBg} p-4 rounded-xl border ${theme.border} shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1`}
+        style={{ animationDelay: `${delay}ms` }}
+    >
+        <div className="flex items-center space-x-3">
+            <div className={`p-2 rounded-lg ${theme.iconBg}`}>
+                <Icon className={`w-5 h-5 ${theme.highlight}`} />
+            </div>
+            <div>
+                <p className={`text-sm ${theme.cardText} font-medium`}>{label}</p>
+                <p className={`text-lg font-bold ${theme.text}`}>{value}</p>
+            </div>
+        </div>
+    </div>
+);
+
+// Dynamic Game Mode Card Component
+const GameModeCard = ({ 
+    icon: Icon, 
+    title, 
+    description, 
+    children, 
+    theme, 
+    gradientColors = ["from-indigo-500", "to-purple-600"],
+    isLoading = false,
+    delay = 0 
+}) => {
+    const gradientClass = `${gradientColors[0]} ${gradientColors[1]}`;
+    
+    return (
+        <div 
+            className={`${theme.cardBg} rounded-2xl border ${theme.border} shadow-lg hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 relative overflow-hidden group`}
+            style={{ animationDelay: `${delay}ms` }}
+        >
+            {/* Dynamic background gradient overlay */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${gradientClass} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
+            
+            {/* Content */}
+            <div className="relative z-10 p-8">
+                {/* Header */}
+                <div className="flex items-start space-x-4 mb-6">
+                    <div className={`p-3 rounded-xl bg-gradient-to-br ${gradientClass} shadow-lg`}>
+                        <Icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className={`text-xl font-bold ${theme.text} mb-2`}>{title}</h3>
+                        <p className={`${theme.cardText} text-sm leading-relaxed`}>{description}</p>
+                    </div>
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className={`rounded-full ${theme.highlight.replace('text-', 'bg-')} ${theme.highlightSecondary.replace('text-', 'bg-')} rounded-full animate-pulse ${size === 'lg' ? 'h-4 w-4' : size === 'sm' ? 'h-2 w-2' : 'h-3 w-3'
-                        }`}></div>
+
+                {/* Content */}
+                <div className="space-y-6">
+                    {children}
                 </div>
             </div>
-            <div className="text-center space-y-2">
-                <p className={`${theme.cardText} font-medium animate-pulse`}>{message}</p>
-                <div className="flex space-x-1 justify-center">
-                    <div className={`w-2 h-2 ${theme.primary.replace('bg-', 'bg-')} rounded-full animate-bounce`}></div>
-                    <div className={`w-2 h-2 ${theme.highlight.replace('text-', 'bg-')} rounded-full animate-bounce`} style={{ animationDelay: '0.1s' }}></div>
-                    <div className={`w-2 h-2 ${theme.highlightSecondary.replace('text-', 'bg-')} rounded-full animate-bounce`} style={{ animationDelay: '0.2s' }}></div>
+
+            {/* Loading overlay */}
+            {isLoading && (
+                <div className={`absolute inset-0 ${theme.cardBg}/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl`}>
+                    <Loader message="Processing..." size="md" appTheme={theme} />
                 </div>
+            )}
+        </div>
+    );
+};
+
+// Dynamic Custom Select Component
+const CustomSelect = ({ label, value, onChange, options, disabled, theme }) => {
+    const getAccentColorBase = () => {
+        const accentColorClass = theme.accent || theme.buttonPrimary;
+        const match = accentColorClass.match(/bg-(\w+)-\d+/);
+        return match ? match[1] : 'blue';
+    };
+
+    return (
+        <div className="space-y-2">
+            <label className={`block text-sm font-semibold ${theme.cardText}`}>
+                {label}
+            </label>
+            <div className="relative">
+                <select
+                    value={value}
+                    onChange={onChange}
+                    disabled={disabled}
+                    className={`w-full p-3 rounded-lg ${theme.cardBg} ${theme.text} border ${theme.border} focus:ring-2 focus:ring-${getAccentColorBase()}-500 focus:border-transparent transition-all duration-300 appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm`}
+                >
+                    {options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+                <FaCog className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${theme.cardText} pointer-events-none w-4 h-4`} />
             </div>
         </div>
     );
 };
 
+// Dynamic Action Button Component
+const ActionButton = ({ 
+    onClick, 
+    disabled, 
+    loading, 
+    children, 
+    variant = "primary", 
+    icon: Icon,
+    theme 
+}) => {
+    const variants = {
+        primary: `${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText}`,
+        secondary: `${theme.cardBg} ${theme.text} border ${theme.border} hover:${theme.cardBg}/80`,
+        danger: `${theme.errorColor.replace('text-', 'bg-')}/20 ${theme.errorColor} hover:${theme.errorColor.replace('text-', 'bg-')}/30`
+    };
+
+    return (
+        <button
+            onClick={onClick}
+            disabled={disabled || loading}
+            className={`w-full py-4 px-6 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2 ${variants[variant]}`}
+        >
+            {loading ? (
+                <Loader size="sm" appTheme={theme} />
+            ) : (
+                <>
+                    {Icon && <Icon className="w-5 h-5" />}
+                    <span>{children}</span>
+                </>
+            )}
+        </button>
+    );
+};
 
 const GamePage = () => {
     const navigate = useNavigate();
@@ -59,15 +209,26 @@ const GamePage = () => {
     const { theme: appThemeFromContext } = useTheme();
     const theme = { ...defaultTheme, ...appThemeFromContext };
 
-    // Old global 'loading' state removed, replaced with granular ones
-    const [quickMatchLoading, setQuickMatchLoading] = useState(false); // NEW
-    const [createRoomLoading, setCreateRoomLoading] = useState(false); // NEW
-    const [joinRoomLoading, setJoinRoomLoading] = useState(false);     // NEW
+    // Dynamic helper function
+    const getAccentColorBase = () => {
+        const accentColorClass = theme.accent || theme.buttonPrimary;
+        const match = accentColorClass.match(/bg-(\w+)-\d+/);
+        return match ? match[1] : 'blue';
+    };
 
+    const sectionClasses = `backdrop-blur-xl border ${theme.border}/20 shadow-xl rounded-2xl`;
+
+    // Loading states
+    const [quickMatchLoading, setQuickMatchLoading] = useState(false);
+    const [createRoomLoading, setCreateRoomLoading] = useState(false);
+    const [joinRoomLoading, setJoinRoomLoading] = useState(false);
+
+    // Game states
     const [searchingOpponent, setSearchingOpponent] = useState(false);
     const [searchTimer, setSearchTimer] = useState(0);
     const [showNoPlayerModal, setShowNoPlayerModal] = useState(false);
 
+    // Form states
     const [roomIdInput, setRoomIdInput] = useState('');
     const [quickMatchDifficulty, setQuickMatchDifficulty] = useState('easy');
     const [quickMatchTime, setQuickMatchTime] = useState(10);
@@ -85,15 +246,22 @@ const GamePage = () => {
 
     const userEloRating = user?.stats?.eloRating || 1000;
     const userFirstName = user?.firstName || 'Player';
+    const userStats = user?.stats || {};
+    console.log(userStats)
 
-    const sectionClasses = `backdrop-blur-xl border ${theme.border}/20 shadow-xl rounded-2xl`;
+    // Options for dropdowns
+    const difficultyOptions = [
+        { value: 'easy', label: 'Easy - Beginner Friendly' },
+        { value: 'medium', label: 'Medium - Intermediate' },
+        { value: 'hard', label: 'Hard - Expert Level' }
+    ];
 
-    const getAccentColorBase = () => {
-        const accentColorClass = theme.accent || theme.buttonPrimary;
-        const match = accentColorClass.match(/bg-(\w+)-\d+/);
-        return match ? match[1] : 'blue';
-    };
-
+    const timeOptions = [
+        { value: 5, label: '5 Minutes - Quick Battle' },
+        { value: 10, label: '10 Minutes - Standard' },
+        { value: 15, label: '15 Minutes - Extended' },
+        { value: 20, label: '20 Minutes - Marathon' }
+    ];
 
     const clearSearchTimer = useCallback(() => {
         if (searchTimerRef.current) {
@@ -106,17 +274,14 @@ const GamePage = () => {
     const startSearchTimer = useCallback(() => {
         setSearchTimer(0);
         setSearchingOpponent(true);
-        setQuickMatchLoading(true); // Only quick match related button should be disabled
-        // Other loading states should remain false
-        // setLoading(true); // REMOVED GLOBAL LOADING
+        setQuickMatchLoading(true);
 
         searchTimerRef.current = setInterval(() => {
             setSearchTimer(prev => {
                 if (prev >= 19) {
                     clearSearchTimer();
                     setSearchingOpponent(false);
-                    setQuickMatchLoading(false); // Re-enable quick match button
-                    // setLoading(false); // REMOVED GLOBAL LOADING
+                    setQuickMatchLoading(false);
                     setShowNoPlayerModal(true);
                     return 0;
                 }
@@ -128,8 +293,7 @@ const GamePage = () => {
     const startBattleAnimationAndNavigate = useCallback((roomData, currentUserProfile, opponentUserProfile) => {
         clearSearchTimer();
         setSearchingOpponent(false);
-        setQuickMatchLoading(false); // Ensure quick match button is re-enabled
-        // setLoading(false); // REMOVED GLOBAL LOADING
+        setQuickMatchLoading(false);
         setShowNoPlayerModal(false);
 
         setMatchedUsers({ currentUser: currentUserProfile, opponent: opponentUserProfile });
@@ -143,6 +307,7 @@ const GamePage = () => {
         }, 5000);
     }, [clearSearchTimer, navigate]);
 
+    // Socket effect
     useEffect(() => {
         if (!isAuthenticated || !user) {
             return;
@@ -162,7 +327,6 @@ const GamePage = () => {
             newSocket.on('connect_error', (err) => {
                 console.error("Socket.IO connection error (Lobby):", err);
                 toast.error("Failed to connect to game server. Please try again.");
-                // Ensure all loading states are reset on error
                 setQuickMatchLoading(false);
                 setCreateRoomLoading(false);
                 setJoinRoomLoading(false);
@@ -170,7 +334,6 @@ const GamePage = () => {
 
             newSocket.on('disconnect', (reason) => {
                 console.log('Disconnected from Socket.IO (Lobby):', reason);
-                // Ensure all loading states are reset on disconnect
                 setQuickMatchLoading(false);
                 setCreateRoomLoading(false);
                 setJoinRoomLoading(false);
@@ -192,12 +355,12 @@ const GamePage = () => {
                     toast.info("Match found, but room state is not yet ready. Waiting for room details...");
                     navigate(`/game/room/${data.room.roomId}`);
                 }
-                setQuickMatchLoading(false); // Ensure quick match button is reset
+                setQuickMatchLoading(false);
             });
 
             newSocket.on('roomCreated', (data) => {
                 toast.success(data.message);
-                setCreateRoomLoading(false); // Reset only create room loading
+                setCreateRoomLoading(false);
                 navigate(`/game/room/${data.room.roomId}`);
             });
 
@@ -206,9 +369,9 @@ const GamePage = () => {
                 console.error('Game Error (Lobby):', data.message);
                 clearSearchTimer();
                 setSearchingOpponent(false);
-                setQuickMatchLoading(false); // Reset quick match loading
-                setCreateRoomLoading(false); // Reset create room loading
-                setJoinRoomLoading(false);    // Reset join room loading
+                setQuickMatchLoading(false);
+                setCreateRoomLoading(false);
+                setJoinRoomLoading(false);
 
                 if (showBattleAnimation) {
                     setShowBattleAnimation(false);
@@ -244,12 +407,12 @@ const GamePage = () => {
     }
 
     const handleFindRandomOpponent = async () => {
-        setQuickMatchLoading(true); // Use specific loading state
-        setSearchingOpponent(true); // Indicate searching for opponent
+        setQuickMatchLoading(true);
+        setSearchingOpponent(true);
         try {
             if (!lobbySocketRef.current || !lobbySocketRef.current.connected) {
                 toast.error("Not connected to game server. Please wait or refresh the page.");
-                setQuickMatchLoading(false); // Reset specific loading state
+                setQuickMatchLoading(false);
                 setSearchingOpponent(false);
                 return;
             }
@@ -269,30 +432,30 @@ const GamePage = () => {
                 const opponentPlayerProfile = roomData.players.find(p => p.userId._id !== user._id)?.userId;
 
                 if (currentPlayerProfile && opponentPlayerProfile) {
-                    startBattleAnimationAndNavigate(roomData, currentPlayerProfile, opponentPlayerProfile);
+                    startBattleAnimationAndNavigate(roomData, currentPlayerProfile, opponentUserProfile);
                 } else {
                     toast.success(response.data.message + " Redirecting...");
                     navigate(`/game/room/${roomData.roomId}/play`);
                 }
             } else if (response.status === 202) {
                 toast.info(response.data.message);
-                startSearchTimer(); // This also sets quickMatchLoading(true) internally
+                startSearchTimer();
             }
         } catch (error) {
             console.error('Error finding random opponent:', error);
             toast.error(error.response?.data?.message || 'Failed to find random opponent.');
-            setQuickMatchLoading(false); // Reset specific loading state
+            setQuickMatchLoading(false);
             setSearchingOpponent(false);
             clearSearchTimer();
         }
     };
 
     const handleCreateRoom = async () => {
-        setCreateRoomLoading(true); // Use specific loading state
+        setCreateRoomLoading(true);
         try {
             if (!lobbySocketRef.current || !lobbySocketRef.current.connected) {
                 toast.error("Not connected to game server. Please wait or refresh the page.");
-                setCreateRoomLoading(false); // Reset specific loading state
+                setCreateRoomLoading(false);
                 return;
             }
             const response = await axiosClient.post(`/game/create-room`,
@@ -306,27 +469,26 @@ const GamePage = () => {
                 { withCredentials: true }
             );
             toast.success(response.data.message);
-            // setCreateRoomLoading(false) will be handled by the roomCreated socket event now.
             navigate(`/game/room/${response.data.room.roomId}`);
         } catch (error) {
             console.error('Error creating room:', error);
             toast.error(error.response?.data?.message || 'Failed to create room.');
         } finally {
-            setCreateRoomLoading(false); // Ensure it's always reset, even on error
+            setCreateRoomLoading(false);
         }
     };
 
     const handleJoinRoom = async () => {
-        setJoinRoomLoading(true); // Use specific loading state
+        setJoinRoomLoading(true);
         try {
             if (!lobbySocketRef.current || !lobbySocketRef.current.connected) {
                 toast.error("Not connected to game server. Please wait or refresh the page.");
-                setJoinRoomLoading(false); // Reset specific loading state
+                setJoinRoomLoading(false);
                 return;
             }
             if (!roomIdInput.trim()) {
                 toast.error("Please enter a valid Room ID.");
-                setJoinRoomLoading(false); // Reset specific loading state
+                setJoinRoomLoading(false);
                 return;
             }
             const roomIDToJoin = roomIdInput.trim().toUpperCase();
@@ -335,7 +497,6 @@ const GamePage = () => {
                 { withCredentials: true }
             );
             toast.success(response.data.message);
-            // setJoinRoomLoading(false) will be handled by the roomUpdate socket event or direct navigation if match already started.
             navigate(`/game/room/${roomIDToJoin}`);
         } catch (error) {
             console.error('Error joining room:', error);
@@ -346,14 +507,14 @@ const GamePage = () => {
                 toast.info(error.response.data.message);
             }
         } finally {
-            setJoinRoomLoading(false); // Ensure it's always reset, even on error
+            setJoinRoomLoading(false);
         }
     };
 
     const handleCancelSearch = () => {
         clearSearchTimer();
         setSearchingOpponent(false);
-        setQuickMatchLoading(false); // Ensure quick match button is reset
+        setQuickMatchLoading(false);
         toast.info("Search cancelled.");
         if (showBattleAnimation) {
             setShowBattleAnimation(false);
@@ -370,304 +531,365 @@ const GamePage = () => {
         handleFindRandomOpponent();
     };
 
-    // Consolidated disabled check for all inputs/buttons
     const anyOperationInProgress = searchingOpponent || showBattleAnimation || quickMatchLoading || createRoomLoading || joinRoomLoading;
 
     return (
         <div className={`min-h-screen relative overflow-hidden ${theme.text} bg-gradient-to-br ${theme.gradientFrom} ${theme.gradientTo}`}>
-            {/* Animated Background Elements - no change */}
+            {/* Dynamic Animated Background Elements */}
             <div className={`absolute top-0 left-0 w-80 h-80 ${theme.primary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[-20%] translate-y-[-20%] animate-blob`}></div>
             <div className={`absolute bottom-0 right-0 w-96 h-96 ${theme.secondary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[20%] translate-y-[20%] animate-blob animation-delay-2000`}></div>
-            <div className={`absolute top-1/2 left-1/2 w-60 h-60 ${theme.highlight.replace('text-', 'bg-')}/5 rounded-full blur-3xl -translate-x-1/2 -translate-x-1/2 animate-blob animation-delay-4000`}></div>
-
-
-            {/* Conditional rendering for Battle Animation vs Lobby Content */}
+            <div className={`absolute top-1/2 left-1/2 w-60 h-60 ${theme.highlight.replace('text-', 'bg-')}/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-blob animation-delay-4000`}></div>
+            
+            <Header />
+            
+            {/* Battle Animation */}
             {showBattleAnimation && matchedUsers.currentUser && matchedUsers.opponent ? (
-                // Battle Animation JSX - no change
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-50 animate-fade-in-fast">
-                    <div className="text-center text-white space-y-8 relative">
+                <div className={`fixed inset-0 bg-gradient-to-br ${theme.gradientFrom} via-purple-900 ${theme.gradientTo} flex items-center justify-center z-50`}>
+                    <div className="text-center text-white space-y-12 relative max-w-4xl mx-auto px-4">
+                        {/* Animated rings with dynamic colors */}
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-96 h-96 border-8 border-purple-500 rounded-full animate-pulse-border opacity-70"></div>
+                            <div className={`w-96 h-96 border-4 border-white/20 rounded-full animate-ping`}></div>
+                            <div className={`absolute w-80 h-80 border-4 ${theme.highlight.replace('text-', 'border-')}/30 rounded-full animate-pulse`}></div>
                         </div>
 
-                        <h2 className="text-6xl font-extrabold text-white animate-text-pop-in relative z-10">
-                            BATTLE!
-                        </h2>
-                        <div className="flex items-center justify-center space-x-12 relative z-10">
-                            <div className="flex flex-col items-center space-y-4 animate-slide-in-left-fast">
-                                <img src={matchedUsers.currentUser.avatar || '/default-avatar.png'} alt="You" className="w-40 h-40 rounded-full object-cover border-4 border-blue-500 shadow-lg animate-float" />
-                                <p className="text-3xl font-bold text-blue-300">YOU</p>
-                                <p className="text-xl font-medium">{matchedUsers.currentUser.firstName || 'Player'}</p>
+                        <div className="relative z-10">
+                            <h2 className={`text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} via-pink-500 ${theme.secondary.replace('bg-', 'to-')} animate-pulse`}>
+                                BATTLE ARENA
+                            </h2>
+                            <p className="text-xl text-white/80 mt-4">Match Found! Prepare for Combat</p>
+                        </div>
+
+                        <div className="flex items-center justify-center space-x-16 relative z-10">
+                            {/* Current User */}
+                            <div className="flex flex-col items-center space-y-6 transform hover:scale-105 transition-transform">
+                                <div className="relative">
+                                    <img 
+                                        src={matchedUsers.currentUser.avatar || '/default-avatar.png'} 
+                                        alt="You" 
+                                        className={`w-32 h-32 rounded-full object-cover border-4 ${theme.primary.replace('bg-', 'border-')} shadow-2xl animate-bounce`} 
+                                    />
+                                    <div className={`absolute -bottom-2 -right-2 ${theme.primary} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold`}>
+                                        YOU
+                                    </div>
+                                </div>
+                                <div className="text-center">
+                                    <p className={`text-2xl font-bold ${theme.highlight}`}>
+                                        {matchedUsers.currentUser.firstName || 'Player'}
+                                    </p>
+                                    <p className={`text-sm ${theme.cardText}`}>Ready to Code</p>
+                                </div>
                             </div>
 
-                            <span className="text-8xl font-extrabold text-red-500 animate-vs-zoom relative z-10">VS</span>
+                            {/* VS Text */}
+                            <div className="relative">
+                                <span className="text-6xl font-black text-white animate-pulse">VS</span>
+                                <div className={`absolute inset-0 text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${theme.errorColor.replace('text-', 'from-')} to-pink-600 animate-ping`}>
+                                    VS
+                                </div>
+                            </div>
 
-                            <div className="flex flex-col items-center space-y-4 animate-slide-in-right-fast">
-                                <img src={matchedUsers.opponent.avatar || '/default-avatar.png'} alt="Opponent" className="w-40 h-40 rounded-full object-cover border-4 border-pink-500 shadow-lg animate-float" />
-                                <p className="text-3xl font-bold text-pink-300">OPPONENT</p>
-                                <p className="text-xl font-medium">{matchedUsers.opponent.firstName || 'Opponent'}</p>
+                            {/* Opponent */}
+                            <div className="flex flex-col items-center space-y-6 transform hover:scale-105 transition-transform">
+                                <div className="relative">
+                                    <img 
+                                        src={matchedUsers.opponent.avatar || '/default-avatar.png'} 
+                                        alt="Opponent" 
+                                        className={`w-32 h-32 rounded-full object-cover border-4 ${theme.secondary.replace('bg-', 'border-')} shadow-2xl animate-bounce`}
+                                        style={{ animationDelay: '0.5s' }}
+                                    />
+                                    <div className={`absolute -bottom-2 -right-2 ${theme.secondary} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold`}>
+                                        OPP
+                                    </div>
+                                </div>
+                                <div className="text-center">
+                                    <p className={`text-2xl font-bold ${theme.highlightSecondary}`}>
+                                        {matchedUsers.opponent.firstName || 'Opponent'}
+                                    </p>
+                                    <p className={`text-sm ${theme.cardText}`}>Challenge Accepted</p>
+                                </div>
                             </div>
                         </div>
-                        <p className="text-xl font-semibold text-gray-300 mt-8 animate-fade-in-slow relative z-10">
-                            Get ready to code!
-                        </p>
+
+                        <div className="relative z-10">
+                            <p className="text-2xl font-semibold text-white/90 animate-pulse">
+                                Starting in moments...
+                            </p>
+                            <div className="flex justify-center mt-4">
+                                <div className="flex space-x-2">
+                                    <div className="w-3 h-3 bg-white rounded-full animate-bounce"></div>
+                                    <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                    <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             ) : (
-                // Original lobby content wrapped in new UI structure
-                <div className='w-screen'>
-                    <Header />
-                    <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                        <div className={`${sectionClasses} p-8 text-center mb-12`}>
-                            <h2 className={`text-5xl font-extrabold mb-4 ${theme.highlight} transform transition-all duration-500 hover:scale-105 animate-pulse-slow`}>
-                                Welcome to CodeMasti Games!
-                            </h2>
-                            <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full animate-shimmer"></div>
-
-                            {/* Display User's ELO Rating */}
-                            {isAuthenticated && user && (
-                                <div className={`mt-6 p-4 rounded-lg inline-flex items-center space-x-3 ${theme.iconBg} border ${theme.border}`}>
-                                    <FaTrophy className={`text-2xl ${theme.highlightSecondary}`} />
-                                    <p className={`text-xl font-semibold ${theme.text}`}>
-                                        Your ELO: <span className={`${theme.highlight}`}>{userEloRating}</span>
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Quick Match Card */}
-                            <div className={`${sectionClasses} p-8 flex flex-col transform transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-slide-in-left relative overflow-hidden group`}>
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center mb-6">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mr-4 animate-bounce-slow">
-                                            <span className="text-white font-bold text-xl">⚡</span>
-                                        </div>
-                                        <h3 className={`text-2xl font-bold ${theme.text}`}>Quick Match</h3>
+                /* Main Content */
+                <div className="relative">
+                    {/* Hero Section with Dynamic Colors */}
+                    <div className={`relative bg-gradient-to-br ${theme.gradientFrom}  ${theme.gradientTo} py-16`}>
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="text-center mb-12">
+                                <div className="flex items-center justify-center mb-6">
+                                    <div className={`p-4 bg-gradient-to-br ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')} rounded-2xl shadow-lg`}>
+                                        <FaGamepad className="w-12 h-12 text-white" />
                                     </div>
+                                </div>
+                                <h1 className={`text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} via-purple-600 ${theme.secondary.replace('bg-', 'to-')} mb-4`}>
+                                    CodeMasti Arena
+                                </h1>
+                                <p className={`text-xl ${theme.cardText} mb-8 max-w-3xl mx-auto leading-relaxed`}>
+                                    Welcome back, <span className={`font-bold ${theme.highlight}`}>{userFirstName}</span>! 
+                                    Challenge developers worldwide in epic coding battles and climb the ranks.
+                                </p>
 
-                                    <p className={`text-md ${theme.cardText} mb-6 flex-grow leading-relaxed`}>
-                                        Find a random opponent and start an epic coding battle!
-                                    </p>
+                                {/* User Stats with Dynamic Colors */}
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                                    <StatCard 
+                                        icon={FaTrophy} 
+                                        label="ELO Rating" 
+                                        value={userEloRating.toLocaleString()} 
+                                        theme={theme}
+                                        delay={0}
+                                    />
+                                    <StatCard 
+                                        icon={FaGamepad} 
+                                        label="Games Played" 
+                                        value={userStats.gamesPlayed || 0} 
+                                        theme={theme}
+                                        delay={100}
+                                    />
+                                    <StatCard 
+                                        icon={FaUsers} 
+                                        label="Win Rate" 
+                                        value={`${(((userStats?.wins) / (userStats?.gamesPlayed)) * 100).toFixed(1) || 0}%`} 
+                                        theme={theme}
+                                        delay={200}
+                                    />
+                                    <StatCard 
+                                        icon={FaChartLine} 
+                                        label="Win" 
+                                        value={userStats?.wins || 0} 
+                                        theme={theme}
+                                        delay={300}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
+                    {/* Game Modes Section with Dynamic Colors */}
+                    <div className={`py-16 ${theme.background}`}>
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="text-center mb-12">
+                                <h2 className={`text-3xl font-bold ${theme.text} mb-4`}>Choose Your Battle Mode</h2>
+                                <p className={`text-lg ${theme.cardText} max-w-2xl mx-auto`}>
+                                    Select your preferred way to compete and show off your coding skills
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* Quick Match with Dynamic Colors */}
+                                <GameModeCard
+                                    icon={FaBolt}
+                                    title="Quick Match"
+                                    description="Get matched with a random opponent instantly. Perfect for quick skill tests and ELO climbing."
+                                    gradientColors={[theme.primary.replace('bg-', 'from-'), theme.secondary.replace('bg-', 'to-')]}
+                                    theme={theme}
+                                    isLoading={quickMatchLoading}
+                                    delay={0}
+                                >
                                     {searchingOpponent && (
-                                        <div className="mb-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20 animate-pulse">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="text-blue-400 font-semibold">Searching for opponent...</span>
-                                                <span className="text-blue-400 font-mono">{20 - searchTimer}s</span>
+                                        <div className={`mb-6 p-4 ${theme.iconBg} rounded-xl border ${theme.border}`}>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className={`${theme.highlight} font-semibold flex items-center`}>
+                                                    <FaSearch className="w-4 h-4 mr-2 animate-spin" />
+                                                    Finding worthy opponent...
+                                                </span>
+                                                <span className={`${theme.highlight} font-mono font-bold`}>
+                                                    {20 - searchTimer}s
+                                                </span>
                                             </div>
-                                            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                                            <div className={`w-full ${theme.cardBg} rounded-full h-2 overflow-hidden`}>
                                                 <div
-                                                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000 animate-shimmer"
+                                                    className={`h-full bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')} transition-all duration-1000`}
                                                     style={{ width: `${(searchTimer / 20) * 100}%` }}
                                                 ></div>
                                             </div>
                                         </div>
                                     )}
 
-                                    <div className="space-y-4 mb-6">
-                                        <div className="transform transition-all duration-300 hover:scale-105">
-                                            <label htmlFor="quickMatchDifficulty" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
-                                                Difficulty Level:
-                                            </label>
-                                            <select
-                                                id="quickMatchDifficulty"
-                                                value={quickMatchDifficulty}
-                                                onChange={(e) => setQuickMatchDifficulty(e.target.value)}
-                                                className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                                disabled={anyOperationInProgress}
-                                            >
-                                                <option value="easy">🟢 Easy</option>
-                                                <option value="medium">🟡 Medium</option>
-                                                <option value="hard">🔴 Hard</option>
-                                            </select>
-                                        </div>
+                                    <div className="space-y-4">
+                                        <CustomSelect
+                                            label="Difficulty Level"
+                                            value={quickMatchDifficulty}
+                                            onChange={(e) => setQuickMatchDifficulty(e.target.value)}
+                                            options={difficultyOptions}
+                                            disabled={anyOperationInProgress}
+                                            theme={theme}
+                                        />
 
-                                        <div className="transform transition-all duration-300 hover:scale-105">
-                                            <label htmlFor="quickMatchTime" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
-                                                Time Limit:
-                                            </label>
-                                            <select
-                                                id="quickMatchTime"
-                                                value={quickMatchTime}
-                                                onChange={(e) => setQuickMatchTime(parseInt(e.target.value))}
-                                                className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                                disabled={anyOperationInProgress} 
-                                            >
-                                                <option value={5}>⏰ 5 minutes</option>
-                                                <option value={10}>⏰ 10 minutes</option>
-                                                <option value={15}>⏰ 15 minutes</option>
-                                                <option value={20}>⏰ 20 minutes</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    {!searchingOpponent ? (
-                                        <button
-                                            onClick={handleFindRandomOpponent}
-                                            disabled={anyOperationInProgress || !isAuthenticated} 
-                                            className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed`}
-                                        >
-                                            <span className={`absolute inset-0 bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')}/80 ${theme.secondary.replace('bg-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
-                                            <span className="relative z-10 flex items-center justify-center">
-                                                {quickMatchLoading ? <Loader size="sm" color="white" /> : '🚀 Find Random Opponent'} {/* Use specific loading spinner */}
-                                            </span>
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={handleCancelSearch}
-                                            disabled={showBattleAnimation} 
-                                            className="w-full py-4 px-6 rounded-xl text-lg font-bold bg-red-500 hover:bg-red-600 text-white transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            ❌ Cancel Search
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Create Private Room Card */}
-                            <div className={`${sectionClasses} p-8 flex flex-col transform transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-slide-in-up relative overflow-hidden group`}>
-                                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center mb-6">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center mr-4 animate-bounce-slow">
-                                            <span className="text-white font-bold text-xl">🏠</span>
-                                        </div>
-                                        <h3 className={`text-2xl font-bold ${theme.text}`}>Create Private Room</h3>
-                                    </div>
-
-                                    <p className={`text-md ${theme.cardText} mb-6 flex-grow leading-relaxed`}>
-                                        Host a private coding arena for your friends to join!
-                                    </p>
-
-                                    <div className="space-y-4 mb-6">
-                                        <div className="transform transition-all duration-300 hover:scale-105">
-                                            <label htmlFor="createRoomDifficulty" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
-                                                Difficulty Level:
-                                            </label>
-                                            <select
-                                                id="createRoomDifficulty"
-                                                value={createRoomDifficulty}
-                                                onChange={(e) => setCreateRoomDifficulty(e.target.value)}
-                                                className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                                disabled={anyOperationInProgress} 
-                                            >
-                                                <option value="easy">🟢 Easy</option>
-                                                <option value="medium">🟡 Medium</option>
-                                                <option value="hard">🔴 Hard</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="transform transition-all duration-300 hover:scale-105">
-                                            <label htmlFor="createRoomTime" className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
-                                                Time Limit:
-                                            </label>
-                                            <select
-                                                id="createRoomTime"
-                                                value={createRoomTime}
-                                                onChange={(e) => setCreateRoomTime(parseInt(e.target.value))}
-                                                className={`w-full p-3 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 shadow-inner appearance-none cursor-pointer`}
-                                                disabled={anyOperationInProgress} 
-                                            >
-                                                <option value={5}>⏰ 5 minutes</option>
-                                                <option value={10}>⏰ 10 minutes</option>
-                                                <option value={15}>⏰ 15 minutes</option>
-                                                <option value={20}>⏰ 20 minutes</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={handleCreateRoom}
-                                        disabled={anyOperationInProgress || !isAuthenticated} 
-                                        className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed`}
-                                    >
-                                        <span className={`absolute inset-0 bg-gradient-to-r ${theme.successColor.replace('text-', 'from-')}/80 ${theme.infoColor.replace('text-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
-                                        <span className="relative z-10 flex items-center justify-center">
-                                            {createRoomLoading ? <Loader size="sm" color="white" /> : '🏗️ Create Private Room'} {/* Use specific loading spinner */}
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Join Room Card */}
-                            <div className={`${sectionClasses} p-8 flex flex-col transform transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-slide-in-right relative overflow-hidden group`}>
-                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center mb-6">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-4 animate-bounce-slow">
-                                            <span className="text-white font-bold text-xl">🚪</span>
-                                        </div>
-                                        <h3 className={`text-2xl font-bold ${theme.text}`}>Join Room</h3>
-                                    </div>
-
-                                    <p className={`text-md ${theme.cardText} mb-6 flex-grow leading-relaxed`}>
-                                        Enter a Room ID to join an existing coding battle!
-                                    </p>
-
-                                    <div className="mb-6 transform transition-all duration-300 hover:scale-105">
-                                        <label className={`block text-sm font-semibold ${theme.cardText} mb-2`}>
-                                            Room ID:
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={roomIdInput}
-                                            onChange={(e) => setRoomIdInput(e.target.value.toUpperCase())}
-                                            placeholder="Enter Room ID (e.g., ABC123)"
-                                            className={`w-full p-4 rounded-xl ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 focus:ring-2 focus:ring-${getAccentColorBase()}-500/50 focus:border-transparent transition-all duration-300 font-mono text-center text-lg tracking-wider shadow-inner`}
-                                            maxLength={6}
-                                            disabled={anyOperationInProgress} 
+                                        <CustomSelect
+                                            label="Time Limit"
+                                            value={quickMatchTime}
+                                            onChange={(e) => setQuickMatchTime(parseInt(e.target.value))}
+                                            options={timeOptions}
+                                            disabled={anyOperationInProgress}
+                                            theme={theme}
                                         />
                                     </div>
 
-                                    <button
-                                        onClick={handleJoinRoom}
-                                        disabled={anyOperationInProgress || !roomIdInput.trim() || !isAuthenticated}
-                                        className={`w-full py-4 px-6 rounded-xl text-lg font-bold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group`}
-                                    >
-                                        <span className={`absolute inset-0 bg-gradient-to-r ${theme.highlightTertiary.replace('text-', 'from-')}/80 ${theme.primary.replace('bg-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
-                                        <span className="relative z-10 flex items-center justify-center">
-                                            {joinRoomLoading ? <Loader size="sm" color="white" /> : '🎯 Join Room'}                                         </span>
-                                    </button>
-                                </div>
+                                    <div className="pt-4">
+                                        {!searchingOpponent ? (
+                                            <ActionButton
+                                                onClick={handleFindRandomOpponent}
+                                                disabled={anyOperationInProgress || !isAuthenticated}
+                                                loading={quickMatchLoading}
+                                                icon={FaSearch}
+                                                theme={theme}
+                                            >
+                                                Find Opponent
+                                            </ActionButton>
+                                        ) : (
+                                            <ActionButton
+                                                onClick={handleCancelSearch}
+                                                disabled={showBattleAnimation}
+                                                variant="danger"
+                                                theme={theme}
+                                            >
+                                                Cancel Search
+                                            </ActionButton>
+                                        )}
+                                    </div>
+                                </GameModeCard>
+
+                                {/* Create Room with Dynamic Colors */}
+                                <GameModeCard
+                                    icon={FaHome}
+                                    title="Create Private Room"
+                                    description="Host your own coding arena and invite friends. Perfect for team practice sessions and tournaments."
+                                    gradientColors={[theme.successColor.replace('text-', 'from-'), theme.infoColor.replace('text-', 'to-')]}
+                                    theme={theme}
+                                    isLoading={createRoomLoading}
+                                    delay={200}
+                                >
+                                    <div className="space-y-4">
+                                        <CustomSelect
+                                            label="Difficulty Level"
+                                            value={createRoomDifficulty}
+                                            onChange={(e) => setCreateRoomDifficulty(e.target.value)}
+                                            options={difficultyOptions}
+                                            disabled={anyOperationInProgress}
+                                            theme={theme}
+                                        />
+
+                                        <CustomSelect
+                                            label="Time Limit"
+                                            value={createRoomTime}
+                                            onChange={(e) => setCreateRoomTime(parseInt(e.target.value))}
+                                            options={timeOptions}
+                                            disabled={anyOperationInProgress}
+                                            theme={theme}
+                                        />
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <ActionButton
+                                            onClick={handleCreateRoom}
+                                            disabled={anyOperationInProgress || !isAuthenticated}
+                                            loading={createRoomLoading}
+                                            icon={FaPlus}
+                                            theme={theme}
+                                        >
+                                            Create Room
+                                        </ActionButton>
+                                    </div>
+                                </GameModeCard>
+
+                                {/* Join Room with Dynamic Colors */}
+                                <GameModeCard
+                                    icon={FaDoorOpen}
+                                    title="Join Room"
+                                    description="Enter an existing room using a Room ID. Join ongoing tournaments or friend matches."
+                                    gradientColors={[theme.highlightTertiary.replace('text-', 'from-'), 'to-pink-600']}
+                                    theme={theme}
+                                    isLoading={joinRoomLoading}
+                                    delay={400}
+                                >
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className={`block text-sm font-semibold ${theme.cardText}`}>
+                                                Room ID
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={roomIdInput}
+                                                onChange={(e) => setRoomIdInput(e.target.value.toUpperCase())}
+                                                placeholder="Enter 6-character Room ID"
+                                                className={`w-full p-4 rounded-lg ${theme.cardBg} ${theme.text} border ${theme.border} focus:ring-2 focus:ring-${getAccentColorBase()}-500 focus:border-transparent transition-all duration-300 font-mono text-center text-lg tracking-wider shadow-sm`}
+                                                maxLength={6}
+                                                disabled={anyOperationInProgress}
+                                            />
+                                            <p className={`text-xs ${theme.cardText} text-center`}>
+                                                Room IDs are case-insensitive
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <ActionButton
+                                            onClick={handleJoinRoom}
+                                            disabled={anyOperationInProgress || !roomIdInput.trim() || !isAuthenticated}
+                                            loading={joinRoomLoading}
+                                            icon={FaSignInAlt}
+                                            theme={theme}
+                                        >
+                                            Join Room
+                                        </ActionButton>
+                                    </div>
+                                </GameModeCard>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* No Player Found Modal with Dynamic Colors */}
             {showNoPlayerModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-                    <div className={`${theme.cardBg} p-8 rounded-2xl shadow-2xl max-w-md mx-4 border ${theme.border} transform animate-scale-in`}>
-                        <div className="text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                                <span className="text-white text-4xl">😔</span>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className={`${theme.cardBg} rounded-2xl shadow-2xl max-w-md w-full border ${theme.border} transform scale-100 animate-in`}>
+                        <div className="p-8 text-center">
+                            <div className={`w-20 h-20 bg-gradient-to-br ${theme.warningColor.replace('text-', 'from-')} ${theme.errorColor.replace('text-', 'to-')} rounded-full flex items-center justify-center mx-auto mb-6`}>
+                                <FaUsers className="w-10 h-10 text-white" />
                             </div>
-                            <h3 className={`text-2xl font-bold mb-4 ${theme.text}`}>No Player Found</h3>
-                            <p className={`${theme.cardText} mb-6 leading-relaxed`}>
-                                We couldn't find an opponent within 20 seconds. Would you like to try searching again?
+                            <h3 className={`text-2xl font-bold mb-4 ${theme.text}`}>No Opponents Available</h3>
+                            <p className={`${theme.cardText} mb-8 leading-relaxed`}>
+                                We couldn't find a suitable opponent within 20 seconds. This might happen during off-peak hours. 
+                                Would you like to try again or create a private room instead?
                             </p>
                             <div className="flex space-x-3">
-                                <button
+                                <ActionButton
                                     onClick={() => setShowNoPlayerModal(false)}
-                                    className={`flex-1 py-3 px-6 rounded-xl font-semibold ${theme.cardBg}/50 ${theme.text} border ${theme.border}/50 hover:${theme.cardBg}/80 transition-all duration-300 shadow-md`}
+                                    variant="secondary"
+                                    theme={theme}
                                 >
                                     Cancel
-                                </button>
-                                <button
+                                </ActionButton>
+                                <ActionButton
                                     onClick={handleTryAgain}
-                                    className={`flex-1 py-3 px-6 rounded-xl font-semibold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-lg`}
+                                    icon={FaSearch}
+                                    theme={theme}
                                 >
                                     Try Again
-                                </button>
+                                </ActionButton>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Global CSS for animations (already there) */}
+            {/* Dynamic Animations CSS */}
             <style jsx>{`
                 @keyframes blob {
                     0% { transform: translate(0px, 0px) scale(1); }
@@ -675,73 +897,20 @@ const GamePage = () => {
                     66% { transform: translate(-20px, 20px) scale(0.9); }
                     100% { transform: translate(0px, 0px) scale(1); }
                 }
-                @keyframes shimmer {
-                    0% { background-position: -200% 0; }
-                    100% { background-position: 200% 0; }
+                @keyframes animate-in {
+                    from { 
+                        opacity: 0; 
+                        transform: scale(0.95) translateY(10px); 
+                    }
+                    to { 
+                        opacity: 1; 
+                        transform: scale(1) translateY(0); 
+                    }
                 }
-                @keyframes fade-in {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes slide-in-left {
-                    from { transform: translateX(-50px); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes slide-in-right {
-                    from { transform: translateX(50px); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes slide-in-up {
-                    from { transform: translateY(50px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                @keyframes scale-in {
-                    from { transform: scale(0.9); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
-                }
-                @keyframes bounce-slow {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-10px); }
-                }
-                @keyframes pulse-slow {
-                    0%, 100% { transform: scale(1); opacity: 1; }
-                    50% { transform: scale(1.02); opacity: 0.95; }
-                }
-
                 .animate-blob { animation: blob 7s infinite; }
-                .animate-shimmer {
-                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-                    background-size: 200% 100%;
-                    animation: shimmer 2s infinite;
-                }
-                .animate-fade-in { animation: fade-in 0.5s ease-out; }
-                .animate-slide-in-left { animation: slide-in-left 0.6s ease-out; }
-                .animate-slide-in-right { animation: slide-in-right 0.6s ease-out; }
-                .animate-slide-in-up { animation: slide-in-up 0.6s ease-out; }
-                .animate-scale-in { animation: scale-in 0.3s ease-out; }
-                .animate-bounce-slow { animation: bounce-slow 3s infinite; }
-                .animate-pulse-slow { animation: pulse-slow 3s infinite; }
-
+                .animate-in { animation: animate-in 0.2s ease-out; }
                 .animation-delay-2000 { animation-delay: 2s; }
                 .animation-delay-4000 { animation-delay: 4s; }
-
-                /* Battle Animation Specific CSS */
-                @keyframes fade-in-fast { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes slide-in-left-fast { from { transform: translateX(-100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-                @keyframes slide-in-right-fast { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-                @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-                @keyframes text-pop-in { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-                @keyframes vs-zoom { 0% { transform: scale(0.5) rotate(-10deg); opacity: 0; } 50% { transform: scale(1.2) rotate(5deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
-                @keyframes pulse-border { 0% { border-color: rgba(168, 85, 247, 0.7); transform: scale(1); } 50% { border-color: rgba(236, 72, 153, 0.9); transform: scale(1.05); } 100% { border-color: rgba(168, 85, 247, 0.7); transform: scale(1); } }
-
-                .animate-fade-in-fast { animation: fade-in-fast 0.5s ease-out forwards; }
-                .animate-slide-in-left-fast { animation: slide-in-left-fast 0.6s ease-out forwards; animation-delay: 0.2s; }
-                .animate-slide-in-right-fast { animation: slide-in-right-fast 0.6s ease-out forwards; animation-delay: 0.2s; }
-                .animate-float { animation: float 3s ease-in-out infinite; }
-                .animate-text-pop-in { animation: text-pop-in 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
-                .animate-vs-zoom { animation: vs-zoom 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.4s; }
-                .animate-pulse-border { animation: pulse-border 2s infinite ease-in-out; }
-                .animate-fade-in-slow { animation: fade-in-fast 1s ease-out forwards; animation-delay: 1.5s; }
             `}</style>
         </div>
     );
