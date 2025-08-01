@@ -122,20 +122,6 @@ const Home = () => {
         }
     }, [location, theme, dispatch, navigate]);
 
-    const getPrimaryGradient = () => `bg-gradient-to-r ${theme.primary} ${theme.secondary}`;
-    const getPrimaryGradientHover = () => `hover:bg-gradient-to-r hover:${theme.primaryHover} hover:${theme.secondaryHover}`;
-
-    const getSolidPrimaryButtonClasses = () => `
-        ${getPrimaryGradient()}
-        ${getPrimaryGradientHover()}
-        transition-all duration-300
-        font-semibold shadow-lg hover:shadow-xl
-        ${theme.buttonText}
-        transform hover:scale-105 active:scale-95
-        focus:outline-none focus:ring-4 focus:ring-opacity-50
-        ${theme.buttonPrimary.replace('bg-', 'focus:ring-')}
-    `;
-
     const isUserPremium = user && user.isPremium;
 
     const Card3D = ({ children, className = '' }) => {
@@ -258,56 +244,18 @@ const Home = () => {
                     )}
                 </div>
 
+
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     <div className="text-center lg:text-left animate-fade-in-up">
-                        <div className='mb-2'>
-                            <SplitText
-                                text="Master Modern"
-                                className="text-7xl font-semibold "
-                                delay={100}
-                                duration={0.6}
-                                ease="power3.out"
-                                splitType="chars"
-                                from={{ opacity: 0, y: 40 }}
-                                to={{ opacity: 1, y: 0 }}
-                                threshold={0.1}
-                                rootMargin="-100px"
-                                textAlign="center"
-                            />
-                        </div>
-                        <div className='mb-2'>
-                            <SplitText
-                                text="Coding"
-                                className="text-7xl font-semibold"
-                                delay={100}
-                                duration={0.6}
-                                ease="power3.out"
-                                splitType="chars"
-                                from={{ opacity: 0, y: 40 }}
-                                to={{ opacity: 1, y: 0 }}
-                                threshold={0.1}
-                                rootMargin="-100px"
-                                textAlign="center"
-                            />
-                        </div>
-                        <div>
-                            <SplitText
-                                text="Challenges"
-                                className="text-7xl font-semibold"
-                                delay={100}
-                                duration={0.6}
-                                ease="power3.out"
-                                splitType="chars"
-                                from={{ opacity: 0, y: 40 }}
-                                to={{ opacity: 1, y: 0 }}
-                                threshold={0.1}
-                                rootMargin="-100px"
-                                textAlign="center"
-                            />
-                        </div>
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight">
+                            <span className="block bg-gradient-to-r from-white to-gray-300 bg-clip-text ">Master Modern</span>
+                            <span className={`block bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} ${theme.secondary.replace('bg-', 'to-')} bg-clip-text  mt-2 animate-gradient-x`}>
+                                Coding Challenges
+                            </span>
+                        </h1>
 
                         <TextType
-                            className={`text-l mt-10 mb-10 ${theme.text}`}
+                            className={`text-xl mt-10 mb-10 ${theme.text}`}
                             text={["Join our platform where developers sharpen their skills...",
                                 "through interactive coding exercises, real-world projects...",
                                 "and competitive programming..."]}
@@ -315,19 +263,19 @@ const Home = () => {
                             pauseDuration={1500}
                             showCursor={true}
                             cursorCharacter="|"
-                            textColors = {theme.text}
+                            textColors={theme.text}
                         />
 
                         <Link to="/problems">
-                            <div className={`group relative cursor-pointer p-2.5 w-40  ${theme.buttonPrimary} rounded-full overflow-hidden text-black text-center font-semibold`}>
+                            <div className={`group relative cursor-pointer p-2.5 w-40  ${theme.buttonPrimary} rounded-full overflow-hidden ${theme.buttonText}  text-center font-semibold`}>
                                 <span className="translate-x-1 group-hover:translate-x-12 group-hover:opacity-0 transition-all duration-300 inline-block">
                                     Start Coding Now
                                 </span>
-                                <div className="flex gap-2 text-white z-10 items-center absolute top-0 h-full w-full justify-center translate-x-12 opacity-0 group-hover:-translate-x-1 group-hover:opacity-100 transition-all duration-300">
+                                <div className={`flex gap-2 ${theme.text} ${theme.secondary} z-10 items-center absolute top-0 h-full w-full justify-center translate-x-12 opacity-0 group-hover:-translate-x-1 group-hover:opacity-100 transition-all duration-300`}>
                                     <span>Start Coding</span>
                                     <ArrowRight />
                                 </div>
-                                <div className={`absolute top-[40%] bg-transparent left-[20%] h-2 w-2 group-hover:h-full group-hover:w-full rounded-lg  scale-[1]  ${theme.buttonPrimaryHover} group-hover:scale-[1.8] transition-all duration-300 group-hover:top-[0%] group-hover:left-[0%] `}></div>
+                                <div className={`absolute top-[40%] bg-transparent left-[20%] h-2 w-2 group-hover:h-full group-hover:w-full rounded-lg  scale-[1]  ${theme.secondary} group-hover:scale-[1.8] transition-all duration-300 group-hover:top-[0%] group-hover:left-[0%] `}></div>
                             </div>
                         </Link>
                     </div>
