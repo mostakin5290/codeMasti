@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import io from 'socket.io-client';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { FaShareAlt, FaUserCircle, FaSpinner, FaCrown, FaTimesCircle, FaCheckCircle, FaArrowUp, FaArrowDown } from 'react-icons/fa'; // Import FaArrowUp, FaArrowDown
@@ -291,7 +291,7 @@ const GameRoomDetailsPage = () => {
         const fetchAndConnect = async () => {
             setLoading(true); // Start loading
             try {
-                const response = await axios.get(`${VITE_API_URL}/game/room/${roomId}`, { withCredentials: true });
+                const response = await axiosClient.get(`/game/room/${roomId}`, { withCredentials: true });
                 const fetchedRoom = response.data.room;
 
                 if (!isMounted) return; // Prevent state updates if component unmounted

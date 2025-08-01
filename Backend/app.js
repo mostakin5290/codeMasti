@@ -19,20 +19,10 @@ const frontendUrl = process.env.FRONTEND_URL;
 
 const allowedOrigins = [
     frontendUrl, 
-    "http://localhost:5173", 
+    "https://codemasti.fun",
+    "https://www.codemasti.fun"
 ];
 
-const keepAlive = async () => {
-    try {
-        await axios.get('https://keepalive404.netlify.app/.netlify/functions/keepalive');
-        await axios.get(`https://codemasti.onrender.com/keep-alive`);
-    } catch (err) {
-        console.error('Keep-alive failed:', err.message);
-    }
-};
-
-// Keep-alive interval
-setInterval(keepAlive, 14 * 60 * 1000);
 
 const io = new Server(server, {
     cors: {
@@ -531,25 +521,15 @@ app.use((err, req, res, next) => {
 // Initialize server connection and start daily challenge scheduler
 const InitializeConnection = async () => {
     try {
-        console.log('🚀 Starting server initialization...');
-        
-        // Connect to database and Redis
         await Promise.all([
             main(),
             redisClient.connect()
         ]);
         
-        console.log('✅ Database and Redis connections established');
-        
-        // Start the daily challenge scheduler
-        console.log('🕛 Starting daily challenge scheduler...');
         dailyChallengeScheduler.start();
         
-        // Start the server
-        server.listen(process.env.PORT || 5000, () => {
-            console.log(`✅ Server started on port ${process.env.PORT || 5000}`);
-            console.log('🎯 Daily challenge automation is active');
-            console.log(`📊 Scheduler status: ${JSON.stringify(dailyChallengeScheduler.getStatus(), null, 2)}`);
+        server.listen(process.env.PORT || 3000, () => {
+            console.log(`✅ Server started on port ${process.env.PORT || 3000}`);
         });
         
     } catch (err) {

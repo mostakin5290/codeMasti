@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
+import axiosClient from '../api/axiosClient'
 import io from 'socket.io-client';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-toastify';
@@ -255,7 +256,7 @@ const GamePage = () => {
                 return;
             }
 
-            const response = await axios.post(`${VITE_API_URL}/game/find-opponent`,
+            const response = await axiosClient.post(`/game/find-opponent`,
                 {
                     socketId: lobbySocketRef.current.id,
                     difficulty: quickMatchDifficulty,
@@ -296,7 +297,7 @@ const GamePage = () => {
                 setCreateRoomLoading(false); // Reset specific loading state
                 return;
             }
-            const response = await axios.post(`${VITE_API_URL}/game/create-room`,
+            const response = await axiosClient.post(`/game/create-room`,
                 {
                     maxPlayers: 2,
                     gameMode: '1v1-coding',
@@ -331,7 +332,7 @@ const GamePage = () => {
                 return;
             }
             const roomIDToJoin = roomIdInput.trim().toUpperCase();
-            const response = await axios.post(`${VITE_API_URL}/game/join-room`,
+            const response = await axiosClient.post(`/game/join-room`,
                 { roomId: roomIDToJoin, socketId: lobbySocketRef.current.id },
                 { withCredentials: true }
             );
