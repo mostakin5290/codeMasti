@@ -55,7 +55,7 @@ const GameRoomDetailsPage = () => {
     const gameRoomSocketRef = useRef(null);
     const timerIntervalRef = useRef(null);
 
-    const VITE_API_URL = import.meta.env.VITE_API_URL;
+    const VITE_API_URL = "http://localhost:3000";
 
     // Helper to start the countdown timer
     const startCountdown = useCallback((endTimeMs) => {

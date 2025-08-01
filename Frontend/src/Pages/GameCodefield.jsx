@@ -241,7 +241,7 @@ const GameCodefield = () => {
     const gameSocketRef = useRef(null); // Socket for real-time game communication
     const timerIntervalRef = useRef(null); // Timer for the game countdown
 
-    const backendUrl = import.meta.env.VITE_API_URL;
+    const backendUrl = "http://localhost:3000";
 
     // Determine if the current user has solved the current problem
     const hasCurrentUserSolvedProblem = room?.players

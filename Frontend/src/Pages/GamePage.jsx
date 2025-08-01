@@ -81,7 +81,7 @@ const GamePage = () => {
     const [matchedUsers, setMatchedUsers] = useState({ currentUser: null, opponent: null });
     const battleAnimationTimerRef = useRef(null);
 
-    const VITE_API_URL = import.meta.env.VITE_API_URL;
+    const VITE_API_URL = "http://localhost:3000";
     const lobbySocketRef = useRef(null);
     const searchTimerRef = useRef(null);
 

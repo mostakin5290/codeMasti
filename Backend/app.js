@@ -15,7 +15,7 @@ const server = http.createServer(app);
 // Import the daily challenge scheduler
 const dailyChallengeScheduler = require('./src/utils/dailyChallengeScheduler');
 
-const frontendUrl = process.env.FRONTEND_URL;
+const frontendUrl = process.env.FRONTEND_URL||"https://codemasti.fun";;
 
 const allowedOrigins = [
     frontendUrl, 
