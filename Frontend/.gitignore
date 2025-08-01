@@ -1,13 +1,16 @@
-# Dependencies
+# Node modules
 node_modules/
 
 # Build outputs
-
+build/
+dist/
 .next/
 .out/
 
 # Environment variables
-
+.env
+.env.*
+!.env.example
 
 # Logs
 npm-debug.log*
@@ -15,7 +18,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# OS files
+# OS generated files
 .DS_Store
 Thumbs.db
 
@@ -31,21 +34,19 @@ coverage/
 *.tmp
 tmp/
 
-# Parcel cache
+# Parcel / Vite / Webpack cache
 .cache/
 
 # Output of 'npm pack'
 *.tgz
 
-# ESLint cache
+# ESLint / Prettier / Lint caches
 .eslintcache
+.prettiercache
 
 # Optional: Storybook
 .storybook-out/
 out/
-
-# Optional: VS Code settings (if not shared across team)
-.vscode/
 
 # Optional: Local SSL certificates
 cert.pem

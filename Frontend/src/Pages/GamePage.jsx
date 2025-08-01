@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
 import axiosClient from '../api/axiosClient'
 import io from 'socket.io-client';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-toastify';
-import LoadingSpinner from '../components/common/LoadingSpinner';
 import { FaTrophy, FaCalendarAlt, FaClock } from 'react-icons/fa';
 import Header from '../components/layout/Header';
 
@@ -30,11 +28,11 @@ const defaultTheme = {
 const Loader = ({ message = "Loading...", size = "md", appTheme }) => {
     const theme = { ...defaultTheme, ...appTheme };
     return (
-        <div className="flex flex-col items-center justify-center h-full space-y-6">
+        <div className="flex flex-col items-center justify-center h-3.5 space-y-6">
             <div className="relative">
-                <div className={`animate-spin rounded-full border-4 border-transparent ${theme.primary.replace('bg-', 'bg-gradient-to-r from-')} ${theme.highlight.replace('text-', 'via-')} ${theme.highlightSecondary.replace('text-', 'to-')} ${size === 'lg' ? 'h-20 w-20' : size === 'sm' ? 'h-10 w-10' : 'h-16 w-16'
+                <div className={`animate-spin rounded-full border-4 border-transparent ${theme.primary.replace('bg-', 'bg-gradient-to-r from-')} ${theme.highlight.replace('text-', 'via-')} ${theme.highlightSecondary.replace('text-', 'to-')} h-3 w-3
                     }`} style={{ clipPath: 'circle(50% at 50% 50%)' }}>
-                    <div className={`absolute inset-1 rounded-full ${theme.background} ${size === 'lg' ? 'h-18 w-18' : size === 'sm' ? 'h-8 w-8' : 'h-14 w-14'
+                    <div className={`absolute inset-1 rounded-full ${theme.background} h-3 w-3'
                         }`}></div>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -81,7 +79,7 @@ const GamePage = () => {
     const [matchedUsers, setMatchedUsers] = useState({ currentUser: null, opponent: null });
     const battleAnimationTimerRef = useRef(null);
 
-    const VITE_API_URL = "http://localhost:3000";
+    const VITE_API_URL = import.meta.env.VITE_API_URL;
     const lobbySocketRef = useRef(null);
     const searchTimerRef = useRef(null);
 
@@ -513,7 +511,7 @@ const GamePage = () => {
                                         >
                                             <span className={`absolute inset-0 bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')}/80 ${theme.secondary.replace('bg-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
                                             <span className="relative z-10 flex items-center justify-center">
-                                                {quickMatchLoading ? <LoadingSpinner size="sm" color="white" /> : '🚀 Find Random Opponent'} {/* Use specific loading spinner */}
+                                                {quickMatchLoading ? <Loader size="sm" color="white" /> : '🚀 Find Random Opponent'} {/* Use specific loading spinner */}
                                             </span>
                                         </button>
                                     ) : (
@@ -587,7 +585,7 @@ const GamePage = () => {
                                     >
                                         <span className={`absolute inset-0 bg-gradient-to-r ${theme.successColor.replace('text-', 'from-')}/80 ${theme.infoColor.replace('text-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
                                         <span className="relative z-10 flex items-center justify-center">
-                                            {createRoomLoading ? <LoadingSpinner size="sm" color="white" /> : '🏗️ Create Private Room'} {/* Use specific loading spinner */}
+                                            {createRoomLoading ? <Loader size="sm" color="white" /> : '🏗️ Create Private Room'} {/* Use specific loading spinner */}
                                         </span>
                                     </button>
                                 </div>
@@ -630,7 +628,7 @@ const GamePage = () => {
                                     >
                                         <span className={`absolute inset-0 bg-gradient-to-r ${theme.highlightTertiary.replace('text-', 'from-')}/80 ${theme.primary.replace('bg-', 'to-')}/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></span>
                                         <span className="relative z-10 flex items-center justify-center">
-                                            {joinRoomLoading ? <LoadingSpinner size="sm" color="white" /> : '🎯 Join Room'}                                         </span>
+                                            {joinRoomLoading ? <Loader size="sm" color="white" /> : '🎯 Join Room'}                                         </span>
                                     </button>
                                 </div>
                             </div>
