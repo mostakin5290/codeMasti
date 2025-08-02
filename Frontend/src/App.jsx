@@ -22,7 +22,7 @@ import AboutPage from "./components/FooterPage/CodeCrack/AboutPage";
 import TermsPage from "./components/FooterPage/Legal/TermsPage";
 import PrivacyPolicyPage from "./components/FooterPage/Legal/PrivacyPolicyPage";
 import CookiePolicyPage from "./components/FooterPage/Legal/CookiePolicyPage";
-import CreateDiscussPost from "./features/discuss/CreateDiscussPost";
+import CreateDiscussPost from "./components/discuss/CreateDiscussPost";
 import GitHubCallback from './features/auth/GitHubCallback';
 import ExplorePremium from "./components/Premium/ExplorePremium";
 

@@ -432,8 +432,8 @@ const VisualizerPage = () => {
             </div>
 
             {/* Header - Fixed at top */}
-            <div className="flex-shrink-0 z-10">
-                <Header />
+            <div className="flex-shrink-0 z-100">
+                <Header/>
             </div>
 
             {/* Main Content Container */}

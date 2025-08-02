@@ -216,10 +216,7 @@ const GamePage = () => {
         return match ? match[1] : 'blue';
     };
 
-    const sectionClasses = `backdrop-blur-xl border ${theme.border}/20 shadow-xl rounded-2xl`;
 
-    // Loading states
-    const [quickMatchLoading, setQuickMatchLoading] = useState(false);
     const [createRoomLoading, setCreateRoomLoading] = useState(false);
     const [joinRoomLoading, setJoinRoomLoading] = useState(false);
 
@@ -274,14 +271,13 @@ const GamePage = () => {
     const startSearchTimer = useCallback(() => {
         setSearchTimer(0);
         setSearchingOpponent(true);
-        setQuickMatchLoading(true);
 
         searchTimerRef.current = setInterval(() => {
             setSearchTimer(prev => {
                 if (prev >= 19) {
                     clearSearchTimer();
                     setSearchingOpponent(false);
-                    setQuickMatchLoading(false);
+                    // 
                     setShowNoPlayerModal(true);
                     return 0;
                 }
@@ -293,7 +289,7 @@ const GamePage = () => {
     const startBattleAnimationAndNavigate = useCallback((roomData, currentUserProfile, opponentUserProfile) => {
         clearSearchTimer();
         setSearchingOpponent(false);
-        setQuickMatchLoading(false);
+        
         setShowNoPlayerModal(false);
 
         setMatchedUsers({ currentUser: currentUserProfile, opponent: opponentUserProfile });
@@ -327,14 +323,14 @@ const GamePage = () => {
             newSocket.on('connect_error', (err) => {
                 console.error("Socket.IO connection error (Lobby):", err);
                 toast.error("Failed to connect to game server. Please try again.");
-                setQuickMatchLoading(false);
+                
                 setCreateRoomLoading(false);
                 setJoinRoomLoading(false);
             });
 
             newSocket.on('disconnect', (reason) => {
                 console.log('Disconnected from Socket.IO (Lobby):', reason);
-                setQuickMatchLoading(false);
+                
                 setCreateRoomLoading(false);
                 setJoinRoomLoading(false);
             });
@@ -355,7 +351,7 @@ const GamePage = () => {
                     toast.info("Match found, but room state is not yet ready. Waiting for room details...");
                     navigate(`/game/room/${data.room.roomId}`);
                 }
-                setQuickMatchLoading(false);
+                
             });
 
             newSocket.on('roomCreated', (data) => {
@@ -369,7 +365,7 @@ const GamePage = () => {
                 console.error('Game Error (Lobby):', data.message);
                 clearSearchTimer();
                 setSearchingOpponent(false);
-                setQuickMatchLoading(false);
+                
                 setCreateRoomLoading(false);
                 setJoinRoomLoading(false);
 
@@ -407,12 +403,12 @@ const GamePage = () => {
     }
 
     const handleFindRandomOpponent = async () => {
-        setQuickMatchLoading(true);
+        
         setSearchingOpponent(true);
         try {
             if (!lobbySocketRef.current || !lobbySocketRef.current.connected) {
                 toast.error("Not connected to game server. Please wait or refresh the page.");
-                setQuickMatchLoading(false);
+                
                 setSearchingOpponent(false);
                 return;
             }
@@ -444,7 +440,7 @@ const GamePage = () => {
         } catch (error) {
             console.error('Error finding random opponent:', error);
             toast.error(error.response?.data?.message || 'Failed to find random opponent.');
-            setQuickMatchLoading(false);
+            
             setSearchingOpponent(false);
             clearSearchTimer();
         }
@@ -514,7 +510,7 @@ const GamePage = () => {
     const handleCancelSearch = () => {
         clearSearchTimer();
         setSearchingOpponent(false);
-        setQuickMatchLoading(false);
+        
         toast.info("Search cancelled.");
         if (showBattleAnimation) {
             setShowBattleAnimation(false);
@@ -531,7 +527,7 @@ const GamePage = () => {
         handleFindRandomOpponent();
     };
 
-    const anyOperationInProgress = searchingOpponent || showBattleAnimation || quickMatchLoading || createRoomLoading || joinRoomLoading;
+    const anyOperationInProgress = searchingOpponent || showBattleAnimation || createRoomLoading || joinRoomLoading;
 
     return (
         <div className={`min-h-screen relative overflow-hidden ${theme.text} bg-gradient-to-br ${theme.gradientFrom} ${theme.gradientTo}`}>
@@ -697,7 +693,7 @@ const GamePage = () => {
                                     description="Get matched with a random opponent instantly. Perfect for quick skill tests and ELO climbing."
                                     gradientColors={[theme.primary.replace('bg-', 'from-'), theme.secondary.replace('bg-', 'to-')]}
                                     theme={theme}
-                                    isLoading={quickMatchLoading}
+                                    // isLoading={quickMatchLoading}
                                     delay={0}
                                 >
                                     {searchingOpponent && (
@@ -745,7 +741,7 @@ const GamePage = () => {
                                             <ActionButton
                                                 onClick={handleFindRandomOpponent}
                                                 disabled={anyOperationInProgress || !isAuthenticated}
-                                                loading={quickMatchLoading}
+                                                // loading={quickMatchLoading}
                                                 icon={FaSearch}
                                                 theme={theme}
                                             >

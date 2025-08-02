@@ -7,7 +7,7 @@ import {
 import axiosClient from '../../api/axiosClient';
 import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'react-toastify';
-import LoadingSpinner from '../common/LoadingSpinner';
+// import LoadingSpinner from '../common/LoadingSpinner';
 import { useSelector } from 'react-redux';
 
 // Default theme (unchanged - ensures consistency if context is not fully loaded)
@@ -46,6 +46,14 @@ const ContestOverview = () => {
     const [error, setError] = useState(null);
     const [filter, setFilter] = useState('upcoming');
 
+
+    const LoadingSpinner = () => {
+        return (
+            <div className="flex items-center justify-center h-32">
+                <div className={`animate-spin rounded-full h-8 w-8 border-b-2 border-${appTheme.highlightColor}-400`}></div>
+            </div>
+        )
+    }
     const getContestStatus = useCallback((startTime, endTime) => {
         const now = new Date();
         const start = new Date(startTime);
@@ -205,7 +213,7 @@ const ContestOverview = () => {
     if (loading) {
         return (
             <div className="text-center py-20 flex flex-col items-center justify-center">
-                <LoadingSpinner message="Fetching the latest contests..." />
+                <LoadingSpinner />
                 <p className={`mt-4 text-lg ${appTheme.cardText}`}>Please wait a moment.</p>
             </div>
         );

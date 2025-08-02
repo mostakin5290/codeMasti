@@ -51,6 +51,9 @@ const GameRoomDetailsPage = () => {
     const { theme: themeFromContext } = useTheme();
     const theme = { ...defaultTheme, ...themeFromContext };
 
+    // Responsive state
+    const [isMobile, setIsMobile] = useState(false);
+
     // Dynamic helper functions
     const getAccentColorBase = () => {
         const accentColorClass = theme.accent || theme.buttonPrimary;
@@ -80,6 +83,18 @@ const GameRoomDetailsPage = () => {
     const timerIntervalRef = useRef(null);
 
     const VITE_API_URL = import.meta.env.VITE_API_URL;
+
+    // Check screen size for responsive design
+    useEffect(() => {
+        const checkScreenSize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+
+        return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
 
     // Helper to start the countdown timer
     const startCountdown = useCallback((endTimeMs) => {
@@ -376,7 +391,6 @@ const GameRoomDetailsPage = () => {
         }
     };
 
-
     if (loading) {
         return (
             <div className={`min-h-screen flex items-center justify-center ${theme.background}`}>
@@ -387,13 +401,13 @@ const GameRoomDetailsPage = () => {
 
     if (error) {
         return (
-            <div className={`min-h-screen flex flex-col items-center justify-center ${theme.background} ${theme.errorColor}`}>
-                <FaTimesCircle className="text-6xl mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Error</h2>
-                <p className="text-lg text-center">{error}</p>
+            <div className={`min-h-screen flex flex-col items-center justify-center ${theme.background} ${theme.errorColor} px-4`}>
+                <FaTimesCircle className="text-4xl sm:text-6xl mb-4" />
+                <h2 className="text-xl sm:text-2xl font-bold mb-2 text-center">Error</h2>
+                <p className="text-base sm:text-lg text-center mb-4">{error}</p>
                 <button
                     onClick={() => navigate('/game')}
-                    className={`mt-6 px-6 py-3 rounded-md ${theme.buttonPrimary} ${theme.buttonText} hover:${theme.buttonPrimaryHover} transition-colors duration-200`}
+                    className={`px-4 sm:px-6 py-2 sm:py-3 rounded-md ${theme.buttonPrimary} ${theme.buttonText} hover:${theme.buttonPrimaryHover} transition-colors duration-200 text-sm sm:text-base`}
                 >
                     Back to Game Lobby
                 </button>
@@ -403,11 +417,11 @@ const GameRoomDetailsPage = () => {
 
     if (!room) {
         return (
-            <div className={`min-h-screen flex items-center justify-center ${theme.background} ${theme.text}`}>
-                <p>No room data available. Please try joining again.</p>
+            <div className={`min-h-screen flex flex-col items-center justify-center ${theme.background} ${theme.text} px-4 text-center`}>
+                <p className="mb-4 text-sm sm:text-base">No room data available. Please try joining again.</p>
                 <button
                     onClick={() => navigate('/game')}
-                    className={`mt-6 px-6 py-3 rounded-md ${theme.buttonPrimary} ${theme.buttonText} hover:${theme.buttonPrimaryHover} transition-colors duration-200`}
+                    className={`px-4 sm:px-6 py-2 sm:py-3 rounded-md ${theme.buttonPrimary} ${theme.buttonText} hover:${theme.buttonPrimaryHover} transition-colors duration-200 text-sm sm:text-base`}
                 >
                     Back to Game Lobby
                 </button>
@@ -422,95 +436,94 @@ const GameRoomDetailsPage = () => {
 
     return (
         <div className={`min-h-screen relative overflow-hidden ${theme.text} bg-gradient-to-br ${theme.gradientFrom} ${theme.gradientTo}`}>
-            {/* Dynamic Animated Background Elements */}
-            <div className={`absolute top-0 left-0 w-80 h-80 ${theme.primary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[-20%] translate-y-[-20%] animate-blob`}></div>
-            <div className={`absolute bottom-0 right-0 w-96 h-96 ${theme.secondary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[20%] translate-y-[20%] animate-blob animation-delay-2000`}></div>
-            <div className={`absolute top-1/2 left-1/2 w-60 h-60 ${theme.highlight.replace('text-', 'bg-')}/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-blob animation-delay-4000`}></div>
+            {/* Dynamic Animated Background Elements - Responsive */}
+            <div className={`absolute top-0 left-0 w-40 h-40 sm:w-60 sm:h-60 lg:w-80 lg:h-80 ${theme.primary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[-20%] translate-y-[-20%] animate-blob`}></div>
+            <div className={`absolute bottom-0 right-0 w-48 h-48 sm:w-72 sm:h-72 lg:w-96 lg:h-96 ${theme.secondary.replace('bg-', 'bg-')}/5 rounded-full blur-3xl translate-x-[20%] translate-y-[20%] animate-blob animation-delay-2000`}></div>
+            <div className={`absolute top-1/2 left-1/2 w-30 h-30 sm:w-45 sm:h-45 lg:w-60 lg:h-60 ${theme.highlight.replace('text-', 'bg-')}/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-blob animation-delay-4000`}></div>
 
-            <div className="relative z-10 p-8 flex flex-col items-center justify-center min-h-screen">
+            <div className="relative z-10 p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center min-h-screen">
                 {showBattleAnimation && matchedUsers.currentUser && matchedUsers.opponent ? (
-                    <div className={`fixed inset-0 bg-gradient-to-br ${theme.gradientFrom} via-purple-900 ${theme.gradientTo} backdrop-blur-lg flex items-center justify-center z-50 animate-fade-in-fast`}>
-                        <div className="text-center text-white space-y-8 relative">
+                    <div className={`fixed inset-0 bg-gradient-to-br ${theme.gradientFrom} via-purple-900 ${theme.gradientTo} backdrop-blur-lg flex items-center justify-center z-50 animate-fade-in-fast px-4`}>
+                        <div className="text-center text-white space-y-4 sm:space-y-6 lg:space-y-8 relative w-full max-w-4xl">
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className={`w-96 h-96 border-8 ${theme.highlight.replace('text-', 'border-')} rounded-full animate-pulse-border opacity-70`}></div>
+                                <div className={`w-48 h-48 sm:w-72 sm:h-72 lg:w-96 lg:h-96 border-4 sm:border-8 ${theme.highlight.replace('text-', 'border-')} rounded-full animate-pulse-border opacity-70`}></div>
                             </div>
 
-                            <h2 className={`text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} via-pink-500 ${theme.secondary.replace('bg-', 'to-')} animate-text-pop-in relative z-10`}>
+                            <h2 className={`text-3xl sm:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r ${theme.primary.replace('bg-', 'from-')} via-pink-500 ${theme.secondary.replace('bg-', 'to-')} animate-text-pop-in relative z-10`}>
                                 BATTLE!
                             </h2>
-                            <div className="flex items-center justify-center space-x-12 relative z-10">
-                                <div className="flex flex-col items-center space-y-4 animate-slide-in-left-fast">
+                            <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-center justify-center ${isMobile ? 'space-y-6' : 'space-x-8 lg:space-x-12'} relative z-10`}>
+                                <div className="flex flex-col items-center space-y-2 sm:space-y-4 animate-slide-in-left-fast">
                                     <img
                                         src={matchedUsers.currentUser.avatar || '/default-avatar.png'}
                                         alt="You"
-                                        className={`w-40 h-40 rounded-full object-cover border-4 ${theme.primary.replace('bg-', 'border-')} shadow-lg animate-float`}
+                                        className={`w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 rounded-full object-cover border-2 sm:border-4 ${theme.primary.replace('bg-', 'border-')} shadow-lg animate-float`}
                                     />
-                                    <p className={`text-3xl font-bold ${theme.highlight}`}>YOU</p>
-                                    <p className="text-xl font-medium">{matchedUsers.currentUser.firstName || 'Player'}</p>
+                                    <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${theme.highlight}`}>YOU</p>
+                                    <p className="text-sm sm:text-lg lg:text-xl font-medium text-center max-w-32 sm:max-w-none truncate">{matchedUsers.currentUser.firstName || 'Player'}</p>
                                 </div>
 
-                                <span className={`text-8xl font-extrabold ${theme.errorColor} animate-vs-zoom relative z-10`}>VS</span>
+                                <span className={`text-4xl sm:text-6xl lg:text-8xl font-extrabold ${theme.errorColor} animate-vs-zoom relative z-10 ${isMobile ? 'order-first mb-4' : ''}`}>VS</span>
 
-                                <div className="flex flex-col items-center space-y-4 animate-slide-in-right-fast">
+                                <div className="flex flex-col items-center space-y-2 sm:space-y-4 animate-slide-in-right-fast">
                                     <img
                                         src={matchedUsers.opponent.avatar || '/default-avatar.png'}
                                         alt="Opponent"
-                                        className={`w-40 h-40 rounded-full object-cover border-4 ${theme.secondary.replace('bg-', 'border-')} shadow-lg animate-float`}
+                                        className={`w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 rounded-full object-cover border-2 sm:border-4 ${theme.secondary.replace('bg-', 'border-')} shadow-lg animate-float`}
                                     />
-                                    <p className={`text-3xl font-bold ${theme.highlightSecondary}`}>OPPONENT</p>
-                                    <p className="text-xl font-medium">{matchedUsers.opponent.firstName || 'Opponent'}</p>
+                                    <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${theme.highlightSecondary}`}>OPPONENT</p>
+                                    <p className="text-sm sm:text-lg lg:text-xl font-medium text-center max-w-32 sm:max-w-none truncate">{matchedUsers.opponent.firstName || 'Opponent'}</p>
                                 </div>
                             </div>
-                            <p className={`text-xl font-semibold ${theme.cardText} mt-8 animate-fade-in-slow relative z-10`}>
+                            <p className={`text-base sm:text-xl font-semibold ${theme.cardText} mt-4 sm:mt-8 animate-fade-in-slow relative z-10`}>
                                 Get ready to code!
                             </p>
                         </div>
                     </div>
                 ) : (
-                    // Original room details content with dynamic theming
-                    <div className={`${sectionClasses} ${theme.cardBg} p-8 max-w-3xl w-full text-center`}>
+                    // Original room details content with responsive design
+                    <div className={`${sectionClasses} ${theme.cardBg} p-4 sm:p-6 lg:p-8 max-w-sm sm:max-w-2xl lg:max-w-3xl w-full text-center`}>
                         {/* Lobby/Waiting State */}
                         {!gameStarted && !gameEnded && (
                             <>
-                                <h2 className={`text-4xl font-extrabold mb-4 ${theme.highlight}`}>
+                                <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3 sm:mb-4 ${theme.highlight}`}>
                                     Waiting Room: {room.roomId}
                                 </h2>
-                                <p className={`text-lg ${theme.cardText} mb-6`}>
+                                <p className={`text-sm sm:text-base lg:text-lg ${theme.cardText} mb-4 sm:mb-6`}>
                                     Game Mode: {room.gameMode.toUpperCase()} | Difficulty: <span className={`font-semibold ${theme.highlightSecondary}`}>{room.difficulty.toUpperCase()}</span> | Time Limit: {room.timeLimit} minutes
                                 </p>
 
-                                <div className={`${theme.iconBg} p-4 rounded-lg mb-6 border ${theme.border}/50`}>
-                                    <p className={`${theme.cardText} mb-3 flex items-center justify-center`}>
+                                <div className={`${theme.iconBg} p-3 sm:p-4 rounded-lg mb-4 sm:mb-6 border ${theme.border}/50`}>
+                                    <p className={`${theme.cardText} mb-2 sm:mb-3 flex items-center justify-center text-sm sm:text-base`}>
                                         <FaShareAlt className="mr-2" /> Share this link with your friend:
                                     </p>
-                                    <div className="flex items-center justify-center space-x-2">
+                                    <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-2">
                                         <input
                                             type="text"
                                             readOnly
                                             value={`${window.location.origin}/game/room/${room.roomId}`}
-                                            className={`flex-grow p-2 rounded-md ${theme.background} ${theme.text} border ${theme.border} text-sm focus:outline-none focus:ring-2 focus:ring-${getAccentColorBase()}-500`}
+                                            className={`w-full sm:flex-grow p-2 rounded-md ${theme.background} ${theme.text} border ${theme.border} text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-${getAccentColorBase()}-500`}
                                         />
                                         <button
                                             onClick={() => setShowSharePopup(true)}
-                                            className={`p-2 rounded-lg ${theme.cardBg} ${theme.cardText} hover:${theme.cardBg}/80 transition-colors`}
+                                            className={`w-full sm:w-auto p-2 rounded-lg ${theme.cardBg} ${theme.cardText} hover:${theme.cardBg}/80 transition-colors text-sm sm:text-base`}
                                             title="Share Post"
                                         >
-                                            <FaShare className="w-4 h-4" />
+                                            <FaShare className="w-3 h-3 sm:w-4 sm:h-4 mx-auto sm:mx-0" />
                                         </button>
-
                                     </div>
                                 </div>
 
-                                <h3 className={`text-2xl font-bold mb-4 ${theme.text}`}>Players in Room ({room.players.length}/{room.maxPlayers})</h3>
-                                <div className="flex flex-wrap justify-center gap-4 mb-8">
+                                <h3 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 ${theme.text}`}>Players in Room ({room.players.length}/{room.maxPlayers})</h3>
+                                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-center gap-3 sm:gap-4 mb-6 sm:mb-8`}>
                                     {room.players.map(player => (
-                                        <div key={player.userId?._id || player.socketId} className={`${theme.background}/50 p-4 rounded-lg flex flex-col items-center w-36 border ${theme.border}/50`}>
+                                        <div key={player.userId?._id || player.socketId} className={`${theme.background}/50 p-3 sm:p-4 rounded-lg flex flex-col items-center ${isMobile ? 'w-full' : 'w-32 sm:w-36'} border ${theme.border}/50`}>
                                             <img
                                                 src={player.userId?.avatar || '/default-avatar.png'}
                                                 alt={player.userId?.firstName || 'Player'}
-                                                className="w-16 h-16 rounded-full object-cover mb-2 border-2 border-transparent"
+                                                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover mb-2 border-2 border-transparent"
                                             />
-                                            <p className={`font-semibold ${theme.text}`}>{player.userId?.firstName || 'Connecting...'}</p>
+                                            <p className={`font-semibold ${theme.text} text-sm sm:text-base text-center truncate w-full`}>{player.userId?.firstName || 'Connecting...'}</p>
                                             <p className={`text-xs ${theme.cardText}`}>{player.isCreator ? 'Host' : 'Player'}</p>
                                             <span className={`mt-2 text-xs font-medium px-2 py-1 rounded-full ${player.status === 'ready' ? theme.successColor.replace('text-', 'bg-') + '/20' : theme.warningColor.replace('text-', 'bg-') + '/20'} ${player.status === 'ready' ? theme.successColor : theme.warningColor}`}>
                                                 {player.status === 'ready' ? 'Ready' : 'Waiting...'}
@@ -518,9 +531,9 @@ const GameRoomDetailsPage = () => {
                                         </div>
                                     ))}
                                     {Array.from({ length: room.maxPlayers - room.players.length }).map((_, index) => (
-                                        <div key={`empty-${index}`} className={`${theme.background}/50 p-4 rounded-lg flex flex-col items-center w-36 border ${theme.border}/50 border-dashed`}>
-                                            <FaUserCircle className={`w-16 h-16 rounded-full object-cover mb-2 ${theme.cardText}/50`} />
-                                            <p className={`font-semibold ${theme.cardText}/50`}>Waiting...</p>
+                                        <div key={`empty-${index}`} className={`${theme.background}/50 p-3 sm:p-4 rounded-lg flex flex-col items-center ${isMobile ? 'w-full' : 'w-32 sm:w-36'} border ${theme.border}/50 border-dashed`}>
+                                            <FaUserCircle className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover mb-2 ${theme.cardText}/50`} />
+                                            <p className={`font-semibold ${theme.cardText}/50 text-sm sm:text-base`}>Waiting...</p>
                                             <p className={`text-xs ${theme.cardText}/50`}>Empty Slot</p>
                                             <span className={`mt-2 text-xs font-medium px-2 py-1 rounded-full ${theme.cardText}/10 ${theme.cardText}/50`}>
                                                 Empty
@@ -533,21 +546,21 @@ const GameRoomDetailsPage = () => {
                                     <button
                                         onClick={handlePlayerReady}
                                         disabled={loading}
-                                        className={`w-full py-3 px-6 rounded-xl text-lg font-semibold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-lg disabled:opacity-50`}
+                                        className={`w-full py-2 sm:py-3 px-4 sm:px-6 rounded-xl text-base sm:text-lg font-semibold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-lg disabled:opacity-50`}
                                     >
                                         {loading ? <LoadingSpinner size="sm" color="white" /> : 'I\'m Ready!'}
                                     </button>
                                 )}
                                 {!showReadyButton && isRoomFull && currentPlayerStatus === 'ready' && (
-                                    <p className={`${theme.infoColor} mt-4 text-lg font-semibold`}>Waiting for game to start...</p>
+                                    <p className={`${theme.infoColor} mt-4 text-base sm:text-lg font-semibold`}>Waiting for game to start...</p>
                                 )}
                                 {!showReadyButton && !isRoomFull && (
-                                    <p className={`${theme.cardText} mt-4 text-lg font-semibold`}>Waiting for more players to join...</p>
+                                    <p className={`${theme.cardText} mt-4 text-base sm:text-lg font-semibold`}>Waiting for more players to join...</p>
                                 )}
 
                                 <button
                                     onClick={handleLeaveRoom}
-                                    className={`w-full py-3 px-6 rounded-xl text-lg font-semibold ${theme.errorColor.replace('text-', 'bg-')}/20 ${theme.errorColor} hover:${theme.errorColor.replace('text-', 'bg-')}/30 transition-all duration-300 shadow-lg mt-4`}
+                                    className={`w-full py-2 sm:py-3 px-4 sm:px-6 rounded-xl text-base sm:text-lg font-semibold ${theme.errorColor.replace('text-', 'bg-')}/20 ${theme.errorColor} hover:${theme.errorColor.replace('text-', 'bg-')}/30 transition-all duration-300 shadow-lg mt-4`}
                                 >
                                     Leave Room
                                 </button>
@@ -557,18 +570,18 @@ const GameRoomDetailsPage = () => {
                         {/* Game Started State */}
                         {gameStarted && !gameEnded && !showBattleAnimation && (
                             <div className="flex flex-col items-center justify-center">
-                                <h2 className={`text-4xl font-extrabold mb-4 ${theme.highlight}`}>Game in Progress!</h2>
-                                <div className={`flex items-center space-x-2 text-2xl font-bold mb-6 ${theme.infoColor}`}>
+                                <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3 sm:mb-4 ${theme.highlight}`}>Game in Progress!</h2>
+                                <div className={`flex items-center space-x-2 text-xl sm:text-2xl font-bold mb-4 sm:mb-6 ${theme.infoColor}`}>
                                     <IoTimerOutline /> <span>Time Left: {formatTime(timeLeft)}</span>
                                 </div>
                                 {currentProblem && (
-                                    <div className={`${theme.background}/50 p-6 rounded-lg mb-6 w-full max-w-lg border ${theme.border}/50`}>
-                                        <h3 className={`text-3xl font-bold mb-3 ${theme.text}`}>Current Problem:</h3>
-                                        <p className={`text-xl font-semibold ${theme.highlightSecondary}`}>{currentProblem.title}</p>
-                                        <p className={`${theme.cardText}`}>Difficulty: {currentProblem.difficulty}</p>
+                                    <div className={`${theme.background}/50 p-4 sm:p-6 rounded-lg mb-4 sm:mb-6 w-full max-w-lg border ${theme.border}/50`}>
+                                        <h3 className={`text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 ${theme.text}`}>Current Problem:</h3>
+                                        <p className={`text-lg sm:text-xl font-semibold ${theme.highlightSecondary}`}>{currentProblem.title}</p>
+                                        <p className={`${theme.cardText} text-sm sm:text-base`}>Difficulty: {currentProblem.difficulty}</p>
                                     </div>
                                 )}
-                                <p className={`${theme.cardText} mb-8`}>Redirecting you to the coding environment...</p>
+                                <p className={`${theme.cardText} mb-6 sm:mb-8 text-sm sm:text-base`}>Redirecting you to the coding environment...</p>
                                 <LoadingSpinner size="lg" color={getAccentColorBase()} />
                             </div>
                         )}
@@ -576,28 +589,28 @@ const GameRoomDetailsPage = () => {
                         {/* Game Ended State */}
                         {gameEnded && (
                             <div className="flex flex-col items-center justify-center">
-                                <h2 className={`text-4xl font-extrabold mb-4 ${theme.highlight}`}>Game Over!</h2>
-                                <p className={`text-lg ${theme.cardText} mb-6`}>Reason: {gameResults?.reason || 'Unknown'}</p>
+                                <h2 className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3 sm:mb-4 ${theme.highlight}`}>Game Over!</h2>
+                                <p className={`text-base sm:text-lg ${theme.cardText} mb-4 sm:mb-6`}>Reason: {gameResults?.reason || 'Unknown'}</p>
 
                                 {gameResults?.winner && (
-                                    <div className={`${theme.background}/50 p-6 rounded-lg mb-6 w-full max-w-md border ${theme.border}`}>
-                                        <h3 className={`text-3xl font-bold mb-3 ${theme.successColor}`}>Winner!</h3>
+                                    <div className={`${theme.background}/50 p-4 sm:p-6 rounded-lg mb-4 sm:mb-6 w-full max-w-md border ${theme.border}`}>
+                                        <h3 className={`text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 ${theme.successColor}`}>Winner!</h3>
                                         <div className="flex flex-col items-center">
                                             <img
                                                 src={gameResults.winner.avatar || '/default-avatar.png'}
                                                 alt={gameResults.winner.firstName}
-                                                className={`w-20 h-20 rounded-full object-cover mb-2 border-4 ${theme.warningColor.replace('text-', 'border-')}`}
+                                                className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover mb-2 border-2 sm:border-4 ${theme.warningColor.replace('text-', 'border-')}`}
                                             />
-                                            <p className={`text-2xl font-semibold ${theme.text}`}>{gameResults.winner.firstName}</p>
-                                            <p className={`${theme.cardText}`}>Solved first in {formatTime(gameResults.solvedOrder.find(p => p.userId._id === gameResults.winner._id)?.timeTaken || 0)}</p>
+                                            <p className={`text-xl sm:text-2xl font-semibold ${theme.text}`}>{gameResults.winner.firstName}</p>
+                                            <p className={`${theme.cardText} text-sm sm:text-base`}>Solved first in {formatTime(gameResults.solvedOrder.find(p => p.userId._id === gameResults.winner._id)?.timeTaken || 0)}</p>
                                         </div>
                                     </div>
                                 )}
 
-                                <h3 className={`text-2xl font-bold mb-4 ${theme.text}`}>Leaderboard</h3>
+                                <h3 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 ${theme.text}`}>Leaderboard</h3>
                                 <div className="w-full max-w-xl mx-auto">
                                     {gameResults?.solvedOrder?.length > 0 ? (
-                                        <ol className="list-decimal list-inside space-y-3">
+                                        <ol className="list-decimal list-inside space-y-2 sm:space-y-3">
                                             {gameResults.solvedOrder.map((entry, index) => {
                                                 const playerIsWinner = gameResults.winner && entry.userId._id === gameResults.winner._id;
                                                 const solvedAnyProblems = entry.problemsSolvedCount > 0;
@@ -610,36 +623,36 @@ const GameRoomDetailsPage = () => {
                                                     const eloChangeIcon = entry.eloChange > 0 ? <FaArrowUp className="inline-block ml-1" /> : entry.eloChange < 0 ? <FaArrowDown className="inline-block ml-1" /> : null;
 
                                                     eloDisplay = (
-                                                        <p className={`${theme.cardText} text-sm flex items-center justify-end`}>
+                                                        <p className={`${theme.cardText} text-xs sm:text-sm flex items-center justify-end mt-1`}>
                                                             ELO: {entry.eloBeforeGame} <span className={`${eloChangeColor} ml-1`}>({eloChangeSign}{entry.eloChange})</span> = {entry.eloAfterGame} {eloChangeIcon}
                                                         </p>
                                                     );
                                                 }
 
                                                 return (
-                                                    <li key={entry.userId._id} className={`${theme.background}/50 p-4 rounded-lg flex items-center justify-between border ${theme.border}`}>
-                                                        <div className="flex items-center space-x-3">
-                                                            <span className={`text-lg font-bold ${playerIsWinner ? theme.successColor : theme.infoColor}`}>
+                                                    <li key={entry.userId._id} className={`${theme.background}/50 p-3 sm:p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between border ${theme.border}`}>
+                                                        <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-0">
+                                                            <span className={`text-base sm:text-lg font-bold ${playerIsWinner ? theme.successColor : theme.infoColor}`}>
                                                                 {index + 1}.
                                                             </span>
                                                             <img
                                                                 src={entry.userId.avatar || '/default-avatar.png'}
                                                                 alt={entry.userId.firstName}
-                                                                className="w-10 h-10 rounded-full object-cover border-2"
+                                                                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2"
                                                             />
-                                                            <p className={`font-semibold ${theme.text}`}>
+                                                            <p className={`font-semibold ${theme.text} text-sm sm:text-base`}>
                                                                 {entry.userId.firstName} {entry.userId.lastName}
                                                                 {playerIsWinner && <FaCrown className={`inline-block ml-2 ${theme.warningColor}`} title="Winner!" />}
                                                             </p>
                                                         </div>
-                                                        <div className="text-right">
+                                                        <div className="text-left sm:text-right w-full sm:w-auto">
                                                             {solvedAnyProblems ? (
                                                                 <>
-                                                                    <p className={`${theme.highlightSecondary} font-bold`}>{entry.problemsSolvedCount} problem{entry.problemsSolvedCount !== 1 ? 's' : ''} solved</p>
-                                                                    <p className={`${theme.cardText} text-sm`}>Time: {formatTime(entry.timeTaken)}</p>
+                                                                    <p className={`${theme.highlightSecondary} font-bold text-sm sm:text-base`}>{entry.problemsSolvedCount} problem{entry.problemsSolvedCount !== 1 ? 's' : ''} solved</p>
+                                                                    <p className={`${theme.cardText} text-xs sm:text-sm`}>Time: {formatTime(entry.timeTaken)}</p>
                                                                 </>
                                                             ) : (
-                                                                <p className={`${theme.errorColor} font-bold`}>Not Completed</p>
+                                                                <p className={`${theme.errorColor} font-bold text-sm sm:text-base`}>Not Completed</p>
                                                             )}
                                                             {eloDisplay}
                                                         </div>
@@ -648,19 +661,19 @@ const GameRoomDetailsPage = () => {
                                             })}
                                         </ol>
                                     ) : (
-                                        <p className={`${theme.cardText}`}>No problems were solved in this game.</p>
+                                        <p className={`${theme.cardText} text-sm sm:text-base`}>No problems were solved in this game.</p>
                                     )}
                                 </div>
 
                                 <button
                                     onClick={() => navigate('/game')}
-                                    className={`mt-8 px-6 py-3 rounded-xl text-lg font-semibold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-lg`}
+                                    className={`mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-base sm:text-lg font-semibold ${theme.buttonPrimary} hover:${theme.buttonPrimaryHover} ${theme.buttonText} transition-all duration-300 shadow-lg w-full sm:w-auto`}
                                 >
                                     Play Again!
                                 </button>
                                 <button
                                     onClick={handleLeaveRoom}
-                                    className={`w-full py-3 px-6 rounded-xl text-lg font-semibold ${theme.errorColor.replace('text-', 'bg-')}/20 ${theme.errorColor} hover:${theme.errorColor.replace('text-', 'bg-')}/30 transition-all duration-300 shadow-lg mt-4`}
+                                    className={`w-full py-2 sm:py-3 px-4 sm:px-6 rounded-xl text-base sm:text-lg font-semibold ${theme.errorColor.replace('text-', 'bg-')}/20 ${theme.errorColor} hover:${theme.errorColor.replace('text-', 'bg-')}/30 transition-all duration-300 shadow-lg mt-4`}
                                 >
                                     Back to Lobby
                                 </button>
@@ -673,7 +686,7 @@ const GameRoomDetailsPage = () => {
             {showSharePopup && (
                 <SharePopup
                     url={`${window.location.origin}/game/room/${room.roomId}`}
-                    title="Shere to your Friend"
+                    title="Share to your Friend"
                     onClose={() => setShowSharePopup(false)}
                 />
             )}
@@ -763,6 +776,11 @@ const GameRoomDetailsPage = () => {
                 .animate-vs-zoom { animation: vs-zoom 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; animation-delay: 0.4s; }
                 .animate-pulse-border { animation: pulse-border 2s infinite ease-in-out; }
                 .animate-fade-in-slow { animation: fade-in-fast 1s ease-out forwards; animation-delay: 1.5s; }
+
+                /* Responsive utilities */
+                @media (max-width: 640px) {
+                    .max-w-32 { max-width: 8rem; }
+                }
             `}</style>
         </div>
     );

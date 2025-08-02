@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
@@ -15,34 +15,44 @@ import { SiLeetcode } from 'react-icons/si';
 import { HiSparkles, HiTrendingUp } from 'react-icons/hi';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import PostDetailModal from '../components/discuss/PostDetailModal'; // Your modal component
 import axiosClient from '../api/axiosClient';
 import { format, eachDayOfInterval, formatISO, getDay, getYear } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useTheme } from '../context/ThemeContext';
 
 // Default theme matching your Premium page structure
 const defaultAppTheme = {
-    background: 'bg-gray-900', 
+    background: 'bg-gray-900',
     text: 'text-white',
     primary: 'bg-cyan-500',
-    primaryHover: 'bg-cyan-600', 
-    secondary: 'bg-blue-600', 
+    primaryHover: 'bg-cyan-600',
+    secondary: 'bg-blue-600',
     secondaryHover: 'bg-blue-700',
-    cardBg: 'bg-gray-800', 
-    cardText: 'text-gray-300', 
+    cardBg: 'bg-gray-800',
+    cardText: 'text-gray-300',
     border: 'border-gray-700',
-    buttonText: 'text-white', 
-    highlight: 'text-cyan-400', 
+    buttonText: 'text-white',
+    highlight: 'text-cyan-400',
     highlightSecondary: 'text-blue-400',
-    highlightTertiary: 'text-purple-400', 
+    highlightTertiary: 'text-purple-400',
     iconBg: 'bg-cyan-500/10',
-    gradientFrom: 'from-gray-900', 
+    gradientFrom: 'from-gray-900',
     gradientTo: 'to-gray-800',
     successColor: 'text-emerald-400',
     warningColor: 'text-amber-400',
     errorColor: 'text-red-400',
     infoColor: 'text-blue-400',
+};
+
+// LoadingSpinner component
+const LoadingSpinner = ({ message, appTheme }) => {
+    return (
+        <div className="flex flex-col items-center justify-center p-8">
+            <div className={`animate-spin rounded-full h-12 w-12 border-b-2 border-${appTheme.primary.split('-')[1]}-500 mb-4`}></div>
+            {message && <p className={`${appTheme.cardText} text-sm`}>{message}</p>}
+        </div>
+    );
 };
 
 // Helper for pagination
@@ -65,9 +75,14 @@ function ProfilePage() {
     const { theme: appThemeFromContext } = useTheme();
     const appTheme = { ...defaultAppTheme, ...(appThemeFromContext) };
 
+    // FIXED: Add ref to control fetch behavior
+    const dataFetchedRef = useRef(false);
+    const postsDataFetchedRef = useRef(false);
+
     const [profile, setProfile] = useState(null);
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [postsLoading, setPostsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
     const [userRank, setUserRank] = useState(null);
@@ -78,17 +93,81 @@ function ProfilePage() {
     const [postsCurrentPage, setPostsCurrentPage] = useState(1);
     const postsPerPage = 10;
     const [totalPosts, setTotalPosts] = useState(0);
-    
+
+    // POST DETAIL MODAL STATES
+    const [showPostDetail, setShowPostDetail] = useState(false);
+    const [selectedPostSlug, setSelectedPostSlug] = useState(null);
+
     const [showAchievements, setShowAchievements] = useState(false);
     const [profileViews, setProfileViews] = useState(0);
     const [isFollowing, setIsFollowing] = useState(false);
 
     const userIdToFetch = routeUserId || loggedInUser?._id;
 
+    // POST DETAIL MODAL HANDLERS
+    const handlePostClick = (post) => {
+        setSelectedPostSlug(post.slug);
+        setShowPostDetail(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowPostDetail(false);
+        setSelectedPostSlug(null);
+    };
+
+    // Refresh posts after post operations
+    const handlePostUpdate = () => {
+        // Re-fetch posts data
+        fetchPostsData(postsCurrentPage);
+    };
+
+    // Create a separate posts fetching function
+    const fetchPostsData = useCallback(async (page = 1) => {
+        if (!userIdToFetch || postsLoading) return;
+
+        setPostsLoading(true);
+        try {
+            console.log('Fetching posts for user:', userIdToFetch, 'page:', page);
+            const postsResponse = await axiosClient.get(`/discuss/user/${userIdToFetch}/posts`, {
+                params: {
+                    page: page,
+                    limit: postsPerPage
+                }
+            });
+
+            console.log('Posts API Response:', postsResponse.data);
+
+            // Handle different possible response structures
+            let postsData = [];
+            let postsTotal = 0;
+            
+            if (postsResponse.data.success) {
+                postsData = postsResponse.data.posts || postsResponse.data.data || [];
+                postsTotal = postsResponse.data.totalPosts || postsResponse.data.total || 0;
+            } else {
+                postsData = postsResponse.data.posts || postsResponse.data.data || postsResponse.data || [];
+                postsTotal = postsResponse.data.totalPosts || postsResponse.data.total || postsData.length;
+            }
+
+            console.log('Processed posts data:', postsData);
+            console.log('Total posts:', postsTotal);
+
+            // FIXED: Better state setting with validation
+            setSolutionPosts(Array.isArray(postsData) ? postsData : []);
+            setTotalPosts(postsTotal);
+
+        } catch (err) {
+            console.error("Error fetching solution posts:", err.response?.data || err.message);
+            setSolutionPosts([]);
+            setTotalPosts(0);
+        } finally {
+            setPostsLoading(false);
+        }
+    }, [userIdToFetch, postsLoading, postsPerPage]);
+
+    // FIXED: Initial data fetch - runs only once
     useEffect(() => {
-        if (!userIdToFetch) {
-            setLoading(false);
-            setError("No user to display. Please log in or provide a user ID.");
+        if (!userIdToFetch || dataFetchedRef.current) {
             return;
         }
 
@@ -108,16 +187,7 @@ function ProfilePage() {
                     console.log("No submissions found for user, using empty array.", err);
                 }
 
-                let postsData = [];
-                let postsTotal = 0;
-                try {
-                    const postsResponse = await axiosClient.get(`/discuss/user/${userIdToFetch}/posts?page=${postsCurrentPage}&limit=${postsPerPage}`);
-                    postsData = postsResponse?.data?.posts;
-                    postsTotal = postsResponse?.data?.totalPosts || 0;
-                } catch (err) {
-                    console.log("No solution posts found for user, using empty array.", err);
-                }
-
+                // Rest of your existing rank fetching logic...
                 let fetchedRank = null;
                 let fetchedTotalUsers = 0;
                 if (userIdToFetch) {
@@ -142,16 +212,17 @@ function ProfilePage() {
                 if (profileResponse.data.success) {
                     setProfile(profileResponse.data.profile);
                     setSubmissions(submissionsData);
-                    setSolutionPosts(postsData);
-                    setTotalPosts(postsTotal);
                     setUserRank(fetchedRank);
                     setTotalUsersForRank(fetchedTotalUsers);
-                    // Simulate profile views for demo
                     setProfileViews(Math.floor(Math.random() * 1000) + 100);
+                    
+                    // Mark as fetched to prevent re-renders
+                    dataFetchedRef.current = true;
                 } else {
                     setError("Failed to load profile data.");
                 }
             } catch (err) {
+                console.error("Profile fetch error:", err);
                 setError(err.response?.data?.message || "An error occurred while fetching the profile.");
             } finally {
                 setLoading(false);
@@ -159,7 +230,21 @@ function ProfilePage() {
         };
 
         fetchProfileData();
-    }, [userIdToFetch, postsCurrentPage]);
+    }, [userIdToFetch]); // Only userIdToFetch dependency
+
+    // FIXED: Only fetch posts when posts tab becomes active
+    useEffect(() => {
+        if (activeTab === 'solutionPosts' && !postsDataFetchedRef.current && userIdToFetch) {
+            fetchPostsData(postsCurrentPage);
+            postsDataFetchedRef.current = true;
+        }
+    }, [activeTab, userIdToFetch, fetchPostsData, postsCurrentPage]);
+
+    // FIXED: Handle posts pagination without refetching everything
+    const handlePostsPageChange = useCallback((newPage) => {
+        setPostsCurrentPage(newPage);
+        fetchPostsData(newPage);
+    }, [fetchPostsData]);
 
     // Enhanced Modern Stat Card with dynamic theming
     const ModernStatCard = useCallback(({ title, value, icon, subtext, trend }) => (
@@ -172,7 +257,7 @@ function ProfilePage() {
         >
             {/* Background glow effect */}
             <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${appTheme.primary.replace('bg-', 'from-')}/5 ${appTheme.secondary.replace('bg-', 'to-')}/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-            
+
             <div className="relative flex items-start space-x-4">
                 <div className={`text-2xl p-4 rounded-xl ${appTheme.iconBg} ${appTheme.highlight} group-hover:scale-110 transition-transform duration-300`}>
                     {icon}
@@ -211,7 +296,7 @@ function ProfilePage() {
             {unlocked && rarity === 'legendary' && (
                 <div className={`absolute inset-0 rounded-xl bg-gradient-to-r ${appTheme.warningColor.replace('text-', 'from-')}/20 ${appTheme.primary.replace('bg-', 'to-')}/20 animate-pulse`} />
             )}
-            
+
             <div className={`text-2xl mb-2 ${unlocked ? appTheme.warningColor : appTheme.cardText}`}>
                 {icon}
             </div>
@@ -222,11 +307,10 @@ function ProfilePage() {
                 {description}
             </p>
             {rarity && unlocked && (
-                <div className={`inline-block mt-2 px-2 py-1 rounded-full text-xs ${
-                    rarity === 'legendary' ? `${appTheme.warningColor.replace('text-', 'bg-')}/20 ${appTheme.warningColor}` :
+                <div className={`inline-block mt-2 px-2 py-1 rounded-full text-xs ${rarity === 'legendary' ? `${appTheme.warningColor.replace('text-', 'bg-')}/20 ${appTheme.warningColor}` :
                     rarity === 'rare' ? `${appTheme.highlightTertiary.replace('text-', 'bg-')}/20 ${appTheme.highlightTertiary}` :
-                    `${appTheme.highlightSecondary.replace('text-', 'bg-')}/20 ${appTheme.highlightSecondary}`
-                }`}>
+                        `${appTheme.highlightSecondary.replace('text-', 'bg-')}/20 ${appTheme.highlightSecondary}`
+                    }`}>
                     {rarity}
                 </div>
             )}
@@ -239,7 +323,7 @@ function ProfilePage() {
             {/* Enhanced background with dynamic colors */}
             <div className={`absolute inset-0 bg-gradient-to-br ${appTheme.primary.replace('bg-', 'from-')}/20 via-transparent ${appTheme.secondary.replace('bg-', 'to-')}/20`} />
             <div className={`absolute inset-0 bg-gradient-to-t ${appTheme.gradientFrom} via-transparent ${appTheme.gradientTo}`} />
-            
+
             {/* Animated particles with dynamic colors */}
             <div className="absolute inset-0">
                 {[...Array(20)].map((_, i) => (
@@ -270,13 +354,13 @@ function ProfilePage() {
                             <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${appTheme.primary} ${appTheme.secondary} ${appTheme.highlightTertiary.replace('text-', 'to-')} p-1 animate-pulse`}>
                                 <div className={`w-full h-full rounded-full ${appTheme.background}`} />
                             </div>
-                            
+
                             <img
                                 src={profile.avatar}
                                 alt={`${profile.firstName}'s avatar`}
                                 className="relative w-40 h-40 rounded-full object-cover shadow-2xl border-4 border-white/10 group-hover:scale-105 transition-transform duration-300"
                             />
-                            
+
                             {/* Status indicator */}
                             <div className={`absolute bottom-2 right-2 w-6 h-6 ${appTheme.successColor.replace('text-', 'bg-')} rounded-full border-4 ${appTheme.background.replace('bg-', 'border-')} flex items-center justify-center`}>
                                 <div className={`w-2 h-2 ${appTheme.successColor.replace('text-', 'bg-')} rounded-full animate-pulse`} />
@@ -305,7 +389,7 @@ function ProfilePage() {
                                 <h1 className={`text-5xl font-bold ${appTheme.text}`}>
                                     {profile.firstName} {profile.lastName}
                                 </h1>
-                                
+
                                 {/* Premium Badge */}
                                 <div className="flex items-center space-x-3 mt-2 lg:mt-0">
                                     {loggedInUser?.isPremium ? (
@@ -314,15 +398,15 @@ function ProfilePage() {
                                             <span className={`${appTheme.warningColor} font-semibold`}>Premium</span>
                                         </div>
                                     ) : (
-                                        <Link 
-                                            to="/premium" 
+                                        <Link
+                                            to="/premium"
                                             className={`flex items-center ${appTheme.primary.replace('bg-', 'bg-')}/20 hover:${appTheme.primary.replace('bg-', 'bg-')}/30 px-4 py-2 rounded-full border ${appTheme.primary.replace('bg-', 'border-')}/30 transition-all duration-300`}
                                         >
                                             <HiSparkles className={`${appTheme.highlight} mr-2`} />
                                             <span className={`${appTheme.highlight} font-semibold`}>Get Premium</span>
                                         </Link>
                                     )}
-                                    
+
                                     {/* Verification Badge */}
                                     <div className={`flex items-center ${appTheme.highlightSecondary.replace('text-', 'bg-')}/20 px-3 py-1 rounded-full border ${appTheme.highlightSecondary.replace('text-', 'border-')}/30`}>
                                         <BsShield className={`${appTheme.highlightSecondary} mr-1`} />
@@ -374,11 +458,10 @@ function ProfilePage() {
                             <>
                                 <button
                                     onClick={() => setIsFollowing(!isFollowing)}
-                                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                                        isFollowing 
-                                            ? `${appTheme.cardBg} hover:${appTheme.cardBg}/80 ${appTheme.text}` 
-                                            : `${appTheme.primary} hover:${appTheme.primaryHover} ${appTheme.buttonText} shadow-lg hover:shadow-xl`
-                                    }`}
+                                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${isFollowing
+                                        ? `${appTheme.cardBg} hover:${appTheme.cardBg}/80 ${appTheme.text}`
+                                        : `${appTheme.primary} hover:${appTheme.primaryHover} ${appTheme.buttonText} shadow-lg hover:shadow-xl`
+                                        }`}
                                 >
                                     {isFollowing ? 'Following' : 'Follow'}
                                 </button>
@@ -441,7 +524,7 @@ function ProfilePage() {
         const canGoToNextYear = displayYear < currentYear;
 
         return (
-            <motion.div 
+            <motion.div
                 className={`p-8 rounded-xl ${appTheme.cardBg} border ${appTheme.border} shadow-xl`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -643,24 +726,52 @@ function ProfilePage() {
     const postsTotalPages = Math.ceil(totalPosts / postsPerPage);
     const postsPageNumbers = getPaginationNumbers(postsCurrentPage, postsTotalPages);
 
-    const SolutionPostCard = ({ post }) => (
-        <motion.div
-            className={`p-5 rounded-xl ${appTheme.cardBg} border ${appTheme.border} hover:shadow-lg transition-all duration-300 group`}
-            whileHover={{ y: -3, scale: 1.01 }}
-        >
-            <Link to={`/discuss/${post.slug}`} className="block">
-                <div className="flex items-center justify-between">
-                    <h4 className={`font-semibold ${appTheme.text} mb-2 group-hover:${appTheme.highlight} transition-colors line-clamp-2`}>
-                        {post.title}
-                    </h4>
-                    <div className={`flex items-center text-xs ${appTheme.cardText} ml-4`}>
-                        <FaCalendarAlt className="mr-1" />
-                        <span>{format(new Date(post.createdAt), 'MMM d, yyyy')}</span>
+    // FIXED: Updated SolutionPostCard to handle clicks instead of navigation
+    const SolutionPostCard = ({ post }) => {
+        if (!post) {
+            return null;
+        }
+
+        return (
+            <motion.div
+                className={`p-5 rounded-xl ${appTheme.cardBg} border ${appTheme.border} hover:shadow-lg transition-all duration-300 group cursor-pointer`}
+                whileHover={{ y: -3, scale: 1.01 }}
+                onClick={() => handlePostClick(post)} // CLICK HANDLER INSTEAD OF NAVIGATION
+            >
+                <div className="flex items-start justify-between">
+                    <div className="flex-1 mr-4">
+                        <h4 className={`font-semibold ${appTheme.text} mb-2 group-hover:${appTheme.highlight} transition-colors line-clamp-2`}>
+                            {post.title || 'Untitled Post'}
+                        </h4>
+                        {post.description && (
+                            <p className={`text-sm ${appTheme.cardText} mb-2 line-clamp-2`}>
+                                {post.description.replace(/<[^>]*>/g, '').substring(0, 150)}...
+                            </p>
+                        )}
+                        <div className="flex items-center space-x-4 text-xs">
+                            <div className={`flex items-center ${appTheme.cardText}`}>
+                                <FaCalendarAlt className="mr-1" />
+                                <span>{format(new Date(post.createdAt), 'MMM d, yyyy')}</span>
+                            </div>
+                            {post.likeCount !== undefined && (
+                                <div className={`flex items-center ${appTheme.successColor}`}>
+                                    <FaHeart className="mr-1" />
+                                    <span>{post.likeCount} likes</span>
+                                </div>
+                            )}
+                            {post.commentCount !== undefined && (
+                                <div className={`flex items-center ${appTheme.infoColor}`}>
+                                    <FaCode className="mr-1" />
+                                    <span>{post.commentCount} comments</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
+                    <FaChevronRight className={`${appTheme.cardText} group-hover:${appTheme.highlight} transition-colors flex-shrink-0`} />
                 </div>
-            </Link>
-        </motion.div>
-    );
+            </motion.div>
+        );
+    };
 
     return (
         <div className={`min-h-screen ${appTheme.background} relative`}>
@@ -804,14 +915,14 @@ function ProfilePage() {
                                     <FaTrophy className={`mr-3 ${appTheme.warningColor}`} />
                                     Achievements
                                 </h3>
-                                <button 
+                                <button
                                     onClick={() => setShowAchievements(!showAchievements)}
                                     className={`text-sm ${appTheme.highlight} hover:underline`}
                                 >
                                     {showAchievements ? 'Show less' : 'View all'}
                                 </button>
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-3">
                                 <AchievementBadge
                                     icon={<FaMedal />}
@@ -866,11 +977,10 @@ function ProfilePage() {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`relative flex items-center px-6 py-3 font-medium text-sm rounded-xl transition-all duration-300 ${
-                                        activeTab === tab.id 
-                                            ? `${appTheme.primary} ${appTheme.buttonText} shadow-lg` 
-                                            : `${appTheme.cardText} hover:${appTheme.text} hover:${appTheme.cardBg}/50`
-                                    }`}
+                                    className={`relative flex items-center px-6 py-3 font-medium text-sm rounded-xl transition-all duration-300 ${activeTab === tab.id
+                                        ? `${appTheme.primary} ${appTheme.buttonText} shadow-lg`
+                                        : `${appTheme.cardText} hover:${appTheme.text} hover:${appTheme.cardBg}/50`
+                                        }`}
                                 >
                                     <span className="mr-2">{tab.icon}</span>
                                     {tab.label}
@@ -927,7 +1037,7 @@ function ProfilePage() {
                                     <SubmissionHeatmap submissions={submissions} userCreatedAt={profile.createdAt} />
 
                                     {/* Recent Activity with enhanced design */}
-                                    <motion.div 
+                                    <motion.div
                                         className={`p-8 rounded-xl ${appTheme.cardBg} border ${appTheme.border} shadow-xl`}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
@@ -938,15 +1048,15 @@ function ProfilePage() {
                                                 <RiSwordFill className={`mr-3 ${appTheme.highlight}`} />
                                                 Recent Activity
                                             </h3>
-                                            <button 
-                                                onClick={() => setActiveTab('activity')} 
+                                            <button
+                                                onClick={() => setActiveTab('activity')}
                                                 className={`${appTheme.successColor} flex items-center hover:underline font-medium`}
                                             >
-                                                View all activity 
+                                                View all activity
                                                 <FaChevronRight className="ml-2 text-xs" />
                                             </button>
                                         </div>
-                                        
+
                                         {submissions.length > 0 ? (
                                             <div className="space-y-4">
                                                 {submissions.slice(0, 5).map(sub => (
@@ -985,7 +1095,7 @@ function ProfilePage() {
                                             <FaChartLine className={`mr-3 ${appTheme.infoColor}`} />
                                             Full Activity History
                                         </h3>
-                                        
+
                                         {submissions.length > 0 ? (
                                             <>
                                                 <div className="space-y-4 mb-8">
@@ -993,7 +1103,7 @@ function ProfilePage() {
                                                         <ActivityItem key={sub._id} submission={sub} />
                                                     ))}
                                                 </div>
-                                                
+
                                                 {activityTotalPages > 1 && (
                                                     <div className="flex justify-between items-center">
                                                         <button
@@ -1003,7 +1113,7 @@ function ProfilePage() {
                                                         >
                                                             Previous
                                                         </button>
-                                                        
+
                                                         <div className="flex items-center space-x-2">
                                                             {activityPageNumbers.map((page, index) => (
                                                                 page === '...' ? (
@@ -1012,18 +1122,17 @@ function ProfilePage() {
                                                                     <button
                                                                         key={page}
                                                                         onClick={() => setActivityCurrentPage(page)}
-                                                                        className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
-                                                                            activityCurrentPage === page
-                                                                                ? `${appTheme.primary} ${appTheme.buttonText} shadow-lg`
-                                                                                : `${appTheme.cardBg}/50 ${appTheme.cardText} hover:${appTheme.cardBg}/80 border ${appTheme.border}`
-                                                                        }`}
+                                                                        className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 ${activityCurrentPage === page
+                                                                            ? `${appTheme.primary} ${appTheme.buttonText} shadow-lg`
+                                                                            : `${appTheme.cardBg}/50 ${appTheme.cardText} hover:${appTheme.cardBg}/80 border ${appTheme.border}`
+                                                                            }`}
                                                                     >
                                                                         {page}
                                                                     </button>
                                                                 )
                                                             ))}
                                                         </div>
-                                                        
+
                                                         <button
                                                             onClick={() => setActivityCurrentPage(prev => Math.min(prev + 1, activityTotalPages))}
                                                             disabled={activityCurrentPage === activityTotalPages}
@@ -1056,73 +1165,88 @@ function ProfilePage() {
                                     transition={{ duration: 0.3 }}
                                 >
                                     <div className={`p-8 rounded-xl ${appTheme.cardBg} border ${appTheme.border} shadow-xl`}>
-                                        <h3 className={`text-xl font-bold ${appTheme.text} mb-6 flex items-center`}>
-                                            <FaCode className={`mr-3 ${appTheme.highlight}`} />
-                                            Solution Posts
-                                        </h3>
-                                        
-                                        {totalPosts > 0 ? (
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h3 className={`text-xl font-bold ${appTheme.text} flex items-center`}>
+                                                <FaCode className={`mr-3 ${appTheme.highlight}`} />
+                                                Solution Posts
+                                                <span className={`ml-3 px-3 py-1 rounded-full ${appTheme.primary}/20 ${appTheme.primary} text-sm font-medium`}>
+                                                    {totalPosts}
+                                                </span>
+                                            </h3>
+                                            <Link
+                                                to="/discuss/new"
+                                                className={`px-4 py-2 ${appTheme.primary} hover:${appTheme.primaryHover} ${appTheme.buttonText} rounded-lg transition-all duration-300 text-sm font-medium`}
+                                            >
+                                                <FaCode className="mr-2 inline" />
+                                                New Post
+                                            </Link>
+                                        </div>
+
+                                        {/* Loading State */}
+                                        {postsLoading && (
+                                            <div className="text-center py-8">
+                                                <LoadingSpinner message="Loading posts..." appTheme={appTheme} />
+                                            </div>
+                                        )}
+
+                                        {!postsLoading && (
                                             <>
-                                                <div className="space-y-4 mb-8">
-                                                    {solutionPosts.map(post => (
-                                                        <SolutionPostCard key={post._id} post={post} />
-                                                    ))}
-                                                </div>
-                                                
-                                                {postsTotalPages > 1 && (
-                                                    <div className="flex justify-between items-center">
-                                                        <button
-                                                            onClick={() => setPostsCurrentPage(prev => Math.max(prev - 1, 1))}
-                                                            disabled={postsCurrentPage === 1}
-                                                            className={`px-6 py-3 rounded-xl ${appTheme.cardBg}/50 border ${appTheme.border} ${appTheme.cardText} disabled:opacity-50 disabled:cursor-not-allowed hover:${appTheme.cardBg}/80 transition-all duration-300 font-medium`}
-                                                        >
-                                                            Previous
-                                                        </button>
-                                                        
-                                                        <div className="flex items-center space-x-2">
-                                                            {postsPageNumbers.map((page, index) => (
-                                                                page === '...' ? (
-                                                                    <span key={`ellipsis-${index}`} className={`px-3 py-2 ${appTheme.cardText}`}>...</span>
-                                                                ) : (
-                                                                    <button
-                                                                        key={page}
-                                                                        onClick={() => setPostsCurrentPage(page)}
-                                                                        className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
-                                                                            postsCurrentPage === page
-                                                                                ? `${appTheme.primary} ${appTheme.buttonText} shadow-lg`
-                                                                                : `${appTheme.cardBg}/50 ${appTheme.cardText} hover:${appTheme.cardBg}/80 border ${appTheme.border}`
-                                                                        }`}
-                                                                    >
-                                                                        {page}
-                                                                    </button>
-                                                                )
+                                                {totalPosts > 0 && solutionPosts?.length > 0 ? (
+                                                    <>
+                                                        <div className="space-y-4 mb-8">
+                                                            {solutionPosts.map((post, index) => (
+                                                                <div key={post._id || post.id || index}>
+                                                                    <SolutionPostCard post={post} />
+                                                                </div>
                                                             ))}
                                                         </div>
-                                                        
-                                                        <button
-                                                            onClick={() => setPostsCurrentPage(prev => Math.min(prev + 1, postsTotalPages))}
-                                                            disabled={postsCurrentPage === postsTotalPages}
-                                                            className={`px-6 py-3 rounded-xl ${appTheme.cardBg}/50 border ${appTheme.border} ${appTheme.cardText} disabled:opacity-50 disabled:cursor-not-allowed hover:${appTheme.cardBg}/80 transition-all duration-300 font-medium`}
+
+                                                        {postsTotalPages > 1 && (
+                                                            <div className="flex justify-between items-center">
+                                                                <button
+                                                                    onClick={() => handlePostsPageChange(Math.max(postsCurrentPage - 1, 1))}
+                                                                    disabled={postsCurrentPage === 1}
+                                                                    className={`px-6 py-3 rounded-xl ${appTheme.cardBg}/50 border ${appTheme.border} ${appTheme.cardText} disabled:opacity-50 disabled:cursor-not-allowed hover:${appTheme.cardBg}/80 transition-all duration-300 font-medium`}
+                                                                >
+                                                                    Previous
+                                                                </button>
+
+                                                                <div className="flex items-center space-x-2">
+                                                                    <span className={`${appTheme.cardText} text-sm`}>
+                                                                        Page {postsCurrentPage} of {postsTotalPages}
+                                                                    </span>
+                                                                </div>
+
+                                                                <button
+                                                                    onClick={() => handlePostsPageChange(Math.min(postsCurrentPage + 1, postsTotalPages))}
+                                                                    disabled={postsCurrentPage === postsTotalPages}
+                                                                    className={`px-6 py-3 rounded-xl ${appTheme.cardBg}/50 border ${appTheme.border} ${appTheme.cardText} disabled:opacity-50 disabled:cursor-not-allowed hover:${appTheme.cardBg}/80 transition-all duration-300 font-medium`}
+                                                                >
+                                                                    Next
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <div className="text-center py-16">
+                                                        <div className={`${appTheme.cardText}/50 mb-6`}>
+                                                            <FaCode className="inline-block text-8xl" />
+                                                        </div>
+                                                        <h4 className={`${appTheme.text} font-semibold text-xl mb-3`}>
+                                                            No solution posts yet
+                                                        </h4>
+                                                        <p className={`${appTheme.cardText} text-lg mb-8`}>
+                                                            Share your coding insights and solutions with the community!
+                                                        </p>
+                                                        <Link
+                                                            to="/discuss/new"
+                                                            className={`inline-block px-8 py-4 ${appTheme.primary} hover:${appTheme.primaryHover} ${appTheme.buttonText} rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105`}
                                                         >
-                                                            Next
-                                                        </button>
+                                                            Create Your First Post
+                                                        </Link>
                                                     </div>
                                                 )}
                                             </>
-                                        ) : (
-                                            <div className="text-center py-16">
-                                                <div className={`${appTheme.cardText}/50 mb-6`}>
-                                                    <FaCode className="inline-block text-8xl" />
-                                                </div>
-                                                <h4 className={`${appTheme.text} font-semibold text-xl mb-3`}>No solution posts yet</h4>
-                                                <p className={`${appTheme.cardText} text-lg mb-8`}>Share your coding insights and solutions with the community!</p>
-                                                <Link
-                                                    to="/discuss/new"
-                                                    className={`inline-block px-8 py-4 ${appTheme.primary} hover:${appTheme.primaryHover} ${appTheme.buttonText} rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105`}
-                                                >
-                                                    Create Your First Post
-                                                </Link>
-                                            </div>
                                         )}
                                     </div>
                                 </motion.div>
@@ -1131,8 +1255,17 @@ function ProfilePage() {
                     </div>
                 </div>
             </div>
-            
+
             <Footer />
+
+            {/* POST DETAIL MODAL - Using your existing component */}
+            <PostDetailModal
+                isOpen={showPostDetail}
+                onClose={handleCloseModal}
+                postSlug={selectedPostSlug}
+                appTheme={appTheme}
+                onPostUpdate={handlePostUpdate}
+            />
         </div>
     );
 }

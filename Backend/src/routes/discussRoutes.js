@@ -21,7 +21,8 @@ discussRoute.post('/create', userMiddleware, createPost);
 discussRoute.get('/post/:slug', userMiddleware, getPostBySlug);
 discussRoute.get('/post', userMiddleware, getAllPosts);
 discussRoute.delete('/:id', userMiddleware, deletePost);
-discussRoute.put('/:id', userMiddleware, updatePost);
+discussRoute.put('/posts/:id', userMiddleware, updatePost); 
+// discussRoute.put('/:id', userMiddleware, updatePost);
 discussRoute.put('/post/:postId/like', userMiddleware, togglePostLike); 
 
 

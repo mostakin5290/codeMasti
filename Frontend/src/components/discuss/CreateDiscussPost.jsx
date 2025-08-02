@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Header from '../../components/layout/Header';
-import Footer from '../../components/layout/Footer';
+import Header from '../layout/Header';
+import Footer from '../layout/Footer';
 import axiosClient from '../../api/axiosClient';
 import { toast } from 'react-toastify';
 import MonacoEditor from '@monaco-editor/react';
@@ -147,8 +147,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                 className={`px-3 py-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('heading', { level: 1 })
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Heading 1"
             >
@@ -158,8 +158,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                 className={`px-3 py-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('heading', { level: 2 })
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Heading 2"
             >
@@ -169,8 +169,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
                 className={`px-3 py-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('heading', { level: 3 })
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Heading 3"
             >
@@ -184,8 +184,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('bold')
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Bold (Ctrl+B)"
             >
@@ -195,8 +195,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().toggleItalic().run()}
                 className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('italic')
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Italic (Ctrl+I)"
             >
@@ -206,8 +206,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
                 className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('underline')
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Underline (Ctrl+U)"
             >
@@ -217,8 +217,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().toggleStrike().run()}
                 className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('strike')
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Strikethrough"
             >
@@ -232,8 +232,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
                 className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('bulletList')
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Bullet List"
             >
@@ -243,8 +243,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
                 className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('orderedList')
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Numbered List"
             >
@@ -256,8 +256,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
                 className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('blockquote')
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Quote"
             >
@@ -271,8 +271,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().setTextAlign('left').run()}
                 className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive({ textAlign: 'left' })
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Align Left"
             >
@@ -282,8 +282,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().setTextAlign('center').run()}
                 className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive({ textAlign: 'center' })
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Align Center"
             >
@@ -293,8 +293,8 @@ const MenuBar = ({ editor, appTheme }) => {
                 type="button"
                 onClick={() => editor.chain().focus().setTextAlign('right').run()}
                 className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive({ textAlign: 'right' })
-                        ? `${appTheme.primary} ${appTheme.buttonText}`
-                        : `${appTheme.cardText} hover:${appTheme.highlight}`
+                    ? `${appTheme.primary} ${appTheme.buttonText}`
+                    : `${appTheme.cardText} hover:${appTheme.highlight}`
                     }`}
                 title="Align Right"
             >
@@ -316,8 +316,8 @@ const MenuBar = ({ editor, appTheme }) => {
                         }
                     }}
                     className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 ${editor.isActive('link')
-                            ? `${appTheme.primary} ${appTheme.buttonText}`
-                            : `${appTheme.cardText} hover:${appTheme.highlight}`
+                        ? `${appTheme.primary} ${appTheme.buttonText}`
+                        : `${appTheme.cardText} hover:${appTheme.highlight}`
                         }`}
                     title="Add Link"
                 >
@@ -416,8 +416,8 @@ const MenuBar = ({ editor, appTheme }) => {
                                                 setCustomColor(color);
                                             }}
                                             className={`w-7 h-7 rounded-md border-2 hover:scale-110 transition-transform ${editor.getAttributes('textStyle').color === color
-                                                    ? `border-${appTheme.primary.split('-')[1]}-500 shadow-md`
-                                                    : 'border-gray-300 hover:border-gray-400'
+                                                ? `border-${appTheme.primary.split('-')[1]}-500 shadow-md`
+                                                : 'border-gray-300 hover:border-gray-400'
                                                 }`}
                                             style={{ backgroundColor: color }}
                                             title={color}
@@ -472,8 +472,8 @@ const MenuBar = ({ editor, appTheme }) => {
                     type="button"
                     onClick={() => setShowHighlightPicker(!showHighlightPicker)}
                     className={`p-2 rounded-md hover:${appTheme.cardBg}/80 transition-all duration-200 flex items-center gap-2 ${editor.isActive('highlight')
-                            ? `${appTheme.primary} ${appTheme.buttonText}`
-                            : `${appTheme.cardText} hover:${appTheme.highlight}`
+                        ? `${appTheme.primary} ${appTheme.buttonText}`
+                        : `${appTheme.cardText} hover:${appTheme.highlight}`
                         }`}
                     title="Highlight Text"
                 >
@@ -500,8 +500,8 @@ const MenuBar = ({ editor, appTheme }) => {
                                                 setCustomHighlight(color);
                                             }}
                                             className={`w-7 h-7 rounded-md border-2 hover:scale-110 transition-transform ${editor.getAttributes('highlight').color === color
-                                                    ? `border-${appTheme.primary.split('-')[1]}-500 shadow-md`
-                                                    : 'border-gray-300 hover:border-gray-400'
+                                                ? `border-${appTheme.primary.split('-')[1]}-500 shadow-md`
+                                                : 'border-gray-300 hover:border-gray-400'
                                                 }`}
                                             style={{ backgroundColor: color }}
                                             title={color}
@@ -576,6 +576,8 @@ const CreateDiscussPost = () => {
     const [code, setCode] = useState('');
     const [language, setLanguage] = useState('javascript');
     const [problemQuery, setProblemQuery] = useState('');
+    const [updateTarget, setUpdateTarget] = useState(null);
+
     const [searchedProblems, setSearchedProblems] = useState([]);
     const [selectedProblem, setSelectedProblem] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
@@ -737,8 +739,9 @@ const CreateDiscussPost = () => {
 
             let response;
             if (postToEdit) {
-                response = await axiosClient.put(`/discuss/${postToEdit._id}`, postData);
+                response = await axiosClient.put(`/discuss/posts/${postToEdit._id}`, postData);
                 toast.success('Post updated successfully! ✨');
+                console.log(response)
             } else {
                 response = await axiosClient.post('/discuss/create', postData);
                 toast.success('Post created successfully! 🎉');

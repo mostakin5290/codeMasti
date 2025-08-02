@@ -308,7 +308,7 @@ const Home = () => {
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 bg-transparent ">
                         {[
                             {
                                 title: "AI-Powered Feedback",
@@ -335,7 +335,7 @@ const Home = () => {
                                 gradient: "from-green-400 to-cyan-500"
                             }
                         ].map((feature, i) => (
-                            <Card3D key={i} className="group">
+                            <Card3D key={i} className="group bg-transparent ">
                                 <div className={`relative ${theme.cardBg} rounded-xl border ${theme.border} hover:shadow-xl overflow-hidden`}>
                                     {/* Animated border effect */}
                                     <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-xl`}></div>
