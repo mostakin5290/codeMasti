@@ -326,7 +326,7 @@ const ComingSoonPage = () => {
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center mt-2">
-                                            <span className={`text-xs ${theme.text}/50`}>Jan 2025</span>
+                                            <span className={`text-xs ${theme.text}/50`}>June 2025</span>
                                             <span className={`text-sm font-mono ${theme.highlight} font-bold`}>
                                                 {progressPercentage.toFixed(1)}% Complete
                                             </span>
