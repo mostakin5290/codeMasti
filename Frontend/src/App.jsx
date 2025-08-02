@@ -154,13 +154,17 @@ const AppRoutes = () => {
                 <Route path="/test" element={<PremiumWelcomePage />} />
                 <Route path="/coming" element={<ComingSoonPage />} />
                 <Route path="/world-rank" element={<RankPage />} />
-                <Route path="/tools/debug" element={<CodeDubgger appTheme={theme}/>} />
+                <Route path="/tools/debug" element={<CodeDubgger appTheme={theme} />} />
                 <Route path="/tools/visualizer" element={<VisualizerPage />} />
+
                 {/* GAME ROUTES */}
                 <Route path="/game" element={isAuthenticated ? <GamePage /> : <Navigate to="/" />} />
                 <Route path="/game/room/:roomId" element={isAuthenticated ? <GameRoomDetailsPage /> : <Navigate to="/" />} />
                 <Route path="/game/room/:roomId/play" element={isAuthenticated ? <GameCodefield /> : <Navigate to="/" />} />
+                {/* INterview */}
+                <Route path="/interview-prep" element={isAuthenticated ? <ComingSoonPage/>  : <Navigate to="/" />} />
 
+                
 
                 <Route path="/tools" element={<Tools />} />
                 {/* --- Admin Routes --- */}

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Header from '../layout/Header'; // Your existing Header
-import Footer from '../layout/Footer'; // Your existing Footer
+import Header from '../layout/Header';
+import Footer from '../layout/Footer';
 import { FiTerminal, FiClock, FiSend, FiCpu, FiZap, FiSettings } from 'react-icons/fi';
-import { useTheme } from '../../context/ThemeContext'; // Import useTheme
+import { useTheme } from '../../context/ThemeContext'; 
 
-// IMPORTANT: Adjust these values if your Header/Footer are fixed/sticky
-const HEADER_HEIGHT_APPROX = '80px'; // e.g., '4rem', '64px', etc. Set to '0px' if header is not fixed/sticky.
-const FOOTER_HEIGHT_APPROX = '60px'; // e.g., '3rem', '50px', etc. Set to '0px' if footer is not fixed/sticky.
+const HEADER_HEIGHT_APPROX = '80px';
+const FOOTER_HEIGHT_APPROX = '60px';
 
 const defaultTheme = {
     background: 'bg-gray-900', text: 'text-white', primary: 'bg-cyan-500',
@@ -29,14 +28,12 @@ const ComingSoonPage = () => {
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
     const [isLaunched, setIsLaunched] = useState(false);
 
-    // Use theme from context
     const { theme: themeFromContext } = useTheme();
-    const theme = { ...defaultTheme, ...themeFromContext }; // Merge with default to ensure all properties exist
+    const theme = { ...defaultTheme, ...themeFromContext }; 
 
-    // Helper to extract base color name for ring/border classes
     const getBaseColorName = (tailwindClass) => {
         const match = tailwindClass.match(/bg-(\w+)-\d+/);
-        return match ? match[1] : 'gray'; // Default to gray if not found
+        return match ? match[1] : 'gray'; 
     };
     const primaryBaseColor = getBaseColorName(theme.primary);
     const secondaryBaseColor = getBaseColorName(theme.secondary);
@@ -89,19 +86,15 @@ const ComingSoonPage = () => {
 
     return (
         <div className={`min-h-screen ${theme.background} bg-cover bg-center ${theme.text} flex flex-col relative`}>
-            {/* Header is rendered here. If it's fixed/sticky, its z-index will matter. */}
-            <div className='mb-10'> {/* Added margin-bottom to push content down from header */}
                 <Header />
-            </div>
+            
 
-            {/* Animated Blobs - Deep Background */}
             <div className="absolute inset-0 -z-20 overflow-hidden">
                 <div className={`absolute -top-20 -left-20 w-64 h-64 ${theme.primary} rounded-full opacity-5 animate-blob animation-delay-2000`}></div>
                 <div className={`absolute -bottom-20 -right-20 w-72 h-72 ${theme.secondary} rounded-full opacity-5 animate-blob animation-delay-4000`}></div>
                 <div className={`absolute top-1/3 left-1/3 w-56 h-56 ${theme.accent} rounded-full opacity-5 animate-blob`}></div>
             </div>
 
-            {/* Decorative floating code elements - Mid Background */}
             <div className="absolute inset-0 -z-10 overflow-hidden">
                 <div className={`absolute top-1/4 left-10 ${theme.primary}/10 text-6xl opacity-30 animate-float-slow hidden lg:block`}>
                     {'{}'}
@@ -111,14 +104,9 @@ const ComingSoonPage = () => {
                 </div>
             </div>
 
-            {/* Main Content Area - On Top */}
             <main
                 className="flex-grow flex flex-col items-center justify-center px-4 py-12 sm:py-16 relative z-10 overflow-hidden"
                 style={{
-                    // These styles are likely overridden by `py-12 sm:py-16`.
-                    // If you intend for them to literally push content below header/above footer,
-                    // consider making `main` `min-h-screen` and `flex-grow` on its own,
-                    // and use `mt-[HEADER_HEIGHT_APPROX]` and `mb-[FOOTER_HEIGHT_APPROX]` on `main`.
                     paddingTop: HEADER_HEIGHT_APPROX,
                     paddingBottom: FOOTER_HEIGHT_APPROX,
                 }}
@@ -200,11 +188,8 @@ const ComingSoonPage = () => {
                 </div>
             </main>
 
-            {/* Footer is rendered here. If it's fixed/sticky, its z-index will matter. */}
             <Footer />
 
-            {/* Global styles for animations (if not in tailwind.config.js or global.css) */}
-            {/* The style block assumes you're using a CSS-in-JS solution or have these animations defined globally */}
             <style jsx global>{`
                 /* Ensure body/html have height for min-h-screen on root div to work with flex-col if needed */
                 /* html, body, #root { height: 100%; } */
