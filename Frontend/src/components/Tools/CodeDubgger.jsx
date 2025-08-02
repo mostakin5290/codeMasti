@@ -29,31 +29,32 @@ import {
     MemoryStick
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router";
 
 // Enhanced VS Code theme generator using your dynamic color system
 const getVSCodeTheme = (appTheme) => {
     // Extract color values from Tailwind classes
     const extractColor = (tailwindClass, fallback) => {
         if (!tailwindClass) return fallback;
-        
+
         const colorMap = {
             // Cyan colors
             'text-cyan-400': '#22d3ee',
             'bg-cyan-500': '#06b6d4',
             'bg-cyan-600': '#0891b2',
             'text-cyan-300': '#67e8f9',
-            
+
             // Blue colors
             'text-blue-400': '#60a5fa',
             'bg-blue-600': '#2563eb',
             'bg-blue-700': '#1d4ed8',
             'text-blue-300': '#93c5fd',
-            
+
             // Purple colors
             'text-purple-400': '#c084fc',
             'bg-purple-600': '#9333ea',
             'text-purple-300': '#d8b4fe',
-            
+
             // Gray colors
             'bg-gray-900': '#111827',
             'bg-gray-800': '#1f2937',
@@ -61,14 +62,14 @@ const getVSCodeTheme = (appTheme) => {
             'text-gray-300': '#d1d5db',
             'text-white': '#ffffff',
             'border-gray-700': '#374151',
-            
+
             // Success/Error colors
             'text-emerald-400': '#34d399',
             'text-red-400': '#f87171',
             'text-amber-400': '#fbbf24',
             'text-green-400': '#4ade80',
         };
-        
+
         return colorMap[tailwindClass] || fallback;
     };
 
@@ -77,7 +78,7 @@ const getVSCodeTheme = (appTheme) => {
     const cardBg = extractColor(appTheme.cardBg, '#1f2937');
     const textColor = extractColor(appTheme.text, '#ffffff');
     const cardTextColor = extractColor(appTheme.cardText, '#d1d5db');
-    
+
     return {
         // Activity Bar
         activityBarBg: '#1e1e1e',
@@ -85,14 +86,14 @@ const getVSCodeTheme = (appTheme) => {
         activityBarActiveBg: '#37373d',
         activityBarBorder: '#2b2d30',
         activityBarActiveIndicator: primaryColor,
-        
+
         // Side Bar
         sideBarBg: '#252526',
         sideBarFg: '#cccccc',
         sideBarSectionHeader: '#2d2d30',
         sideBarBorder: '#2b2d30',
         sideBarSelection: primaryColor + '20',
-        
+
         // Editor
         editorBg: '#1e1e1e',
         editorFg: '#d4d4d4',
@@ -100,31 +101,31 @@ const getVSCodeTheme = (appTheme) => {
         editorSelectionBg: primaryColor + '30',
         editorCurrentLineBg: '#2a2d2e',
         editorCursorFg: primaryColor,
-        
+
         // Status Bar
         statusBarBg: primaryColor,
         statusBarFg: '#ffffff',
         statusBarNoFolderBg: '#68217a',
-        
+
         // Panel
         panelBg: '#181818',
         panelBorder: '#2b2d30',
         panelTabActiveBg: '#1e1e1e',
         panelTabInactiveBg: '#2d2d30',
         panelTabActiveIndicator: primaryColor,
-        
+
         // Debug
         debugToolbarBg: '#2d2d30',
         debugConsoleBg: '#181818',
         debugCurrentLineBg: primaryColor + '20',
-        
+
         // Accent colors
         accent: primaryColor,
         error: extractColor(appTheme.errorColor, '#f87171'),
         warning: extractColor(appTheme.warningColor, '#fbbf24'),
         info: extractColor(appTheme.infoColor, '#60a5fa'),
         success: extractColor(appTheme.successColor, '#34d399'),
-        
+
         // Additional UI colors
         buttonPrimary: primaryColor,
         buttonSecondary: '#3c3c3c',
@@ -132,7 +133,7 @@ const getVSCodeTheme = (appTheme) => {
         inputBg: '#3c3c3c',
         inputBorder: '#5a5a5a',
         scrollbarThumb: primaryColor + '60',
-        
+
         // Syntax highlighting
         syntaxKeyword: '#569cd6',
         syntaxString: '#ce9178',
@@ -143,7 +144,7 @@ const getVSCodeTheme = (appTheme) => {
     };
 };
 
-const AlgoVisualiser = ({ appTheme, onClose }) => {
+const AlgoVisualiser = ({ appTheme }) => {
     const [language, setLanguage] = useState("javascript");
     const [code, setCode] = useState("");
     const [isExecuting, setIsExecuting] = useState(false);
@@ -156,7 +157,7 @@ const AlgoVisualiser = ({ appTheme, onClose }) => {
     const [speed, setSpeed] = useState(500);
     const [callStack, setCallStack] = useState([]);
     const [executionInterval, setExecutionInterval] = useState(null);
-    
+
     // Panel states
     const [collapsedPanels, setCollapsedPanels] = useState({
         variables: false,
@@ -165,22 +166,22 @@ const AlgoVisualiser = ({ appTheme, onClose }) => {
         breakpoints: true,
         loadedScripts: true,
     });
-    
+
     // Layout states
     const [sidebarWidth, setSidebarWidth] = useState(320);
     const [panelHeight, setPanelHeight] = useState(250);
     const [activeTab, setActiveTab] = useState('console');
     const [isResizing, setIsResizing] = useState({ sidebar: false, panel: false });
     const [isFullscreen, setIsFullscreen] = useState(false);
-    
+
     // Monaco Editor refs
     const editorRef = useRef(null);
     const monacoRef = useRef(null);
     const [decorations, setDecorations] = useState([]);
     const [editorFontSize, setEditorFontSize] = useState(14);
-    
+
     const theme = getVSCodeTheme(appTheme);
-    
+
     // Default code examples with better algorithms
     const getDefaultCode = (lang) => {
         const algorithmCodes = {
@@ -635,7 +636,7 @@ public class AdvancedAlgorithms {
     const handleEditorDidMount = (editor, monaco) => {
         editorRef.current = editor;
         monacoRef.current = monaco;
-        
+
         try {
             // Define custom dark theme based on your app theme
             monaco.editor.defineTheme('custom-dark', {
@@ -667,7 +668,7 @@ public class AdvancedAlgorithms {
                     'editor.findMatchHighlightBackground': theme.accent + '20',
                 }
             });
-            
+
             monaco.editor.setTheme('custom-dark');
         } catch (error) {
             console.warn('Failed to set custom theme:', error);
@@ -683,16 +684,16 @@ public class AdvancedAlgorithms {
             let outputLog = [];
             let stackTrace = [];
             let stepCounter = 0;
-            
+
             lines.forEach((line, index) => {
                 const trimmedLine = line.trim();
-                
+
                 // Enhanced variable detection
                 const varMatches = trimmedLine.match(/(?:let|const|var)\s+(\w+)\s*=\s*(.+);?/);
                 if (varMatches) {
                     variableState[varMatches[1]] = varMatches[2].replace(/;$/, '');
                 }
-                
+
                 // Function call detection
                 const funcMatches = trimmedLine.match(/(\w+)\s*\(/);
                 if (funcMatches && !trimmedLine.includes('console.log')) {
@@ -702,7 +703,7 @@ public class AdvancedAlgorithms {
                         line: index + 1
                     });
                 }
-                
+
                 // Console.log detection with better parsing
                 const consoleMatches = trimmedLine.match(/console\.log\((.*)\)/);
                 if (consoleMatches) {
@@ -711,7 +712,7 @@ public class AdvancedAlgorithms {
                         .replace(/\$\{([^}]+)\}/g, '${$1}');
                     outputLog.push(`[${new Date().toLocaleTimeString()}] ${logContent}`);
                 }
-                
+
                 steps.push({
                     step: stepCounter++,
                     line: index + 1,
@@ -722,13 +723,13 @@ public class AdvancedAlgorithms {
                     output: [...outputLog],
                     timestamp: Date.now()
                 });
-                
+
                 // Simulate function returns
                 if (trimmedLine.includes('return')) {
                     stackTrace.pop();
                 }
             });
-            
+
             return steps;
         } catch (error) {
             throw new Error(`JavaScript execution failed: ${error.message}`);
@@ -744,12 +745,12 @@ public class AdvancedAlgorithms {
             setCallStack([]);
             setCurrentLine(null);
             setExecutionStep(0);
-            
+
             if (!code.trim()) {
                 setError('No code to execute. Please write some code first.');
                 return;
             }
-            
+
             let steps;
             if (language === "javascript") {
                 steps = executeJavaScript(code);
@@ -757,9 +758,9 @@ public class AdvancedAlgorithms {
                 // Enhanced simulation for other languages
                 steps = simulateExecution(code, language);
             }
-            
+
             setExecutionSteps(steps);
-            
+
             if (steps.length > 0) {
                 setExecutionStep(0);
                 updateVisualization(steps[0]);
@@ -777,27 +778,27 @@ public class AdvancedAlgorithms {
         const steps = [];
         const lines = code.split('\n').filter(line => line.trim());
         let outputLog = ['🔄 Simulating execution...'];
-        
+
         lines.forEach((line, index) => {
             const trimmedLine = line.trim();
             if (!trimmedLine || trimmedLine.startsWith('//') || trimmedLine.startsWith('#')) return;
-            
+
             // Language-specific output detection
-            const isOutput = 
+            const isOutput =
                 (lang === 'python' && (trimmedLine.includes('print(') || trimmedLine.includes('print '))) ||
                 (lang === 'cpp' && trimmedLine.includes('cout')) ||
                 (lang === 'java' && trimmedLine.includes('System.out'));
-            
+
             if (isOutput) {
                 outputLog.push(`📤 Output from line ${index + 1}`);
             }
-            
+
             steps.push({
                 step: steps.length,
                 line: index + 1,
                 type: 'simulation',
                 code: trimmedLine,
-                variables: { 
+                variables: {
                     language: lang.toUpperCase(),
                     currentLine: index + 1,
                     executionMode: 'simulation',
@@ -808,7 +809,7 @@ public class AdvancedAlgorithms {
                 timestamp: Date.now()
             });
         });
-        
+
         return steps;
     };
 
@@ -836,7 +837,7 @@ public class AdvancedAlgorithms {
                     return nextStep;
                 });
             }, speed);
-            
+
             setExecutionInterval(interval);
             return () => clearInterval(interval);
         } else if (executionInterval) {
@@ -949,10 +950,10 @@ public class AdvancedAlgorithms {
     };
 
     return (
-        <div 
+        <div
             className="h-screen flex flex-col overflow-hidden relative"
-            style={{ 
-                backgroundColor: theme.editorBg, 
+            style={{
+                backgroundColor: theme.editorBg,
                 color: theme.editorFg,
                 fontFamily: 'Inter, system-ui, sans-serif'
             }}
@@ -1070,9 +1071,9 @@ public class AdvancedAlgorithms {
             `}</style>
 
             {/* Modern Title Bar */}
-            <div 
+            <div
                 className="flex items-center justify-between h-12 px-6 relative"
-                style={{ 
+                style={{
                     background: `linear-gradient(135deg, ${theme.activityBarBg} 0%, ${theme.sideBarBg} 100%)`,
                     borderBottom: `1px solid ${theme.panelBorder}`
                 }}
@@ -1088,9 +1089,9 @@ public class AdvancedAlgorithms {
                         <span className="text-lg font-semibold tracking-wide">
                             Algorithm Debugger
                         </span>
-                        <span 
+                        <span
                             className="px-3 py-1 rounded-full text-xs font-medium"
-                            style={{ 
+                            style={{
                                 backgroundColor: theme.accent + '20',
                                 color: theme.accent,
                                 border: `1px solid ${theme.accent}40`
@@ -1100,31 +1101,33 @@ public class AdvancedAlgorithms {
                         </span>
                     </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                    <button 
+                    <button
                         onClick={() => setIsFullscreen(!isFullscreen)}
                         className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                         title="Toggle Fullscreen"
                     >
                         {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </button>
-                    <button 
-                        onClick={onClose} 
-                        className="p-2 rounded-lg hover:bg-red-500/20 transition-colors group"
-                        title="Close Debugger"
-                    >
-                        <X className="w-4 h-4 group-hover:text-red-400" />
-                    </button>
+                    <Link to="/tools">
+                        <button
+
+                            className="p-2 rounded-lg hover:bg-red-500/20 transition-colors group"
+                            title="Close Debugger"
+                        >
+                            <X className="w-4 h-4 group-hover:text-red-400" />
+                        </button>
+                    </Link>
                 </div>
             </div>
 
             {/* Enhanced Debug Toolbar */}
-            <div 
+            <div
                 className="flex items-center h-14 px-4 space-x-3 border-b"
-                style={{ 
+                style={{
                     background: `linear-gradient(135deg, ${theme.debugToolbarBg} 0%, ${theme.sideBarBg} 100%)`,
-                    borderColor: theme.panelBorder 
+                    borderColor: theme.panelBorder
                 }}
             >
                 {/* Language Selector */}
@@ -1134,7 +1137,7 @@ public class AdvancedAlgorithms {
                         value={language}
                         onChange={(e) => setLanguage(e.target.value)}
                         className="px-4 py-2 rounded-lg text-sm font-medium modern-card border-0 focus:outline-none focus:ring-2"
-                        style={{ 
+                        style={{
                             backgroundColor: theme.inputBg,
                             color: theme.editorFg,
                             focusRingColor: theme.accent
@@ -1146,9 +1149,9 @@ public class AdvancedAlgorithms {
                         <option value="java">Java</option>
                     </select>
                 </div>
-                
+
                 <div className="h-8 w-px" style={{ backgroundColor: theme.panelBorder }}></div>
-                
+
                 {/* Main Controls */}
                 <div className="flex items-center space-x-2">
                     <button
@@ -1160,11 +1163,11 @@ public class AdvancedAlgorithms {
                         <Play className="w-4 h-4" />
                         <span>Start</span>
                     </button>
-                    
+
                     <button
                         onClick={toggleExecution}
                         className="p-2 rounded-lg text-white button-hover-effect"
-                        style={{ 
+                        style={{
                             backgroundColor: isExecuting ? theme.warning : theme.accent,
                         }}
                         disabled={executionSteps.length === 0}
@@ -1172,11 +1175,11 @@ public class AdvancedAlgorithms {
                     >
                         {isExecuting ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                     </button>
-                    
+
                     <button
                         onClick={stepBackward}
                         className="p-2 rounded-lg button-hover-effect"
-                        style={{ 
+                        style={{
                             backgroundColor: theme.buttonSecondary,
                             color: executionStep === 0 ? theme.editorLineNumberFg : theme.editorFg
                         }}
@@ -1185,11 +1188,11 @@ public class AdvancedAlgorithms {
                     >
                         <StepBack className="w-4 h-4" />
                     </button>
-                    
+
                     <button
                         onClick={stepForward}
                         className="p-2 rounded-lg button-hover-effect"
-                        style={{ 
+                        style={{
                             backgroundColor: theme.buttonSecondary,
                             color: executionStep >= executionSteps.length - 1 ? theme.editorLineNumberFg : theme.editorFg
                         }}
@@ -1198,7 +1201,7 @@ public class AdvancedAlgorithms {
                     >
                         <StepForward className="w-4 h-4" />
                     </button>
-                    
+
                     <button
                         onClick={reset}
                         className="p-2 rounded-lg text-white button-hover-effect"
@@ -1208,9 +1211,9 @@ public class AdvancedAlgorithms {
                         <Square className="w-4 h-4" />
                     </button>
                 </div>
-                
+
                 <div className="flex-1"></div>
-                
+
                 {/* Speed Control */}
                 <div className="flex items-center space-x-3">
                     <Zap className="w-4 h-4" style={{ color: theme.accent }} />
@@ -1228,9 +1231,9 @@ public class AdvancedAlgorithms {
                         {speed}ms
                     </span>
                 </div>
-                
+
                 <div className="h-8 w-px" style={{ backgroundColor: theme.panelBorder }}></div>
-                
+
                 {/* Status Indicator */}
                 <div className="flex items-center space-x-2">
                     {isExecuting && (
@@ -1251,16 +1254,16 @@ public class AdvancedAlgorithms {
             {/* Main Content Area */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Activity Bar */}
-                <div 
-                    className="w-16 flex flex-col items-center py-4 space-y-6" 
-                    style={{ 
+                <div
+                    className="w-16 flex flex-col items-center py-4 space-y-6"
+                    style={{
                         background: `linear-gradient(180deg, ${theme.activityBarBg} 0%, ${theme.sideBarBg} 100%)`,
                         borderRight: `1px solid ${theme.activityBarBorder}`
                     }}
                 >
-                    <div 
+                    <div
                         className="p-2 rounded-xl transition-all duration-200"
-                        style={{ 
+                        style={{
                             backgroundColor: theme.activityBarActiveBg,
                             borderLeft: `3px solid ${theme.activityBarActiveIndicator}`
                         }}
@@ -1279,17 +1282,17 @@ public class AdvancedAlgorithms {
                 </div>
 
                 {/* Enhanced Side Bar */}
-                <div 
-                    className="flex flex-col modern-card" 
-                    style={{ 
+                <div
+                    className="flex flex-col modern-card"
+                    style={{
                         width: sidebarWidth,
                         borderRight: `1px solid ${theme.sideBarBorder}`
                     }}
                 >
                     {/* Side Bar Header */}
-                    <div 
+                    <div
                         className="h-10 flex items-center px-4 text-xs font-bold tracking-wider"
-                        style={{ 
+                        style={{
                             backgroundColor: theme.sideBarSectionHeader,
                             color: theme.sideBarFg,
                             borderBottom: `1px solid ${theme.panelBorder}`
@@ -1298,26 +1301,26 @@ public class AdvancedAlgorithms {
                         <Monitor className="w-4 h-4 mr-2" style={{ color: theme.accent }} />
                         RUN AND DEBUG
                     </div>
-                    
+
                     {/* Debug Panels with enhanced styling */}
                     <div className="flex-1 overflow-y-auto">
                         {/* Variables Panel */}
                         <div className="border-b" style={{ borderColor: theme.panelBorder }}>
-                            <div 
+                            <div
                                 className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 text-sm font-medium transition-colors panel-transition"
                                 onClick={() => togglePanel('variables')}
                             >
                                 <div className="flex items-center space-x-2">
-                                    {collapsedPanels.variables ? 
-                                        <ChevronRight className="w-4 h-4" /> : 
+                                    {collapsedPanels.variables ?
+                                        <ChevronRight className="w-4 h-4" /> :
                                         <ChevronDown className="w-4 h-4" />
                                     }
                                     <MemoryStick className="w-4 h-4" style={{ color: theme.info }} />
                                     <span style={{ color: theme.sideBarFg }}>VARIABLES</span>
                                 </div>
-                                <span 
+                                <span
                                     className="px-2 py-1 rounded-full text-xs font-medium"
-                                    style={{ 
+                                    style={{
                                         backgroundColor: theme.accent + '20',
                                         color: theme.accent
                                     }}
@@ -1337,13 +1340,13 @@ public class AdvancedAlgorithms {
                                         <div className="px-4 pb-3 max-h-48 overflow-y-auto">
                                             {Object.entries(variables).map(([name, value]) => (
                                                 <div key={name} className="flex justify-between items-center py-2 text-sm group">
-                                                    <span 
+                                                    <span
                                                         className="font-mono font-medium"
                                                         style={{ color: theme.info }}
                                                     >
                                                         {name}
                                                     </span>
-                                                    <span 
+                                                    <span
                                                         className="font-mono text-xs truncate ml-2 max-w-32 group-hover:max-w-none group-hover:overflow-visible"
                                                         style={{ color: theme.success }}
                                                         title={String(value)}
@@ -1353,7 +1356,7 @@ public class AdvancedAlgorithms {
                                                 </div>
                                             ))}
                                             {Object.keys(variables).length === 0 && (
-                                                <div 
+                                                <div
                                                     className="text-sm py-6 text-center"
                                                     style={{ color: theme.sideBarFg, opacity: 0.6 }}
                                                 >
@@ -1369,21 +1372,21 @@ public class AdvancedAlgorithms {
 
                         {/* Call Stack Panel */}
                         <div className="border-b" style={{ borderColor: theme.panelBorder }}>
-                            <div 
+                            <div
                                 className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 text-sm font-medium transition-colors"
                                 onClick={() => togglePanel('callStack')}
                             >
                                 <div className="flex items-center space-x-2">
-                                    {collapsedPanels.callStack ? 
-                                        <ChevronRight className="w-4 h-4" /> : 
+                                    {collapsedPanels.callStack ?
+                                        <ChevronRight className="w-4 h-4" /> :
                                         <ChevronDown className="w-4 h-4" />
                                     }
                                     <List className="w-4 h-4" style={{ color: theme.warning }} />
                                     <span style={{ color: theme.sideBarFg }}>CALL STACK</span>
                                 </div>
-                                <span 
+                                <span
                                     className="px-2 py-1 rounded-full text-xs font-medium"
-                                    style={{ 
+                                    style={{
                                         backgroundColor: theme.warning + '20',
                                         color: theme.warning
                                     }}
@@ -1413,7 +1416,7 @@ public class AdvancedAlgorithms {
                                                 </div>
                                             ))}
                                             {callStack.length === 0 && (
-                                                <div 
+                                                <div
                                                     className="text-sm py-6 text-center"
                                                     style={{ color: theme.sideBarFg, opacity: 0.6 }}
                                                 >
@@ -1429,13 +1432,13 @@ public class AdvancedAlgorithms {
 
                         {/* Watch Panel */}
                         <div className="border-b" style={{ borderColor: theme.panelBorder }}>
-                            <div 
+                            <div
                                 className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 text-sm font-medium transition-colors"
                                 onClick={() => togglePanel('watch')}
                             >
                                 <div className="flex items-center space-x-2">
-                                    {collapsedPanels.watch ? 
-                                        <ChevronRight className="w-4 h-4" /> : 
+                                    {collapsedPanels.watch ?
+                                        <ChevronRight className="w-4 h-4" /> :
                                         <ChevronDown className="w-4 h-4" />
                                     }
                                     <Eye className="w-4 h-4" style={{ color: theme.info }} />
@@ -1452,7 +1455,7 @@ public class AdvancedAlgorithms {
                                         className="overflow-hidden"
                                     >
                                         <div className="px-4 pb-3">
-                                            <div 
+                                            <div
                                                 className="text-sm py-4 text-center"
                                                 style={{ color: theme.sideBarFg, opacity: 0.6 }}
                                             >
@@ -1466,13 +1469,13 @@ public class AdvancedAlgorithms {
 
                         {/* Breakpoints Panel */}
                         <div>
-                            <div 
+                            <div
                                 className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 text-sm font-medium transition-colors"
                                 onClick={() => togglePanel('breakpoints')}
                             >
                                 <div className="flex items-center space-x-2">
-                                    {collapsedPanels.breakpoints ? 
-                                        <ChevronRight className="w-4 h-4" /> : 
+                                    {collapsedPanels.breakpoints ?
+                                        <ChevronRight className="w-4 h-4" /> :
                                         <ChevronDown className="w-4 h-4" />
                                     }
                                     <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.error }}></div>
@@ -1489,7 +1492,7 @@ public class AdvancedAlgorithms {
                                         className="overflow-hidden"
                                     >
                                         <div className="px-4 pb-3">
-                                            <div 
+                                            <div
                                                 className="text-sm py-4 text-center"
                                                 style={{ color: theme.sideBarFg, opacity: 0.6 }}
                                             >
@@ -1504,7 +1507,7 @@ public class AdvancedAlgorithms {
                 </div>
 
                 {/* Resize Handle for Sidebar */}
-                <div 
+                <div
                     className="w-2 resize-handle cursor-col-resize flex items-center justify-center group"
                     onMouseDown={handleMouseDown('sidebar')}
                 >
@@ -1516,22 +1519,22 @@ public class AdvancedAlgorithms {
                     {/* Editor Container */}
                     <div className="flex-1 flex flex-col" style={{ height: `calc(100% - ${panelHeight}px)` }}>
                         {/* Editor Tabs */}
-                        <div 
+                        <div
                             className="h-10 flex items-center"
-                            style={{ 
+                            style={{
                                 backgroundColor: theme.panelTabInactiveBg,
                                 borderBottom: `1px solid ${theme.panelBorder}`
                             }}
                         >
-                            <div 
+                            <div
                                 className="px-4 py-2 flex items-center space-x-2 text-sm border-r relative"
-                                style={{ 
+                                style={{
                                     backgroundColor: theme.panelTabActiveBg,
                                     borderColor: theme.panelBorder,
                                     color: theme.editorFg
                                 }}
                             >
-                                <div 
+                                <div
                                     className="absolute bottom-0 left-0 right-0 h-0.5"
                                     style={{ backgroundColor: theme.panelTabActiveIndicator }}
                                 ></div>
@@ -1591,11 +1594,11 @@ public class AdvancedAlgorithms {
                                     }
                                 }}
                             />
-                            
+
                             {/* Execution Status Overlay */}
                             {isExecuting && (
                                 <div className="absolute top-4 right-4 flex items-center space-x-2 px-3 py-2 rounded-lg modern-card">
-                                    <div 
+                                    <div
                                         className="w-2 h-2 rounded-full animate-pulse"
                                         style={{ backgroundColor: theme.success }}
                                     ></div>
@@ -1608,7 +1611,7 @@ public class AdvancedAlgorithms {
                     </div>
 
                     {/* Horizontal Resize Handle */}
-                    <div 
+                    <div
                         className="h-2 resize-handle resize-handle-horizontal cursor-row-resize flex items-center justify-center group"
                         onMouseDown={handleMouseDown('panel')}
                     >
@@ -1616,15 +1619,15 @@ public class AdvancedAlgorithms {
                     </div>
 
                     {/* Enhanced Bottom Panel */}
-                    <div 
+                    <div
                         className="flex flex-col modern-card"
-                        style={{ 
+                        style={{
                             height: panelHeight,
                             borderTop: `1px solid ${theme.panelBorder}`
                         }}
                     >
                         {/* Panel Tabs */}
-                        <div 
+                        <div
                             className="h-10 flex items-center"
                             style={{ borderBottom: `1px solid ${theme.panelBorder}` }}
                         >
@@ -1632,10 +1635,9 @@ public class AdvancedAlgorithms {
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`px-4 py-2 text-sm font-medium capitalize transition-all duration-200 flex items-center space-x-2 relative ${
-                                        activeTab === tab ? 'border-b-2' : 'hover:bg-white/5'
-                                    }`}
-                                    style={{ 
+                                    className={`px-4 py-2 text-sm font-medium capitalize transition-all duration-200 flex items-center space-x-2 relative ${activeTab === tab ? 'border-b-2' : 'hover:bg-white/5'
+                                        }`}
+                                    style={{
                                         color: activeTab === tab ? theme.accent : theme.sideBarFg,
                                         borderColor: activeTab === tab ? theme.accent : 'transparent',
                                         backgroundColor: activeTab === tab ? theme.panelBg : 'transparent'
@@ -1646,9 +1648,9 @@ public class AdvancedAlgorithms {
                                     {tab === 'output' && <List className="w-4 h-4" />}
                                     <span>{tab}</span>
                                     {tab === 'console' && output.length > 0 && (
-                                        <span 
+                                        <span
                                             className="ml-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                                            style={{ 
+                                            style={{
                                                 backgroundColor: theme.accent,
                                                 color: 'white'
                                             }}
@@ -1657,7 +1659,7 @@ public class AdvancedAlgorithms {
                                         </span>
                                     )}
                                     {activeTab === tab && (
-                                        <div 
+                                        <div
                                             className="absolute bottom-0 left-0 right-0 h-0.5"
                                             style={{ backgroundColor: theme.accent }}
                                         ></div>
@@ -1671,7 +1673,7 @@ public class AdvancedAlgorithms {
                         </div>
 
                         {/* Enhanced Panel Content */}
-                        <div 
+                        <div
                             className="flex-1 overflow-y-auto p-4"
                             style={{ backgroundColor: theme.debugConsoleBg }}
                         >
@@ -1679,7 +1681,7 @@ public class AdvancedAlgorithms {
                                 <div className="font-mono text-sm space-y-2">
                                     <AnimatePresence>
                                         {output.map((log, index) => (
-                                            <motion.div 
+                                            <motion.div
                                                 key={index}
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
@@ -1693,7 +1695,7 @@ public class AdvancedAlgorithms {
                                                         {log}
                                                     </span>
                                                 </div>
-                                                <span 
+                                                <span
                                                     className="text-xs opacity-50 group-hover:opacity-100 transition-opacity"
                                                     style={{ color: theme.editorLineNumberFg }}
                                                 >
@@ -1703,7 +1705,7 @@ public class AdvancedAlgorithms {
                                         ))}
                                     </AnimatePresence>
                                     {output.length === 0 && (
-                                        <div 
+                                        <div
                                             className="text-center py-12"
                                             style={{ color: theme.sideBarFg, opacity: 0.6 }}
                                         >
@@ -1714,7 +1716,7 @@ public class AdvancedAlgorithms {
                                     )}
                                 </div>
                             )}
-                            
+
                             {activeTab === 'terminal' && (
                                 <div className="font-mono text-sm" style={{ color: theme.sideBarFg }}>
                                     <div className="mb-4 p-3 rounded-lg modern-card">
@@ -1731,7 +1733,7 @@ public class AdvancedAlgorithms {
                                     </div>
                                 </div>
                             )}
-                            
+
                             {activeTab === 'output' && (
                                 <div className="font-mono text-sm space-y-3">
                                     {error && (
@@ -1739,13 +1741,13 @@ public class AdvancedAlgorithms {
                                             initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             className="p-4 rounded-lg modern-card"
-                                            style={{ 
+                                            style={{
                                                 backgroundColor: theme.error + '10',
                                                 border: `1px solid ${theme.error}40`
                                             }}
                                         >
                                             <div className="flex items-center space-x-2 mb-3">
-                                                <div 
+                                                <div
                                                     className="w-5 h-5 rounded-full flex items-center justify-center"
                                                     style={{ backgroundColor: theme.error }}
                                                 >
@@ -1755,7 +1757,7 @@ public class AdvancedAlgorithms {
                                                     Execution Error
                                                 </span>
                                             </div>
-                                            <pre 
+                                            <pre
                                                 className="whitespace-pre-wrap text-sm leading-relaxed"
                                                 style={{ color: theme.error }}
                                             >
@@ -1763,9 +1765,9 @@ public class AdvancedAlgorithms {
                                             </pre>
                                         </motion.div>
                                     )}
-                                    
+
                                     {!error && executionSteps.length === 0 && (
-                                        <div 
+                                        <div
                                             className="text-center py-12"
                                             style={{ color: theme.sideBarFg, opacity: 0.6 }}
                                         >
@@ -1774,22 +1776,22 @@ public class AdvancedAlgorithms {
                                             <div className="text-sm">Start debugging to see execution details</div>
                                         </div>
                                     )}
-                                    
+
                                     {!error && executionSteps.length > 0 && (
                                         <motion.div
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             className="space-y-3"
                                         >
-                                            <div 
+                                            <div
                                                 className="p-4 rounded-lg modern-card"
-                                                style={{ 
+                                                style={{
                                                     backgroundColor: theme.success + '10',
                                                     border: `1px solid ${theme.success}40`
                                                 }}
                                             >
                                                 <div className="flex items-center space-x-2 mb-2">
-                                                    <div 
+                                                    <div
                                                         className="w-5 h-5 rounded-full flex items-center justify-center"
                                                         style={{ backgroundColor: theme.success }}
                                                     >
@@ -1820,9 +1822,9 @@ public class AdvancedAlgorithms {
             </div>
 
             {/* Enhanced Status Bar */}
-            <div 
+            <div
                 className="h-7 flex items-center justify-between px-4 text-xs"
-                style={{ 
+                style={{
                     background: `linear-gradient(135deg, ${theme.statusBarBg} 0%, ${theme.statusBarBg}dd 100%)`,
                     color: theme.statusBarFg
                 }}
