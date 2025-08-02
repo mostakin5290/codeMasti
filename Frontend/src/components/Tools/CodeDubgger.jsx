@@ -1112,7 +1112,7 @@ public class AdvancedAlgorithms {
                     </button>
                     <Link to="/tools">
                         <button
-
+                            
                             className="p-2 rounded-lg hover:bg-red-500/20 transition-colors group"
                             title="Close Debugger"
                         >

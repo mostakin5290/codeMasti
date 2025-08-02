@@ -79,7 +79,7 @@ const algorithmCategories = [
         algorithms: [
             { name: 'Bubble Sort', complexity: 'O(n²)', difficulty: 'Easy' },
             { name: 'Selection Sort', complexity: 'O(n²)', difficulty: 'Easy' },
-            { name: 'Insertion Sort', complexity: 'O(n²)', difficulty: 'Easy' },
+            // { name: 'Insertion Sort', complexity: 'O(n²)', difficulty: 'Easy' },
             { name: 'Quick Sort', complexity: 'O(n log n)', difficulty: 'Medium' },
             { name: 'Merge Sort', complexity: 'O(n log n)', difficulty: 'Medium' },
             { name: 'Heap Sort', complexity: 'O(n log n)', difficulty: 'Hard' },
