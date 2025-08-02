@@ -7,8 +7,9 @@ import { toast } from 'react-toastify';
 import axiosClient from '../api/axiosClient';
 
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { FaShareAlt, FaUserCircle, FaSpinner, FaCrown, FaTimesCircle, FaCheckCircle, FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import { FaShareAlt,FaShare, FaUserCircle, FaSpinner, FaCrown, FaTimesCircle, FaCheckCircle, FaArrowUp, FaArrowDown } from 'react-icons/fa';
 import { IoTimerOutline } from 'react-icons/io5';
+import SharePopup from '../components/common/SharePopup';
 
 const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -18,21 +19,21 @@ const formatTime = (seconds) => {
 
 // Dynamic default theme that matches your other pages
 const defaultTheme = {
-    background: 'bg-gray-900', 
-    text: 'text-white', 
+    background: 'bg-gray-900',
+    text: 'text-white',
     primary: 'bg-cyan-500',
-    primaryHover: 'bg-cyan-600', 
-    secondary: 'bg-blue-600', 
+    primaryHover: 'bg-cyan-600',
+    secondary: 'bg-blue-600',
     secondaryHover: 'bg-blue-700',
-    cardBg: 'bg-gray-800', 
-    cardText: 'text-gray-300', 
+    cardBg: 'bg-gray-800',
+    cardText: 'text-gray-300',
     border: 'border-gray-700',
-    buttonText: 'text-white', 
-    highlight: 'text-cyan-400', 
+    buttonText: 'text-white',
+    highlight: 'text-cyan-400',
     highlightSecondary: 'text-blue-400',
-    highlightTertiary: 'text-purple-400', 
+    highlightTertiary: 'text-purple-400',
     iconBg: 'bg-cyan-500/10',
-    gradientFrom: 'from-gray-900', 
+    gradientFrom: 'from-gray-900',
     gradientTo: 'to-gray-800',
     buttonPrimary: 'bg-blue-600',
     buttonPrimaryHover: 'bg-blue-700',
@@ -63,6 +64,8 @@ const GameRoomDetailsPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [gameStarted, setGameStarted] = useState(false);
+    const [showSharePopup, setShowSharePopup] = useState(false);
+
     const [timeLeft, setTimeLeft] = useState(0);
     const [currentProblem, setCurrentProblem] = useState(null);
     const [gameEnded, setGameEnded] = useState(false);
@@ -373,11 +376,6 @@ const GameRoomDetailsPage = () => {
         }
     };
 
-    const handleCopyRoomLink = () => {
-        const roomLink = `${window.location.origin}/game/room/${roomId}`;
-        navigator.clipboard.writeText(roomLink);
-        toast.success('Room link copied to clipboard!');
-    };
 
     if (loading) {
         return (
@@ -442,10 +440,10 @@ const GameRoomDetailsPage = () => {
                             </h2>
                             <div className="flex items-center justify-center space-x-12 relative z-10">
                                 <div className="flex flex-col items-center space-y-4 animate-slide-in-left-fast">
-                                    <img 
-                                        src={matchedUsers.currentUser.avatar || '/default-avatar.png'} 
-                                        alt="You" 
-                                        className={`w-40 h-40 rounded-full object-cover border-4 ${theme.primary.replace('bg-', 'border-')} shadow-lg animate-float`} 
+                                    <img
+                                        src={matchedUsers.currentUser.avatar || '/default-avatar.png'}
+                                        alt="You"
+                                        className={`w-40 h-40 rounded-full object-cover border-4 ${theme.primary.replace('bg-', 'border-')} shadow-lg animate-float`}
                                     />
                                     <p className={`text-3xl font-bold ${theme.highlight}`}>YOU</p>
                                     <p className="text-xl font-medium">{matchedUsers.currentUser.firstName || 'Player'}</p>
@@ -454,10 +452,10 @@ const GameRoomDetailsPage = () => {
                                 <span className={`text-8xl font-extrabold ${theme.errorColor} animate-vs-zoom relative z-10`}>VS</span>
 
                                 <div className="flex flex-col items-center space-y-4 animate-slide-in-right-fast">
-                                    <img 
-                                        src={matchedUsers.opponent.avatar || '/default-avatar.png'} 
-                                        alt="Opponent" 
-                                        className={`w-40 h-40 rounded-full object-cover border-4 ${theme.secondary.replace('bg-', 'border-')} shadow-lg animate-float`} 
+                                    <img
+                                        src={matchedUsers.opponent.avatar || '/default-avatar.png'}
+                                        alt="Opponent"
+                                        className={`w-40 h-40 rounded-full object-cover border-4 ${theme.secondary.replace('bg-', 'border-')} shadow-lg animate-float`}
                                     />
                                     <p className={`text-3xl font-bold ${theme.highlightSecondary}`}>OPPONENT</p>
                                     <p className="text-xl font-medium">{matchedUsers.opponent.firstName || 'Opponent'}</p>
@@ -493,11 +491,13 @@ const GameRoomDetailsPage = () => {
                                             className={`flex-grow p-2 rounded-md ${theme.background} ${theme.text} border ${theme.border} text-sm focus:outline-none focus:ring-2 focus:ring-${getAccentColorBase()}-500`}
                                         />
                                         <button
-                                            onClick={handleCopyRoomLink}
-                                            className={`px-4 py-2 rounded-md ${theme.secondary} ${theme.buttonText} hover:${theme.secondaryHover} transition-colors duration-200`}
+                                            onClick={() => setShowSharePopup(true)}
+                                            className={`p-2 rounded-lg ${theme.cardBg} ${theme.cardText} hover:${theme.cardBg}/80 transition-colors`}
+                                            title="Share Post"
                                         >
-                                            Copy
+                                            <FaShare className="w-4 h-4" />
                                         </button>
+
                                     </div>
                                 </div>
 
@@ -601,14 +601,14 @@ const GameRoomDetailsPage = () => {
                                             {gameResults.solvedOrder.map((entry, index) => {
                                                 const playerIsWinner = gameResults.winner && entry.userId._id === gameResults.winner._id;
                                                 const solvedAnyProblems = entry.problemsSolvedCount > 0;
-                                                
+
                                                 // Determine ELO display
                                                 let eloDisplay = null;
                                                 if (entry.eloBeforeGame !== null && entry.eloChange !== null && entry.eloAfterGame !== null) {
                                                     const eloChangeSign = entry.eloChange >= 0 ? '+' : '';
                                                     const eloChangeColor = entry.eloChange > 0 ? theme.successColor : entry.eloChange < 0 ? theme.errorColor : theme.cardText;
                                                     const eloChangeIcon = entry.eloChange > 0 ? <FaArrowUp className="inline-block ml-1" /> : entry.eloChange < 0 ? <FaArrowDown className="inline-block ml-1" /> : null;
-                                                    
+
                                                     eloDisplay = (
                                                         <p className={`${theme.cardText} text-sm flex items-center justify-end`}>
                                                             ELO: {entry.eloBeforeGame} <span className={`${eloChangeColor} ml-1`}>({eloChangeSign}{entry.eloChange})</span> = {entry.eloAfterGame} {eloChangeIcon}
@@ -669,6 +669,14 @@ const GameRoomDetailsPage = () => {
                     </div>
                 )}
             </div>
+
+            {showSharePopup && (
+                <SharePopup
+                    url={`${window.location.origin}/game/room/${room.roomId}`}
+                    title="Shere to your Friend"
+                    onClose={() => setShowSharePopup(false)}
+                />
+            )}
 
             {/* Dynamic Animations CSS */}
             <style jsx>{`

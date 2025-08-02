@@ -1251,9 +1251,7 @@ const ProblemPage = () => {
                         {totalPages > 1 && (
                             <div className={`mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 ${sectionClasses} p-6`}>
                                 <div className={theme.cardText}>
-                                    Showing <span className={`font-bold ${theme.text}`}>{((currentPage - 1) * problemsPerPage) + 1}</span> to{' '}
-                                    <span className={`font-bold ${theme.text}`}>{Math.min(currentPage * problemsPerPage, filteredProblems.length)}</span> of{' '}
-                                    <span className={`font-bold ${theme.text}`}>{filteredProblems.length}</span> problems
+                                    Page <span className={`font-bold ${theme.text}`}>{(currentPage)}</span>
                                 </div>
 
                                 <div className="flex items-center gap-2">
